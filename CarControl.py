@@ -2,7 +2,7 @@ import time
 import Adafruit_PCA9685
 import curses
 
-class CarControl() :
+class KeyboardControl() :
     def __init__(self) :
         self.pwm = Adafruit_PCA9685.PCA9685()
         self.screen = curses.initscr()
@@ -90,7 +90,7 @@ class CarControl() :
         curses.endwin()
 
 def main() :
-    a = CarControl()
+    a = KeyboardControl()
     screen = curses.initscr()
     screen.keypad(True)
     curses.noecho()
@@ -100,7 +100,9 @@ def main() :
     try :
         while True :
             char = screen.getch()
-            screen.clear()
+            # screen.clear()
+            print(char)
+            '''
             if char == curses.KEY_RIGHT :
                 a.turn_right()
             elif char == curses.KEY_LEFT :
@@ -117,7 +119,8 @@ def main() :
                 a.speed_down(30)
             elif char == -1 :
                 a.straight()
-                a.stop()
+                a.stop()'''
+            curses.flushinp()
     except KeyboardInterrupt :
         a.exit()
 
