@@ -1,10 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-
-
-import TCN_socket
+import ROVER_socket
 import __future__
-import xbox
 import sys, time
 import xmlrpc.client as xmlrpclib
 import math

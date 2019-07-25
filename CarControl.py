@@ -59,7 +59,7 @@ class CarControl() :
 		self.pwm.set_pwm(3, 3, 400)
 		self.Status = 0
 
-	def speed_up(self, speed) :
+	def speed_up(self, speed = 10) :
 		if self.Status == 1 and self.Forward_Speed < 650 :
 			self.Forward_Speed += speed
 			self.pwm.set_pwm(3, 3, self.Forward_Speed)
@@ -69,7 +69,7 @@ class CarControl() :
 			self.pwm.set_pwm(3, 3, self.Backward_Speed)
 			self.screen.addstr(0, 0, 'FASTER') 
 
-	def speed_down(self, speed) :
+	def speed_down(self, speed = 10) :
 		if self.Status == 1 and self.Forward_Speed > 440 :
 			self.Forward_Speed -= speed
 			self.pwm.set_pwm(3, 3, self.Forward_Speed)

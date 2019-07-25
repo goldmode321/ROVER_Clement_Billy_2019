@@ -1,3 +1,4 @@
+#on the raspberry pi
 import ROVER_socket as r
 import CarControl as c
 
@@ -8,7 +9,6 @@ try :
     a.reset()
     while True :
         recv_msg = s.recv_string(100)
-        print(recv_msg)
         if recv_msg == 'Close' :
             a.exit()
             s.close()

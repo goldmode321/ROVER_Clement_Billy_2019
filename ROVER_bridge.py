@@ -6,28 +6,29 @@ import subprocess
 import sys
 import threading
 import logging
+import CarControl
 
 '''Portocol'''
-''' "C" to Main , "L" to LiDAR , "S" to STM32 , "G" to GPIO , "V" to Vision , "M" to motion '''
+''' "C" to Main , "L" to LiDAR , "K" to Keyboard control , "G" to GPIO , "V" to Vision , "M" to motion '''
 
 ###                                                                   ###
 ###    global variables                                               ###
 ###                                                                   ###
 commander_server = None
 lidar_server = None
-stm32_server = None
 vision_server = None
+keyboard_server = None
 bridge_run = False
 logging.basicConfig(filename='Bridge.log',filemode = 'w',level =logging.INFO)
 
 
 def bridge_init():
-    global commander_server,stm32_server , vision_server , lidar_server , bridge_run
+    global commander_server , vision_server , lidar_server , bridge_run
     try:
         commander_init()
         vision_init()
         lidar_init()
-        stm32_init()
+
         bridge_run = True
         logging.info("Bridge is ready to run ! \n")
     except:
@@ -35,8 +36,8 @@ def bridge_init():
             commander_server.close()
         if vision_server != None:
             vision_server.close()
-        if stm32_server != None:
-            stm32_server.close()
+        if keyboard_server != None:
+            keyboard_server.close()
         bridge_run = False
         sys.exit(0)
 
@@ -84,7 +85,7 @@ def vision_init():
 
 
 ###                                                                            ###
-###    Gateway for RPLiDAR communication. See TCN_vision_main.py               ###
+###    Gateway for RPLiDAR communication. See ROVER_vision_main.py             ###
 ###                                                                            ###
 
 def lidar_init():
@@ -107,9 +108,23 @@ def lidar_init():
 
 
 
-
-
 ###                                                                   ###
+###    Gateway for Keyboard control communication.                    ###
+###                                                                   ###
+
+def keyboard_init() : 
+    global keyboard_server
+    try :
+        keyboard_server = ROVER_socket.TCP_server(50003,1)
+        keyboard_data = keyboard_server.recv_list()
+        bridge_potorcol(keyboard_data)
+    except :
+        keyboard_server.close()
+        traceback.print_exc()
+        print('Bridge initializing fail at keyboard_init()')
+
+
+'''###                                                                   ###
 ###    Gateway for STM32 communication. See TCN_STM32_main.py         ###
 ###                                                                   ###
 
@@ -134,7 +149,7 @@ def stm32_init():
         print('Bridge initializing fail at stm32_init()')
         logging.info('Bridge initializing fail at stm32_init()\n')
         logging.exception("Got error : \n")
-
+'''
 
 ###                                                                   ###
 ###    Protocol for bridge                                            ###
@@ -163,7 +178,7 @@ def stm32_init():
 '''
 
 def bridge_potorcol(receive_data):
-    global commander_server , stm32_server , vision_server , bridge_run
+    global commander_server , vision_server , bridge_run
     '''First, get commander command (TCN_main.py)'''
     try:
         if receive_data[0] == 'C':
@@ -186,12 +201,29 @@ def bridge_potorcol(receive_data):
                 bridge_potorcol(receive_data)
                 
 
-            elif receive_data[1] == 'stop_motor':
-                stm32_server.send_list(['S','stop'])
+            # elif receive_data[1] == 'stop_motor':
+            #     stm32_server.send_list(['S','stop'])
 
-        elif receive_data[0] == 'S':
-            if receive_data[1] == 'next':
-                commander_server.send_list(['C','next'])
+        elif receive_data[0] == 'K' :
+            if receive_data[1] == 'Close' :
+                CarControl.exit()
+            elif receive_data[1] == 'w' :
+                CarControl.foreward()
+            elif receive_data[1] == 's' :
+                CarControl.backward()
+            elif receive_data[1] == 'a' :
+                CarControl.turn_left()
+            elif receive_data[1] == 'd' :
+                CarControl.turn_right()
+            elif receive_data[1] == '0' :
+                CarControl.stop()
+            elif receive_data[1] == '1' :
+                CarControl.straight()
+            elif receive_data[1] == 'fast' :
+                CarControl.speed_up()
+            elif receive_data[1] == 'slow' :
+                CarControl.speed_down()
+            
 
 
 
@@ -210,7 +242,7 @@ def bridge_potorcol(receive_data):
 
     except:
         commander_server.close()
-        stm32_server.close()
+        keyboard_server.close()
         vision_server.close()
         traceback.print_exc()
         logging.exception("Got error : \n")
@@ -223,7 +255,7 @@ def bridge_potorcol(receive_data):
 ###    Waiting for command from TCN_main.py                           ###
 ###                                                                   ###
 def bridge_main():
-    global commander_server,stm32_server , vision_server , bridge_run
+    global commander_server , vision_server , bridge_run
 
     while bridge_run:
         try:
@@ -234,7 +266,7 @@ def bridge_main():
         except:
             commander_server.close()
             vision_server.close()
-            stm32_server.close()
+            keyboard_server.close()
             traceback.print_exc()
             logging.exception("Got error : \n")
             bridge_run = False
@@ -242,7 +274,7 @@ def bridge_main():
 def end_bridge():
     commander_server.close()
     vision_server.close()
-    stm32_server.close()
+    keyboard_server.close()
     logging.info("Bridge close successfully")
             
 

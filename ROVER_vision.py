@@ -2,9 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 
-import TCN_gpio as tcng
+#import ROVER_gpio as tcng
 import __future__
-import xbox
 import sys, time,readline
 import xmlrpc.client as xmlrpclib
 import math
@@ -17,7 +16,7 @@ def main():
         proxy =  xmlrpclib.ServerProxy("http://192.168.5.100:8080") 
         alive_resp = proxy.alive() #check rpc sever is up
         print(alive_resp)
-        tcng.init()
+        #tcng.init()
 
     except xmlrpclib.Fault as err:
         print("A fault occurred")
