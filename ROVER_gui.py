@@ -4,6 +4,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import gui.ui_rover as ui_rover
 import keyboard
 import time
+import ROVER_socket
 
 class ROVER_gui():
     def __init__(self):
@@ -21,7 +22,7 @@ class ROVER_gui():
         self.gui.GetLidarDataBtn.clicked.connect(self.GetLidarDataBtn_click)
         self.gui.BuildMapBtn.clicked.connect(self.BuildMapBtn_click)
         
-        
+        self.gui_client = ROVER_socket.TCP_client(50003)
         
 
 
@@ -41,23 +42,31 @@ class ROVER_gui():
         def controller():
             if keyboard.is_pressed('up'):
                 self.gui.Key_up.setStyleSheet("background-color: rgb(0, 255, 0);")
+                self.gui_client.send_list(['K', 'w'])
             else:
                 self.gui.Key_up.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.gui_client.send_list(['K', '0'])
             
             if keyboard.is_pressed('down'):
                 self.gui.Key_down.setStyleSheet("background-color: rgb(0, 255, 0);")
+                self.gui_client.send_list('K', 's')
             else:
                 self.gui.Key_down.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.gui_client.send_list(['K', '0'])
 
             if keyboard.is_pressed('left'):
                 self.gui.Key_left.setStyleSheet("background-color: rgb(0, 255, 0);")
+                self.gui_client.send_list(['K', 'a'])
             else:
                 self.gui.Key_left.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.gui_client.send_list(['K', '0'])
             
             if keyboard.is_pressed('right'):
                 self.gui.Key_right.setStyleSheet("background-color: rgb(0, 255, 0);")
+                self.gui_client.send_list(['K', 'd'])
             else:
                 self.gui.Key_right.setStyleSheet("background-color: rgb(255, 255, 255);")
+                self.gui_client.send_list(['K', '0'])
 
         self.KeyboardControlTimer = QtCore.QTimer()
         self.KeyboardControlTimer.timeout.connect(controller)            
