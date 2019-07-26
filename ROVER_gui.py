@@ -10,13 +10,19 @@ class ROVER_gui():
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
         app = QtWidgets.QApplication(sys.argv)
         app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-        
-        
         MainWindow = QtWidgets.QMainWindow()
-
         self.gui = ui_rover.Ui_MainWindow()
         self.gui.setupUi(MainWindow)
+
+
+        self.gui.EmergencyStopBtn.clicked.connect(self.EmergencyStopBtn_click)
         self.gui.KeyboardControlBtn.clicked.connect(self.KeyboardControlBtn_click)
+        self.gui.BuildMapBtn.clicked.connect(self.BuildMapBtn_click)
+        self.gui.GetLidarDataBtn.clicked.connect(self.GetLidarDataBtn_click)
+        self.gui.BuildMapBtn.clicked.connect(self.BuildMapBtn_click)
+        
+        
+        
 
 
         self.Keyboard_Control_Mode = False
@@ -25,6 +31,10 @@ class ROVER_gui():
         sys.exit(app.exec_())
 
 
+
+
+    def EmergencyStopBtn_click(self):
+        pass
 
     def KeyboardControlBtn_click(self):
 
@@ -61,12 +71,15 @@ class ROVER_gui():
             self.Keyboard_Control_Mode = False
                     
             
-            
-        
-        # self.gui.Key_up.styleSheet()
-        # self.gui.Key_down.styleSheet()
-        # self.gui.Key_left.styleSheet()
-        # self.gui.Key_right.styleSheet()
+    def WayPointBtn_click(self):
+        pass
+
+
+    def GetLidarDataBtn_click(self):
+        pass
+
+    def BuildMapBtn_click(self):
+        pass
 
 
 if __name__ == "__main__":
