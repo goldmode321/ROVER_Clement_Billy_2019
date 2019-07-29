@@ -43,7 +43,7 @@ def bridge_init():
 
 
 ###                                                                   ###
-###    Gateway for commander communication. See TCN_main.py           ###
+###    Gateway for commander communication. See ROVER_main.py         ###
 ###                                                                   ###
 def commander_init():
     global commander_server
@@ -61,7 +61,7 @@ def commander_init():
         
 
 ###                                                                            ###
-###    Gateway for Vision module communication. See TCN_vision_main.py         ###
+###    Gateway for Vision module communication. See ROVER_vision_main.py       ###
 ###                                                                            ###
 
 def vision_init():
