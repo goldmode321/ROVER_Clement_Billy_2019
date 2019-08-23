@@ -4,7 +4,7 @@
 
 #import ROVER_gpio as tcng
 import __future__
-import sys, time,readline
+import sys, time
 import xmlrpc.client as xmlrpclib
 import math
 
@@ -13,7 +13,7 @@ def main():
     global proxy
 
     try:
-        proxy =  xmlrpclib.ServerProxy("http://192.168.5.100:8080") 
+        proxy =  xmlrpclib.ServerProxy("http://192.168.5.101:8080") 
         alive_resp = proxy.alive() #check rpc sever is up
         print(alive_resp)
         #tcng.init()
@@ -154,16 +154,17 @@ def scenario1(proxy):
             time.sleep(0.1)
             pose_resp = proxy.get_pose()
             status_resp = proxy.get_status()
-            msg1 = "status:" + format(status_resp[0]) + ", "
-            msg2 = "mapid:" + format(pose_resp[1]) + ", "
-            msg3 = "(x,y):(" + format(pose_resp[2]) + "," + format(pose_resp[3]) + "), "
-            msg4 = "thida: " + format(pose_resp[4]) + ", " 
-            msg5 = "conf: " + format(pose_resp[5]) 
+            #msg1 = "status:" + format(status_resp[0]) + ", "
+            msg1 = "status:" + format(pose_resp[0]) + ", "
+            #msg2 = "mapid:" + format(pose_resp[2]) + ", "
+            msg3 = "position:(" + format(pose_resp[3]) + "," + format(pose_resp[4]) + "), "
+            msg4 = "thida: " + format(pose_resp[5]) 
+            #msg5 = "conf: " + format(pose_resp[6]) 
             msg6 = " ############################### "
             if status_resp[0]==5:
-                msga = msg1 + msg2 + msg3 + msg4 + msg5 + msg6
+                msga = msg1 + msg3 + msg4 + msg6
             else:
-                msga = msg1 + msg2 + msg3 + msg4 + msg5
+                msga = msg1 + msg3 + msg4
 
             # Don't show message if current data is same with previous data 
             if msgb!=msga:
@@ -174,7 +175,7 @@ def scenario1(proxy):
 
 
 def help_manual():
-    print("al: chekc fp-slam is alive.")
+    print("al: check fp-slam is alive.")
     print("cc: check cpu speed.")
     print("gp: get pose from fp-slam.")
     print("gs: get state from fp-slam.")
