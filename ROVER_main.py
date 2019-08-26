@@ -5,9 +5,8 @@ import subprocess
 import traceback
 import threading
 import logging
-from pynput import keyboard
 
-#process_stm32 = None
+
 process_bridge = None
 process_vision = None
 process_lidar = None
@@ -39,10 +38,9 @@ def commander_portocol(commander_receive):
             pass
 
 
-###                                                                   ###
+'''###                                                                   ###
 ###    Keyboard control listener                                      ###
 ###                                                                   ###
-keyboard_client = ROVER_socket.TCP_client(50003)
 def on_press(key):
     try:
         print(key.char)
@@ -77,7 +75,7 @@ def on_release(key):
         keyboard_client.send_list(['K', 'fast'])
     elif key == keyboard.Key.page_down :
         print('Speed down')
-        keyboard_client.send_list(['K', 'slow'])
+        keyboard_client.send_list(['K', 'slow'])'''
 
 
 ###                                                                   ###
@@ -85,7 +83,7 @@ def on_release(key):
 ###                                                                   ###
 def commander_init():
     try:
-        global commander_client,commander_run, process_bridge, process_vision, process_lidar , process_algorithm
+        global commander_client, commander_run, process_bridge, process_vision, process_lidar, process_algorithm
         
         process_bridge = subprocess.Popen('python3 ROVER_bridge.py',shell = True)
         print('##### Initializing communication center #####')
@@ -96,6 +94,7 @@ def commander_init():
         commander_receive = commander_client.recv_list()
         commander_portocol(commander_receive) # Waiting for [ 'C' , 'next' ]
         logging.info("Bridge - commander initialization completed\n")
+
 
         print('\n\n##### Initializing Vision module #####')
         logging.info("Vision module initialize")
@@ -112,13 +111,6 @@ def commander_init():
         commander_portocol(commander_receive)
         logging.info("Vision module initialization complete\n")
 
-
-        # print('\n\n##### Initializing STM32 #####')
-        # logging.info("STM32 initialize")
-        # process_stm32 = subprocess.Popen('python3 TCN_STM32_main.py',shell = True)
-        # commander_receive = commander_client.recv_list() # Waiting for [ 'C' , 'next' ]
-        # commander_portocol(commander_receive)
-        # logging.info("STM32 initialization complete\n")
 
 
 

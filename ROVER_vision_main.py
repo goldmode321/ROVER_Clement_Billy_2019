@@ -17,7 +17,7 @@ def init():
     global vision_module , vision_client , vision_run
     try:
         logging.basicConfig(filename='Vision_main.log',filemode = 'w',level =logging.INFO)
-        vision_module =  xmlrpclib.ServerProxy("http://192.168.5.100:8080") 
+        vision_module =  xmlrpclib.ServerProxy("http://192.168.5.101:8080") 
         if vision_module.alive() == [0,'Alive']:
             logging.info('Connection to Vision module establiished , Vision module status : {}\n'.format(vision_module.alive()))
             vision_client = TCN_socket.TCP_client(50001)

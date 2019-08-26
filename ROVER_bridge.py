@@ -6,7 +6,7 @@ import subprocess
 import sys
 import threading
 import logging
-import CarControl
+#import CarControl
 
 '''Portocol'''
 ''' "C" to Main , "L" to LiDAR , "K" to Keyboard control , "G" to GPIO , "V" to Vision , "M" to motion '''
@@ -17,17 +17,19 @@ import CarControl
 commander_server = None
 lidar_server = None
 vision_server = None
-keyboard_server = None
+#keyboard_server = None
 bridge_run = False
 logging.basicConfig(filename='Bridge.log',filemode = 'w',level =logging.INFO)
 
 
 def bridge_init():
-    global commander_server , vision_server , lidar_server , bridge_run
+    global commander_server , vision_server , lidar_server , keyboard_server , bridge_run
     try:
         commander_init()
+
         vision_init()
         lidar_init()
+        #keyboard_init()
 
         bridge_run = True
         logging.info("Bridge is ready to run ! \n")
@@ -42,9 +44,9 @@ def bridge_init():
         sys.exit(0)
 
 
-###                                                                   ###
-###    Gateway for commander communication. See ROVER_main.py         ###
-###                                                                   ###
+###                                                                            ###
+###          Gateway for commander communication. See ROVER_main.py            ###
+###                                                                            ###
 def commander_init():
     global commander_server
     try:
@@ -109,7 +111,7 @@ def lidar_init():
 
 
 ###                                                                   ###
-###    Gateway for Keyboard control communication.                    ###
+###         Gateway for Keyboard control communication.               ###
 ###                                                                   ###
 
 def keyboard_init() : 
@@ -223,6 +225,7 @@ def bridge_potorcol(receive_data):
                 CarControl.speed_up()
             elif receive_data[1] == 'slow' :
                 CarControl.speed_down()
+            print(receive_data[1])
             
 
 
