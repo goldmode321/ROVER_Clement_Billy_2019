@@ -85,7 +85,7 @@ def commander_init():
     try:
         global commander_client, commander_run, process_bridge, process_vision, process_lidar, process_algorithm
         
-        process_bridge = subprocess.Popen('python3 ROVER_bridge.py',shell = True)
+        process_bridge = subprocess.Popen('python ROVER_bridge.py',shell = True)
         print('##### Initializing communication center #####')
         logging.info("Bridge - commander initialize")
         time.sleep(1)    # Wait some time for assuming Communication center(CC) work  稍微delay，以確保CC正常運作
@@ -98,19 +98,18 @@ def commander_init():
 
         print('\n\n##### Initializing Vision module #####')
         logging.info("Vision module initialize")
-        process_vision = subprocess.Popen('python3 ROVER_vision_main.py',shell = True)
+        process_vision = subprocess.Popen('python ROVER_vision_main.py',shell = True)
         commander_receive = commander_client.recv_list() # Waiting for [ 'C' , 'next' ]
         commander_portocol(commander_receive)
-        logging.info("Vision module initialization complete\n")
+        logging.info("Vision module initialization completed\n")
 
 
         print('\n\n##### Initializing RPLiDAR #####')
         logging.info("RPLiDAR initialize")
-        process_lidar = subprocess.Popen('python3 ROVER_rplidar_main.py',shell = True)
+        process_lidar = subprocess.Popen('python ROVER_rplidar_main.py',shell = True)
         commander_receive = commander_client.recv_list() # Waiting for [ 'C' , 'next' ]
         commander_portocol(commander_receive)
-        logging.info("Vision module initialization complete\n")
-
+        logging.info("RPLiDAR module initialization completed\n")
 
 
 
@@ -122,8 +121,6 @@ def commander_init():
     except:
         if process_algorithm != None:
             process_algorithm.kill()
-        # if process_stm32 != None:
-        #     process_stm32.kill()
         if process_lidar != None:
             process_lidar.kill()
         if process_vision != None:
@@ -136,10 +133,6 @@ def commander_init():
         logging.exception("Got error : \n")
 
 
-
-
-    # p_bridge = subprocess.Popen('python TCN_STM32_main.py',shell = True)
-    # print('Initializing STM32 motor controller')
 
 
 ###                                                                   ###

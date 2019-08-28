@@ -20,7 +20,7 @@ def init():
         vision_module =  xmlrpclib.ServerProxy("http://192.168.5.101:8080") 
         if vision_module.alive() == [0,'Alive']:
             logging.info('Connection to Vision module establiished , Vision module status : {}\n'.format(vision_module.alive()))
-            vision_client = TCN_socket.TCP_client(50001)
+            vision_client = ROVER_socket.TCP_client(50001)
             vision_client.send_list(['V','status','Alive'])
             vision_run = True
         else:
