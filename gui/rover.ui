@@ -147,7 +147,7 @@
      <string>Vision Connection</string>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="LidarConnectionView">
+   <widget class="QGraphicsView" name="LidarConnectionView_UDP">
     <property name="geometry">
      <rect>
       <x>250</x>
@@ -160,7 +160,7 @@
      <string notr="true">background-color: rgb(255, 0, 0);</string>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="VisionView">
+   <widget class="QGraphicsView" name="VisionView_UDP">
     <property name="geometry">
      <rect>
       <x>250</x>
@@ -309,6 +309,9 @@
       <pointsize>10</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">border: 2px solid #8f8f91;border-radius: 5px;background-color:#cfcfcf</string>
+    </property>
     <property name="text">
      <string>LiDAR On/Off</string>
     </property>
@@ -327,6 +330,9 @@
       <family>3ds</family>
       <pointsize>10</pointsize>
      </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border: 2px solid #8f8f91;border-radius: 5px;background-color:#cfcfcf</string>
     </property>
     <property name="text">
      <string>Bridge On/Off</string>
@@ -347,6 +353,9 @@
       <pointsize>10</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">border: 2px solid #8f8f91;border-radius: 5px;background-color:#cfcfcf</string>
+    </property>
     <property name="text">
      <string>Vision On/Off</string>
     </property>
@@ -365,6 +374,9 @@
       <family>3ds</family>
       <pointsize>10</pointsize>
      </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border: 2px solid #8f8f91;border-radius: 5px;background-color:#cfcfcf</string>
     </property>
     <property name="text">
      <string>Motor On/Off</string>
@@ -385,8 +397,14 @@
       <pointsize>10</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">border: 2px solid #8f8f91;border-radius: 5px;background-color:#cfcfcf</string>
+    </property>
     <property name="text">
      <string>Algorithm On/Off</string>
+    </property>
+    <property name="autoDefault">
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QSpinBox" name="spinBox">
@@ -491,6 +509,108 @@
       <width>201</width>
       <height>31</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="LidarConnectionView_TCP">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>120</y>
+      <width>31</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(255, 0, 0);</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>130</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>UDP</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>130</y>
+      <width>41</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>TCP</string>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="VisionView_TCP">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>160</y>
+      <width>31</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(255, 0, 0);</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>170</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>UDP</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_10">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>170</y>
+      <width>41</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>TCP</string>
     </property>
    </widget>
   </widget>

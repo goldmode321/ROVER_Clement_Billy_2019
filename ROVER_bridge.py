@@ -17,19 +17,19 @@ import logging
 commander_server = None
 lidar_server = None
 vision_server = None
-keyboard_server = None
+gui_server = None
 bridge_run = False
 logging.basicConfig(filename='Bridge.log',filemode = 'w',level =logging.INFO)
 
 
 def bridge_init():
-    global commander_server , vision_server , lidar_server , keyboard_server , bridge_run
+    global commander_server , vision_server , lidar_server , gui_server , bridge_run
     try:
         commander_init()
 
         vision_init()
         lidar_init()
-        keyboard_init()
+        gui_init()
 
         bridge_run = True
         logging.info("Bridge is ready to run ! \n")
@@ -38,8 +38,8 @@ def bridge_init():
             commander_server.close()
         if vision_server != None:
             vision_server.close()
-        if keyboard_server != None:
-            keyboard_server.close()
+        if gui_server != None:
+            gui_server.close()
         bridge_run = False
         sys.exit(0)
 
@@ -53,12 +53,12 @@ def commander_init():
         logging.info("Initialize commander server\n")
         commander_server = ROVER_socket.TCP_server(50000,1)
         commander_server.send_list(['C','next'])
-        logging.info("Commander connection complete !\n")
+        logging.info("Commander connection completed !\n")
 
     except:
         commander_server.close()
         traceback.print_exc()
-        logging.info('Bridge initializing fail at commander_init()\n')
+        logging.info('Bridge initializing failed at commander_init()\n')
         logging.exception("Got error : \n")
         
 
@@ -81,7 +81,7 @@ def vision_init():
             raise KeyboardInterrupt      
     except:
         traceback.print_exc()
-        logging.info('Bridge initializing fail at vision_init()\n')
+        logging.info('Bridge initializing failed at vision_init()\n')
         logging.exception("Got error : \n")
 
 
@@ -105,7 +105,7 @@ def lidar_init():
             raise KeyboardInterrupt      
     except:
         traceback.print_exc()
-        logging.info('Bridge initializing fail at lidar_init()\n')
+        logging.info('Bridge initializing failed at lidar_init()\n')
         logging.exception("Got error : \n")
 
 
@@ -114,17 +114,17 @@ def lidar_init():
 ###         Gateway for Keyboard control communication.               ###
 ###                                                                   ###
 
-def keyboard_init() : 
-    global keyboard_server
+def gui_init() : 
+    global gui_server
     try :
-        keyboard_server = ROVER_socket.TCP_server(50003,1)
-        keyboard_data = keyboard_server.recv_list()
-        bridge_potorcol(keyboard_data)
-        logging.info("GUI connection complete!")
+        gui_server = ROVER_socket.TCP_server(50003,1)
+        gui_data = gui_server.recv_list()
+        bridge_potorcol(gui_data)
+        logging.info("GUI connection completed!")
     except :
-        keyboard_server.close()
+        gui_server.close()
         traceback.print_exc()
-        print('Bridge initializing fail at keyboard_init()')
+        print('Bridge initializing fail at gui_init()')
 
 
 
@@ -197,7 +197,7 @@ def bridge_potorcol(receive_data):
         commander_server.close()
         lidar_server.close()
         vision_server.close()
-        keyboard_server.close()
+        gui_server.close()
         traceback.print_exc()
         logging.exception("Got error : \n")
     
@@ -221,7 +221,7 @@ def bridge_main():
             commander_server.close()
             lidar_server.close()
             vision_server.close()
-            keyboard_server.close()
+            gui_server.close()
             traceback.print_exc()
             logging.exception("Got error : \n")
             bridge_run = False
@@ -230,7 +230,7 @@ def end_bridge():
     commander_server.close()
     lidar_server.close()
     vision_server.close()
-    keyboard_server.close()
+    gui_server.close()
     logging.info("Bridge close successfully")
             
 

@@ -35,7 +35,14 @@ class ROVER_gui():
 
 
     def EmergencyStopBtn_click(self):
-        pass
+        self.gui.console_1.setText('Emergency Stop!')
+        
+        self.KeyboardControlTimer.stop()
+        self.Keyboard_Control_Mode = False
+        self.gui.console_1.setText('Stopped Keyboard control!')
+
+        
+
 
     def KeyboardControlBtn_click(self):
 
@@ -81,14 +88,16 @@ class ROVER_gui():
                     
             
     def WayPointBtn_click(self):
-        pass
+        self.gui.console_1.setText('Way point mode start')
 
 
     def GetLidarDataBtn_click(self):
-        pass
+        self.gui.console_1.setText('Start getting Lidar\'s data')
+
 
     def BuildMapBtn_click(self):
-        pass
+        self.gui.console_1.setText('Start building map')
+
 
 
 if __name__ == "__main__":
