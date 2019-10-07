@@ -1,198 +1,182 @@
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
-
-
-#import ROVER_gpio as tcng
-import __future__
-import sys, time
+import time
 import xmlrpc.client as xmlrpclib
-import math
+import traceback
+import threading
+import logging
+import rover_socket
 
-def main():
+class Vision:
+    '''
+    The module for controlling Vision module, communicate with
+    bridge, ip should be specify as the fix ip of vision module
+    '''
+    def __init__(self, auto_start=True, ip='192.168.5.101'):
+        self.ip = ip
+        self.vision_client_run = False
+        self.vision_thread_client_run = False
+        self.reset_flag = False
+        self.vision_x = 0
+        self.vision_y = 0
+        self.vision_theta = 0
+        self.vision_status = 0
+        self.vision = None
+        self.vision_client = None
+        self.vision_thread_client = None
 
-    global proxy
+        if auto_start:
+            self.autorun()
 
-    try:
-        proxy =  xmlrpclib.ServerProxy("http://192.168.5.101:8080") 
-        alive_resp = proxy.alive() #check rpc sever is up
-        print(alive_resp)
-        #tcng.init()
+    def autorun(self):
+        ''' Auto start step'''
+        self.init()
+        self.start_background_thread()
+        self.main()
+        self.end()
+        self.end_background_thread()
 
-    except xmlrpclib.Fault as err:
-        print("A fault occurred")
-        print(err.faultCode)
-        print(err.faultString)
-        return 1
-
-    except:
-        print("# Server is not alive")
-        print("")
-        return 1
-
-    manual_mode(proxy)
-    #manual_mode(proxy,joy)
-
-
-def manual_mode(proxy):
-    print("# type h to refer command usage.")
-    
-    while True:
-        command = input('command：')
-        cmd_list = command.lower().split() #splits the input string on spaces
-        cmd = cmd_list[0]
+    def init(self):
+        ''' Initialize communication with vision module and tcn_bridge'''
         try:
-            if (cmd == 'h') or (cmd == 'help') :
-                help_manual()
-            elif cmd == 'al':
-                alive_resp = proxy.alive()
-                print( 'Proxy.alive(), response: {}'.format(alive_resp) )
-            elif cmd == 'cc':
-                cc_resp = proxy.check_cpu_speed()
-                print( 'Proxy.get_att(), response: {}'.format(cc_resp) )                    
-            elif cmd == 'gp':
-                pose_resp = proxy.get_pose()
-                print( 'Proxy.get_pose(), response: {}'.format(pose_resp) )
-            elif cmd == 'gs':
-                status_resp = proxy.get_status()
-                print( 'Proxy.get_status(), response: {}'.format(status_resp) )         
-            
-            elif cmd == 's1':
-                scenario1(proxy)
-            
-            elif cmd == 'sc1':
-                if len(cmd_list)<6:
-                    print("Error: wrong st arguments, uasge: sc1 <standard> <length1> <length2> <length3>  <length4> ")
-                else:
-                    print( 'Request fp-slam to make 1st correction.' )
-                    itercmd = iter(cmd_list)
-                    next(itercmd)
-                    length_array = [int(ii) for ii in itercmd] 
-                    start_resp = proxy.set_correct1(length_array)
-                    print( 'Proxy.set_start(), response: {}'.format(start_resp) )       
-            
-            elif cmd == 'sd':
-                print( 'Request fp-slam to shutdown.' )
-                proxy.system.shutdown("")
-            
-            elif cmd == 'st':
-                if len(cmd_list)<3:
-                    print("Error: wrong st arguments, uasge: st <mode> <map id> <map id> ... ")
-                else:
-                    smode = int(cmd_list[1])
-                    itercmd = iter(cmd_list)
-                    next(itercmd)
-                    next(itercmd)
-                    mapids = [int(ii) for ii in itercmd] 
-                    
-                    print(mapids)
-                    
-                    start_resp = proxy.set_start(smode,mapids)
-                    print( 'Proxy.set_start(), response: {}'.format(start_resp) )   
-
-
-
-            elif cmd == 'sv':
-                save_resp = proxy.save_db()
-                print( 'Proxy.save_db(), response: {}'.format(save_resp) )
-            
-
-            elif (cmd == 'qi') or (cmd == 'ex'):
-                print( 'Quit now.' )
-                print("")
-                break
-            
-
-            elif (cmd == 'rs'):
-                reset_resp = proxy.reset()
-                print( 'Proxy.reset(), response: {}'.format(reset_resp) )
-            
-
-            elif (cmd == 'hasd'):
-                reset_resp = proxy.hardware_shutdown()
-                print( 'Proxy.hardware_shutdown(), response: {}'.format(reset_resp) )
-
-
-
-            # elif cmd == 'gpio':
-            #     try:
-            #         joy = test_relay()
-            #     except IOError as e:
-            #         print(e+'\n')
-            #         tcng.relay_off()
-            #         #print('Please retry again')
-            #         print("Automaticly retry in 1 second or use Ctrl+C to halt"+'\n')
-            #         time.sleep(1)
-            #         joy = test_relay()
-            #     except KeyboardInterrupt:
-            #         print('Back to command mode')
-            #         tcng.relay_off()
-            #         joy.close()
-
-                
-
-
+            time.sleep(0.2) # Make sure server initialize first
+            logging.basicConfig(filename='Vision_main.log', filemode='w', level=logging.INFO)
+            self.vision = xmlrpclib.ServerProxy("http://{}:8080".format(self.ip))
+            self.vision_thread_client = rover_socket.UDP_client(50003)
+            self.vision_client = rover_socket.TCP_client(50002)
+            if self.vision.alive() == [0, 'Alive']:
+                logging.info('Connection to Vision module establiished , Vision module status : {}\n'.format(self.vision.alive()))
+                self.vision_client.send_list(['V', 'next'])
+                self.vision_client_run = True
             else:
-                print( 'Unknown command, please type help.' )
-        except xmlrpclib.Fault as err:
-            print("A fault occurred")
-            print("Fault code: %d" % err.faultCode)
-            print("Fault string: %s" % err.faultString)
-        except KeyboardInterrupt:
-            print('Quit by KeyboardInterrupt')
+                logging.info('Vision module is not Alive\n')
+                raise KeyboardInterrupt
+        except:
+            self.end()
+            self.end_background_thread()
+            traceback.print_exc()
+            logging.exception('Got error : ')
 
-        except Exception as e:
-            print(e)
-            print("# Command error: please check your format or check if server is not alive.")     
-            print("  You can type gs to check slam's status.")  
+    def main(self):
+        '''Process that wait for bridge command'''
+        while self.vision_client_run:
+            try:
+                vision_receive = self.vision_client.recv_list()
+                logging.info('Command in : {} '.format(vision_receive))
+                self.reset_flag = True
+                self.vision_portocol(vision_receive)
+            except:
+                traceback.print_exc()
+                self.vision_client_run = False
+                self.vision_thread_client_run = False
+                logging.exception('Got error : \n')
+                self.end()
+                self.end_background_thread()
 
-    return
+    def start_background_thread(self):
+        '''Start sending data thread'''
+        thread = threading.Thread(target=self.send_vision_status, daemon=True)
+        self.vision_thread_client_run = True
+        thread.start()
+        logging.info('Thread running')
 
-def scenario1(proxy):
-    msgb=""
-    while True:
-        try:
-            time.sleep(0.1)
-            pose_resp = proxy.get_pose()
-            status_resp = proxy.get_status()
-            #msg1 = "status:" + format(status_resp[0]) + ", "
-            msg1 = "status:" + format(pose_resp[0]) + ", "
-            #msg2 = "mapid:" + format(pose_resp[2]) + ", "
-            msg3 = "position:(" + format(pose_resp[3]) + "," + format(pose_resp[4]) + "), "
-            msg4 = "thida: " + format(pose_resp[5]) 
-            #msg5 = "conf: " + format(pose_resp[6]) 
-            msg6 = " ############################### "
-            if status_resp[0]==5:
-                msga = msg1 + msg3 + msg4 + msg6
-            else:
-                msga = msg1 + msg3 + msg4
-
-            # Don't show message if current data is same with previous data 
-            if msgb!=msga:
-                print(msga)
-                msgb=msga
-        except KeyboardInterrupt:
-            break
+    def send_vision_status(self):
+        '''Send vision data to bridge'''
+        while self.vision_thread_client_run:
+            try:
+                if self.reset_flag:
+                    # time.sleep(7)
+                    self.reset_flag = False
+                    # time.sleep(1)
+                else:
+                    status = self.vision.get_status()
+                    pose = self.vision.get_pose()
+                    self.vision_status = status[0]
+                    self.vision_x = pose[3]
+                    self.vision_y = pose[4]
+                    self.vision_theta = pose[5]
+                    self.vision_thread_client.send_list([self.vision_x, self.vision_y, \
+                        self.vision_theta, self.vision_status, self.vision_client_run, \
+                            self.vision_thread_client_run])
+                time.sleep(0.15)
+            except:
+                logging.exception('Vision thread got error : ')
 
 
-def help_manual():
-    print("al: check fp-slam is alive.")
-    print("cc: check cpu speed.")
-    print("gp: get pose from fp-slam.")
-    print("gs: get state from fp-slam.")
-    print("qi: quit client program.")
-    print("s1: scenario1")
-    print("sc1 <standard> <length1> <length2> <length3>  <length4> : to correct initial corridation.")
-    print("rs: reset the fp-slam system. before re-start another system mode.")
-    print("sd: shutdown the fp-slam system.")
-    print("sn <nfs address> : set nfs address")
-    print("st <system mode> <map id> <map id> ....<map id>: set fp-slam to start.")
-    print("sv: save database.")
-    # print("cr: control coordinate mode.")
-    # print("tr: tracking mode")
-    # print("gpio:test if relay alive")
-    # print("pr:keep moving at 2 position")
-    return
+
+    def vision_portocol(self, vision_receive):
+        '''Intepret message from bridge'''
+        if vision_receive[0] == 'V':
+            if vision_receive[1] == 'exit':
+                self.vision_client_run = False
+                logging.info("'exit' command received, start terminating program\n")
+            elif vision_receive[1] == 'al':
+                alive_resp = self.vision.alive()
+                print('alive(), response: {}'.format(alive_resp))
+            elif vision_receive[1] == 'cc':
+                cc_resp = self.vision.check_cpu_speed()
+                print('get_att(), response: {}'.format(cc_resp))
+            elif vision_receive[1] == 'gp':
+                pose_resp = self.vision.get_pose()
+                print('get_pose(), response: {}'.format(pose_resp))
+            elif vision_receive[1] == 'gs':
+                status_resp = self.vision.get_status()
+                print('get_status(), response: {}'.format(status_resp))
+            elif vision_receive[1] == 'sv':
+                self.reset_flag = False
+                save_resp = self.vision.save_db()
+                time.sleep(3)
+                print('save_db(), response: {}'.format(save_resp))
+                self.vision_client.send_list(['V', 'next'])
+            elif vision_receive[1] == 'rs':
+                self.reset_flag = True
+                self.vision_thread_client_run = False
+                time.sleep(0.2)
+                reset_resp = self.vision.reset()
+                print('reset(), response: {}'.format(reset_resp))
+                time.sleep(10)
+                self.start_background_thread()
+                self.vision_client.send_list(['V', 'next'])
+            elif vision_receive[1] == 'bm': # Build map
+                if vision_receive[2] is not None:
+                    start_resp = self.vision.set_start(1, [vision_receive[2]])
+                    print('set_start(), response: {}'.format(start_resp))
+                    logging.info("'Build map' command received , mapid : %s ", vision_receive[2])
+                else:
+                    print("'Build map' command received , but no mapid")
+                    logging.info("'Build map' command received , but no mapid")
+            elif vision_receive[1] == 'um': # Use map
+                if vision_receive[2] is not None:
+                    start_resp = self.vision.set_start(0, [vision_receive[2]])
+                    print('set_start(), response: {}'.format(start_resp))
+                    logging.info("'Use map' command received , mapid : %s ", vision_receive[2])
+                else:
+                    print("'Use map' command received , but no mapid")
+                    logging.info("'Use map' command received , but no mapid")
+            elif vision_receive[1] == 'kbm': # Keep building map
+                if vision_receive[2] is not None:
+                    start_resp = self.vision.set_start(2, [vision_receive[2]])
+                    print('set_start(), response: {}'.format(start_resp))
+                    logging.info("'Keep build map' command received , mapid : %s ", vision_receive[2])
+                else:
+                    print("'Keep build map' command received , but no mapid")
+                    logging.info("'Build map' command received , but no mapid")
+
+
+        else:
+            print(str(vision_receive) + " received by vision module. Wrong potorcol ! ")
+
+
+    def end(self):
+        '''End vision program'''
+        self.vision_client_run = False
+        self.vision_client.close()
+        logging.info(" Vision module disconnect \n")
+
+    def end_background_thread(self):
+        '''End vision thread'''
+        self.vision_thread_client_run = False
+        self.vision_thread_client.send_list([self.vision_x, self.vision_y, self.vision_theta, self.vision_status,\
+             self.vision_client_run, self.vision_thread_client_run])
+        self.vision_thread_client.close()
 
 if __name__ == "__main__":
-    main()
-
+    Vision()

@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import gui.ui_rover as ui_rover
 import keyboard
 import time
-import ROVER_socket
+import rover_socket
 
 class ROVER_gui():
     def __init__(self):
@@ -22,7 +22,7 @@ class ROVER_gui():
         self.gui.GetLidarDataBtn.clicked.connect(self.GetLidarDataBtn_click)
         self.gui.BuildMapBtn.clicked.connect(self.BuildMapBtn_click)
         
-        self.gui_client = ROVER_socket.TCP_client(50003)
+        self.gui_client = rover_socket.TCP_client(50003)
         
 
 

@@ -1,74 +1,36 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-import ROVER_socket
+
+
+#import ROVER_gpio as tcng
 import __future__
 import sys, time
 import xmlrpc.client as xmlrpclib
 import math
-import traceback
-import logging
-
-# Initial parameters
-vision_module = None
-vision_client = None
-vision_run = False
-
-def init():
-    global vision_module , vision_client , vision_run
-    try:
-        logging.basicConfig(filename='Vision_main.log',filemode = 'w',level =logging.INFO)
-        vision_module =  xmlrpclib.ServerProxy("http://192.168.5.101:8080") 
-        if vision_module.alive() == [0,'Alive']:
-            logging.info('Connection to Vision module establiished , Vision module status : {}\n'.format(vision_module.alive()))
-            vision_client = ROVER_socket.TCP_client(50001)
-            vision_client.send_list(['V','status','Alive'])
-            vision_run = True
-        else:
-            logging.info('Vision module is not Alive\n')
-            raise KeyboardInterrupt
-    except:
-        vision_client.close()
-        traceback.print_exc()
-        logging.exception('Got error : ')
-        sys.exit(0)
-
-        
-
-def vision_portocol(vision_receive):
-    global vision_module , vision_client , vision_run
-    if vision_receive[0] == 'V':
-        if vision_receive[1] == 'exit':
-            vision_run = False
-            logging.info(" 'exit' command received, start terminating program\n")
-
-    
-    else:
-        print(str(vision_receive)+" received by vision module. Wrong potorcol ! ")
-
-
-
-
 
 def main():
-    global vision_module , vision_client , vision_run
-    while vision_run:
-        try:
-            vision_receive = vision_client.recv_list()
-            logging.info('Command in : {} \n'.format(vision_receive))
-            vision_portocol(vision_receive)
-        except:
-            traceback.print_exc()
-            vision_run = False
-            logging.exception('Got error : \n')
 
-def end():
-    global vision_client
-    vision_client.close()
-    logging.info(" Vision module is off \n")
+    global proxy
 
+    try:
+        proxy =  xmlrpclib.ServerProxy("http://192.168.5.101:8080") 
+        alive_resp = proxy.alive() #check rpc sever is up
+        print(alive_resp)
+        #tcng.init()
 
+    except xmlrpclib.Fault as err:
+        print("A fault occurred")
+        print(err.faultCode)
+        print(err.faultString)
+        return 1
 
+    except:
+        print("# Server is not alive")
+        print("")
+        return 1
 
+    manual_mode(proxy)
+    #manual_mode(proxy,joy)
 
 
 def manual_mode(proxy):
@@ -192,16 +154,17 @@ def scenario1(proxy):
             time.sleep(0.1)
             pose_resp = proxy.get_pose()
             status_resp = proxy.get_status()
-            msg1 = "status:" + format(status_resp[0]) + ", "
-            msg2 = "mapid:" + format(pose_resp[1]) + ", "
-            msg3 = "(x,y):(" + format(pose_resp[2]) + "," + format(pose_resp[3]) + "), "
-            msg4 = "thida: " + format(pose_resp[4]) + ", " 
-            msg5 = "conf: " + format(pose_resp[5]) 
+            #msg1 = "status:" + format(status_resp[0]) + ", "
+            msg1 = "status:" + format(pose_resp[0]) + ", "
+            #msg2 = "mapid:" + format(pose_resp[2]) + ", "
+            msg3 = "position:(" + format(pose_resp[3]) + "," + format(pose_resp[4]) + "), "
+            msg4 = "thida: " + format(pose_resp[5]) 
+            #msg5 = "conf: " + format(pose_resp[6]) 
             msg6 = " ############################### "
             if status_resp[0]==5:
-                msga = msg1 + msg2 + msg3 + msg4 + msg5 + msg6
+                msga = msg1 + msg3 + msg4 + msg6
             else:
-                msga = msg1 + msg2 + msg3 + msg4 + msg5
+                msga = msg1 + msg3 + msg4
 
             # Don't show message if current data is same with previous data 
             if msgb!=msga:
@@ -212,7 +175,7 @@ def scenario1(proxy):
 
 
 def help_manual():
-    print("al: chekc fp-slam is alive.")
+    print("al: check fp-slam is alive.")
     print("cc: check cpu speed.")
     print("gp: get pose from fp-slam.")
     print("gs: get state from fp-slam.")
@@ -231,7 +194,5 @@ def help_manual():
     return
 
 if __name__ == "__main__":
-    init()
     main()
-    end()
 

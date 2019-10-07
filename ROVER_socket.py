@@ -15,6 +15,7 @@ class UDP_server(object):
         self.port = port
         self.ip = ip
         self.setblocking = setblocking
+        self.addr = None
 
         # Create UDP server
         try:
@@ -22,7 +23,7 @@ class UDP_server(object):
             self.sock.setblocking(self.setblocking)
             self.sock.bind((self.ip, self.port))
             print('Server initiate - '+ self.ip+ ' : '+ str(self.port))
-            self.recv_string()
+            # self.recv_string()
             self.server_alive = True
 
         except:
@@ -40,8 +41,8 @@ class UDP_server(object):
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
             self.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
-        except socket.error as e:
+            # sys.exit(0) # Exit program
+        except socket.error:
             pass
         except:
             traceback.print_exc()
@@ -68,7 +69,7 @@ class UDP_server(object):
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
             self.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
+            # sys.exit(0) # Exit program
         # except socket.error:
         #     #print(e)
         #     pass
@@ -83,7 +84,16 @@ class UDP_server(object):
     def send_string(self, message = ''):
         ''' Send string to target port (default IP is 127.0.0.1)'''
         try:
-            self.sock.sendto(message.encode('utf-8') , self.addr ) # Send message ( I forgot what's the return value of sendto() )
+            self.sock.sendto(message.encode('utf-8') , (self.ip, self.port) ) # Send message ( I forgot what's the return value of sendto() )
+        except:
+            self.close()
+            traceback.print_exc()
+            raise KeyboardInterrupt
+
+    def send_string_back(self, message = ''):
+        ''' Send string to client'''
+        try:
+            self.sock.sendto(message.encode('utf-8'), self.addr) # Send message ( I forgot what's the return value of sendto() )
         except:
             self.close()
             traceback.print_exc()
@@ -91,14 +101,26 @@ class UDP_server(object):
 
 
 
-    def send_list(self, list = [], port=50000, ip = '127.0.0.1'):
+    def send_list(self, list = []):
         '''send list to target port (default IP is 127.0.0.1)'''
         try:
-            self.sock.sendto(pickle.dumps(list) , self.addr)              
+            self.sock.sendto(pickle.dumps(list) ,(self.ip, self.port))
+        except TypeError as err:
+            print(err)
         except:
             self.close()
             traceback.print_exc()
             raise KeyboardInterrupt
+
+    def send_list_back(self, list = []):
+        try:
+            if self.addr is None:
+                print('UDP server needs receive from UDP client first')
+            else:
+                self.sock.sendto(pickle.dumps(list), self.addr)
+        except TypeError as err:
+            print(err)
+
 
 
     def alive(self):
@@ -118,6 +140,7 @@ class UDP_client(object):
         self.port = port
         self.ip = ip
         self.client_alive = False
+
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.setblocking(setblocking)
@@ -137,7 +160,7 @@ class UDP_client(object):
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
             self.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
+            # sys.exit(0) # Exit program
         except socket.error:
             pass
         except:
@@ -164,7 +187,7 @@ class UDP_client(object):
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
             self.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
+            # sys.exit(0) # Exit program
         # except socket.error:
         #     #print(e)
         #     pass
@@ -263,7 +286,7 @@ class TCP_server(object):
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
             self.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
+            # sys.exit(0) # Exit program
         # except socket.error:
         #     #print(e)
         #     pass
@@ -292,9 +315,10 @@ class TCP_server(object):
         
         except socket.timeout: # if server didn't get any data in a period of time 
             pass               # Do nothing and pass  , the return data is 'None' 
-        except KeyboardInterrupt: 
-            self.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
+        # except KeyboardInterrupt: 
+            # self.close() # Unbind socket from the adress
+            # raise KeyboardInterrupt
+            # sys.exit(0) # Exit program
         # except socket.error:
         #     #print(e)
         #     pass
@@ -368,7 +392,7 @@ class TCP_client(object):
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
             self.sock.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
+            # sys.exit(0) # Exit program
         # except socket.error as e:
         #     print(e)
         #     pass
@@ -396,8 +420,9 @@ class TCP_client(object):
         except socket.timeout: # if server didn't get any data in a period of time 
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
-            self.close() # Unbind socket from the adress
-            sys.exit(0) # Exit program
+            # self.close() # Unbind socket from the adress
+            raise KeyboardInterrupt
+            # sys.exit(0) # Exit program
         # except socket.error as e:
         #     print(e)
         #     pass
