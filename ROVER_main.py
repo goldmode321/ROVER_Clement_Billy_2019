@@ -29,6 +29,7 @@ class CarControl(threading.Thread):
         self.car_control.set_pwm_freq(60)
         self.car_control_server_run = True
         self.car_control_receive = None
+        self.car_control_previous_receive = None
         self.car_state = 'stop'
         threading.Thread.__init__(self, daemon=True)
         thread = threading.Thread(target=self.car_control_main, daemon=True)
@@ -36,28 +37,41 @@ class CarControl(threading.Thread):
 
     def car_control_main(self):
         while self.car_control_server_run:
-            self.car_control_receive = self.car_control_server.recv_string(1)
-            if self.car_control_receive is not None:
-                if self.car_control_receive in ['a', 'wa', 'sa']:
+            # self.car_control_receive = self.car_control_server.recv_string(2)
+            self.car_control_receive = self.car_control_server.recv_list()
+            # print(self.car_control_receive)
+
+            if self.car_control_receive is None and self.car_control_previous_receive is not None:
+                self.car_control_receive = self.car_control_previous_receive
+                self.car_control_previous_receive = None
+                time.sleep(0.05)
+
+            elif self.car_control_receive is not None :
+                if self.car_control_receive[0] in ['a', 'wa', 'sa']:
                     self.turn_left()
-                elif self.car_control_receive in ['d', 'wd', 'sd']:
+                elif self.car_control_receive[0] in ['d', 'wd', 'sd']:
                     self.turn_right()
                 else:
                     self.straight()
-            else:
-                self.straight()
-            time.sleep(0.05)
 
+
+            else:
+                time.sleep(0.05)
+                self.straight()
+                self.car_control_previous_receive = self.car_control_receive
+            # time.sleep(0.15)
 
     def run(self):
         while self.car_control_server_run:
             # print(car_control_receive)
             # print(self.car_control_receive)
             if self.car_control_receive is not None:
-                self.car_control_protocol(self.car_control_receive)
+                self.car_control_protocol(self.car_control_receive[0])
             else:
                 self.stop()
-                time.sleep(0.1)
+            # if self.car_control_server.addr is not None:
+            #     self.car_control_server.send_list_back([self.car_state])
+                # time.sleep(0.1)
             # if self.car_control_server.addr is not None:
             #     self.car_control_server.send_string_back('next')
 
@@ -69,13 +83,13 @@ class CarControl(threading.Thread):
         if car_control_receive is not None:
             if car_control_receive in ['w', 'wa', 'wd']:
                 if self.car_state == 'stop':
-                    self.keep_forward_after_forward()
+                    self.forward()
                     self.car_state = 'forward'
                 elif self.car_state == 'reverse':
                     self.forward_after_reverse()
                     self.car_state = 'forward'
                 elif self.car_state == 'forward':
-                    self.keep_forward_after_forward()
+                    self.forward()
 
             elif car_control_receive in ['s', 'sd', 'sa']:
                 if self.car_state == 'stop':
@@ -83,65 +97,66 @@ class CarControl(threading.Thread):
                     # keep_reversing_after_reverse()
                     self.car_state = 'reverse'
                 elif self.car_state == 'forward':
+                    # self.reverse()
                     self.reverse_after_forward()
                     self.car_state = 'reverse'
                 elif self.car_state == 'reverse':
-                    self.keep_reversing_after_reverse()
+                    self.reverse()
             else:
                 self.stop()
                 self.car_state = 'stop'
 
-            # if car_control_receive in ['a', 'wa', 'sa']:
-            #     self.turn_left()
-            # elif car_control_receive in ['d', 'wd', 'sd']:
-            #     self.turn_right()
-            # else:
-            #     self.straight()
 
         else:
             self.stop()
             self.car_state = 'stop'
-            self.straight()
+            # self.straight()
 
-    def keep_forward_after_forward(self):
-        self.car_control.set_pwm(3,0,415)
-        time.sleep(0.15)
 
     def forward_after_reverse(self):
         self.car_control.set_pwm(3,0,415)
-        time.sleep(0.15)
+        time.sleep(0.1)
         self.car_control.set_pwm(3,0,400)
-        time.sleep(0.15)
+        time.sleep(0.1)
         self.car_control.set_pwm(3,0,415)
-        time.sleep(0.15)
+        time.sleep(0.1)
 
     def reverse_after_forward(self):
         self.car_control.set_pwm(3,0,350)
-        time.sleep(0.15)
+        time.sleep(0.1)
         self.car_control.set_pwm(3,0,400)
-        time.sleep(0.15)
-        self.car_control.set_pwm(3,0,380)
-        time.sleep(0.15)
+        time.sleep(0.1)
+        self.car_control.set_pwm(3,0,383)
+        time.sleep(0.1)
 
-    def keep_reversing_after_reverse(self):
-        self.car_control.set_pwm(3,0,380)
-        time.sleep(0.15)
 
     def stop(self):
         self.car_control.set_pwm(3,0,400)
-        time.sleep(0.15)
+        # time.sleep(0.15)
+        time.sleep(0.05)
+
+    def forward(self):
+        self.car_control.set_pwm(3, 0, 413)
+        time.sleep(0.05)
+    
+    def reverse(self):
+        self.car_control.set_pwm(3, 0, 383)
+        time.sleep(0.05)
 
     def turn_left(self):
         self.car_control.set_pwm(1,0,495)
-        time.sleep(0.15)
+        # time.sleep(0.15)
+        time.sleep(0.05)
 
     def turn_right(self):
         self.car_control.set_pwm(1,0,315)
-        time.sleep(0.15)
+        # time.sleep(0.15)
+        time.sleep(0.05)
 
     def straight(self):
         self.car_control.set_pwm(1,0,405)
-        time.sleep(0.15)
+        # time.sleep(0.15)
+        time.sleep(0.05)
 
 class Main(CarControl, MoveAlgorithm):
     '''Communication center Main(auto_start=True)'''

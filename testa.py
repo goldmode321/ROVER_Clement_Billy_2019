@@ -13,21 +13,21 @@
 # while gen():
     
 #     print(j)
-# import Adafruit_PCA9685
-# import time
-# pwm = Adafruit_PCA9685.PCA9685()
-# pwm.set_pwm_freq(60)
-# mode = 0
-# run = True
-# num = 10
-# while run:
-#     # command = int(input("Enter0 "))
-#     print(num)
-#     pwm.set_pwm(3, mode, num)
-#     time.sleep(0.5)
-#     num += 20
-#     if num > 4040:
-#         run = False
+import Adafruit_PCA9685
+import time
+pwm = Adafruit_PCA9685.PCA9685()
+pwm.set_pwm_freq(60)
+mode = 0
+run = True
+num = 10
+while run:
+    # command = int(input("Enter0 "))
+    print(num)
+    pwm.set_pwm(3, mode, num)
+    time.sleep(0.2)
+    num += 5
+    if num > 4040:
+        run = False
 
 import Adafruit_PCA9685
 import time
@@ -112,7 +112,7 @@ car_state = 'stop'
 while True:
     try:
         # command = input("Enter w/s/ : ")
-        # command = server.recv_list()
+        command = server.recv_list()
         print(car_state, command)
         if command is not None:
             if command[0] in ['w', 'wa', 'wd']:
@@ -150,43 +150,41 @@ while True:
 
 
 
-# delay = 0.15
-# pwm.set_pwm(3,0,400)
-# time.sleep(delay)
-# pwm.set_pwm(3,0,415)
-# time.sleep(2)
+delay = 0.15
+pwm.set_pwm(3,0,400)
+time.sleep(delay)
+pwm.set_pwm(3,0,413)
+time.sleep(2)
 
-# pwm.set_pwm(3,0,400)
-# time.sleep(delay)
-# pwm.set_pwm(3,0,350)
-# time.sleep(delay)
-# pwm.set_pwm(3,0,400)
-# time.sleep(delay)
-# pwm.set_pwm(3,0,380)
-# # time.sleep(delay)
-# # pwm.set_pwm(3,0,380)
-# time.sleep(3)
-# pwm.set_pwm(3,0,400)
+pwm.set_pwm(3,0,400)
+time.sleep(0.1)
+pwm.set_pwm(3,0,350)
+time.sleep(0.1)
+pwm.set_pwm(3,0,400)
+time.sleep(0.05)
+pwm.set_pwm(3,0,382)
+time.sleep(3)
+pwm.set_pwm(3,0,400)
 
 
 
-# delay = 0.15
-# pwm.set_pwm(3,0,400)
-# time.sleep(delay)
-# pwm.set_pwm(3,0,415)
-# time.sleep(2)
-# pwm.set_pwm(3,0,400)
-# time.sleep(1)
+delay = 0.15
+pwm.set_pwm(3,0,400)
+time.sleep(delay)
+pwm.set_pwm(3,0,415)
+time.sleep(2)
+pwm.set_pwm(3,0,400)
+time.sleep(0.1)
 
 
-# pwm.set_pwm(3,0,350)
-# time.sleep(0.1)
-# pwm.set_pwm(3,0,380)
-# time.sleep(delay)
-# pwm.set_pwm(3,0,400)
-# time.sleep(delay)
-# pwm.set_pwm(3,0,380)
-# time.sleep(3)
-# pwm.set_pwm(3,0,400)
+pwm.set_pwm(3,0,350)
+time.sleep(0.1)
+pwm.set_pwm(3,0,380)
+time.sleep(delay)
+pwm.set_pwm(3,0,400)
+time.sleep(delay)
+pwm.set_pwm(3,0,380)
+time.sleep(3)
+pwm.set_pwm(3,0,400)
 
 
