@@ -1,5 +1,6 @@
 import sys
 import os
+import threading
 from PyQt5 import QtWidgets, QtCore, QtGui
 import gui.ui_rover as ui_rover
 import keyboard
@@ -23,6 +24,7 @@ class ROVER_gui():
         self.gui.BuildMapBtn.clicked.connect(self.BuildMapBtn_click)
         
         self.gui_client = rover_socket.TCP_client(50003)
+        self.gui_keyboard_control_client = rover_socket.UDP_client(50011, 0, '192.168.5.2')
         
 
 
