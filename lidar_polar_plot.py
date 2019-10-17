@@ -7,23 +7,59 @@ import math
 import time
 import queue
 import traceback
+import rover_socket
 
+
+
+# def get_lidar_data(lidar_data, get_lidar_data_run):
+#     lidar = rplidar.RPLidar("COM12")
+#     run = True
+#     while run:
+#         try:
+#             # input of iter_scans is the max_buffer_size store in serial port.
+#             # If computer is not fast enough, the buffer will accamulate, and clear when 
+#             # max_buffer_size reach. Lower max_buffer_size should avoid lag for data.
+#             # But short of max_buffer_size also cause lag
+#             for data in lidar.iter_scans(300):
+
+#                 # make sure lidar_data queue is always the lastest lidar data
+#                 # if there is data left, take out the rest. If no data left,
+#                 # just input lidar data.
+#                 if lidar_data.qsize() > 0:
+#                     lidar_data.get()
+#                     lidar_data.put(data)
+#                 else:
+#                     lidar_data.put(data)
+#                 # Check if queue, get_lidar_data_run has an input of Flase.
+#                 try:
+#                     run = get_lidar_data_run.get(False)
+#                     if not run:
+#                         lidar.stop()
+#                         print("Lidar stop")
+#                         break
+#                 except queue.Empty:
+#                     pass
+
+#         except KeyboardInterrupt:
+#             lidar.stop()
+#             print("Lidar stopped by KeyboardInterrupt")
+#         except:
+#             traceback.print_exc()
+#             lidar.stop()
+#         finally:
+#             run = False
+#             lidar.disconnect()
+#             print("Lidar disconnect")
 
 
 def get_lidar_data(lidar_data, get_lidar_data_run):
-    lidar = rplidar.RPLidar("COM12")
+    lidar = rover_socket.UDP_client(50010, 0, '192.168.5.2')
     run = True
     while run:
         try:
-            # input of iter_scans is the max_buffer_size store in serial port.
-            # If computer is not fast enough, the buffer will accamulate, and clear when 
-            # max_buffer_size reach. Lower max_buffer_size should avoid lag for data.
-            # But short of max_buffer_size also cause lag
-            for data in lidar.iter_scans(300):
-
-                # make sure lidar_data queue is always the lastest lidar data
-                # if there is data left, take out the rest. If no data left,
-                # just input lidar data.
+            lidar.send_list([1])
+            data = lidar.recv_list(65535)
+            if data is not None:
                 if lidar_data.qsize() > 0:
                     lidar_data.get()
                     lidar_data.put(data)
@@ -40,15 +76,15 @@ def get_lidar_data(lidar_data, get_lidar_data_run):
                     pass
 
         except KeyboardInterrupt:
-            lidar.stop()
+            lidar.close
             print("Lidar stopped by KeyboardInterrupt")
         except:
             traceback.print_exc()
-            lidar.stop()
+            lidar.close()
         finally:
             run = False
-            lidar.disconnect()
             print("Lidar disconnect")
+
 
 
 def plotting():

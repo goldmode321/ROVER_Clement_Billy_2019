@@ -38,7 +38,7 @@
          <x>0</x>
          <y>0</y>
          <width>850</width>
-         <height>678</height>
+         <height>686</height>
         </rect>
        </property>
        <property name="styleSheet">
@@ -137,7 +137,13 @@ background-color: rgb(255, 239, 57);</string>
              <layout class="QVBoxLayout" name="verticalLayout_2"/>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton_11">
+             <widget class="QPushButton" name="StopAllBtn">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="styleSheet">
                <string notr="true">background-color: rgb(255, 3, 3);</string>
               </property>
@@ -155,120 +161,121 @@ background-color: rgb(255, 239, 57);</string>
           <item>
            <layout class="QVBoxLayout" name="FunctionBtnLayout">
             <item>
-             <widget class="QWidget" name="horizontalWidget_4" native="true">
-              <property name="styleSheet">
-               <string notr="true"/>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_5">
-               <item>
-                <widget class="QPushButton" name="KeyboardControlBtn">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>50</height>
-                  </size>
-                 </property>
-                 <property name="font">
-                  <font>
-                   <family>Algerian</family>
-                   <pointsize>12</pointsize>
-                   <weight>50</weight>
-                   <bold>false</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(112, 155, 255);</string>
-                 </property>
-                 <property name="text">
-                  <string>Keyboard Control</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <layout class="QGridLayout" name="gridLayout">
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <item row="0" column="1">
-                  <widget class="QGraphicsView" name="KeyUp">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>20</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="0">
-                  <widget class="QGraphicsView" name="KeyLeft">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>20</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="1">
-                  <widget class="QGraphicsView" name="KeyDown">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>20</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="2">
-                  <widget class="QGraphicsView" name="KeyRight">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>20</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_7">
+              <item>
+               <widget class="QPushButton" name="KeyboardControlBtn">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>50</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Algerian</family>
+                  <pointsize>12</pointsize>
+                  <weight>50</weight>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(112, 155, 255);</string>
+                </property>
+                <property name="text">
+                 <string>Keyboard Control</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QGridLayout" name="gridLayout">
+                <property name="rightMargin">
+                 <number>0</number>
+                </property>
+                <item row="0" column="1">
+                 <widget class="QGraphicsView" name="KeyUp">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>20</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="2">
+                 <widget class="QGraphicsView" name="KeyRight">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>20</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QGraphicsView" name="KeyDown">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>20</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QGraphicsView" name="KeyLeft">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>20</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -555,6 +562,28 @@ border-color: rgb(0, 0, 0);</string>
              </layout>
             </item>
             <item>
+             <widget class="QPushButton" name="ShowMapBtn">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>50</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <family>Algerian</family>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(112, 155, 255);</string>
+              </property>
+              <property name="text">
+               <string>Show Map</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QPushButton" name="Btnnnnn">
               <property name="minimumSize">
                <size>
@@ -597,7 +626,7 @@ border-color: rgb(255, 0, 0);</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_7">
                 <item>
-                 <widget class="QPlainTextEdit" name="plainTextEdit">
+                 <widget class="QTextEdit" name="console_1">
                   <property name="styleSheet">
                    <string notr="true">background-color: rgb(255, 255, 255);
 </string>
@@ -606,16 +635,23 @@ border-color: rgb(255, 0, 0);</string>
                 </item>
                </layout>
               </widget>
-              <widget class="QWidget" name="Map">
+              <widget class="QWidget" name="lidarMap">
                <attribute name="title">
                 <string>Map</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_5">
                 <item>
-                 <widget class="MpWidget" name="widget_2" native="true"/>
+                 <widget class="LidarMap" name="LidarMap" native="true"/>
                 </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="globalMap">
+               <attribute name="title">
+                <string>頁面</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
-                 <widget class="MpWidget" name="widget" native="true"/>
+                 <widget class="GlobalMap" name="GlobalMap" native="true"/>
                 </item>
                </layout>
               </widget>
@@ -637,7 +673,7 @@ border-color: rgb(255, 0, 0);</string>
      <x>0</x>
      <y>0</y>
      <width>874</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
@@ -645,9 +681,15 @@ border-color: rgb(255, 0, 0);</string>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MpWidget</class>
+   <class>LidarMap</class>
    <extends>QWidget</extends>
-   <header>mpwidget.h</header>
+   <header>lidarmap.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GlobalMap</class>
+   <extends>QWidget</extends>
+   <header>globalmap.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

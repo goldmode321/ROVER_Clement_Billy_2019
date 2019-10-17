@@ -38,15 +38,29 @@ class CarControl(threading.Thread):
     def car_control_main(self):
         while self.car_control_server_run:
             # self.car_control_receive = self.car_control_server.recv_string(2)
-            self.car_control_receive = self.car_control_server.recv_list()
+            # self.car_control_receive = self.car_control_server.recv_list()
+            # print(self.car_control_receive)
+            # if self.car_control_receive is None and self.car_control_previous_receive is not None:
+                # self.car_control_receive = self.car_control_previous_receive
+                # self.car_control_previous_receive = None
+                # time.sleep(0.05)
             # print(self.car_control_receive)
 
-            if self.car_control_receive is None and self.car_control_previous_receive is not None:
+
+            temp = self.car_control_server.recv_list()
+            # print(temp)
+            if temp is None and self.car_control_previous_receive is not None:
                 self.car_control_receive = self.car_control_previous_receive
                 self.car_control_previous_receive = None
-                time.sleep(0.05)
+                # print('is none')
+                # time.sleep(0.05)
+            elif temp is None and self.car_control_previous_receive is None:
+                self.car_control_receive = None
+            else:
+                self.car_control_previous_receive = self.car_control_receive
+                self.car_control_receive = temp
 
-            elif self.car_control_receive is not None :
+            if self.car_control_receive is not None :
                 if self.car_control_receive[0] in ['a', 'wa', 'sa']:
                     self.turn_left()
                 elif self.car_control_receive[0] in ['d', 'wd', 'sd']:
@@ -58,8 +72,9 @@ class CarControl(threading.Thread):
             else:
                 time.sleep(0.05)
                 self.straight()
-                self.car_control_previous_receive = self.car_control_receive
+                # self.car_control_previous_receive = self.car_control_receive
             # time.sleep(0.15)
+            # time.sleep(0.05)
 
     def run(self):
         while self.car_control_server_run:
@@ -250,7 +265,7 @@ class Main(CarControl, MoveAlgorithm):
                 # self.gui_udp_client.send_list_back([self.lidar_data])
                 # pass
                 self.gui_udp_client.send_list_back([self.lidar_data, self.vision_data[0:4]])
-            time.sleep(0.1)
+            time.sleep(0.05)
 
     def end_gui_server(self):
         self.gui_server_run = False
@@ -377,7 +392,7 @@ class Main(CarControl, MoveAlgorithm):
                 if temp_lidar_data is not None:
                     self.lidar_usb_port = temp_lidar_data[0]
                     self.lidar_data = temp_lidar_data[1]
-            time.sleep(0.2)
+            time.sleep(0.05)
 
     def end_lidar_server(self):
         '''End lidar system'''
@@ -417,7 +432,9 @@ class Main(CarControl, MoveAlgorithm):
                 else:
                     print('Unknown Command')
                 time.sleep(0.1)
-
+            except KeyboardInterrupt:
+                self.end_main_all()
+                self.main_run = False
             except:
                 print('Critical error happened on Main , all programs have to be shutdown')
                 self.end_main_all()

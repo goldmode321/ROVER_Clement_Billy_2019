@@ -3,8 +3,9 @@
 # ------------------------------------------------------
 from PyQt5.QtWidgets import*
 from PyQt5.uic import loadUi
-
+from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
+import matplotlib.pyplot as plt
 
 import numpy as np
 import random
@@ -19,8 +20,10 @@ class MatplotlibWidget(QMainWindow):
 
         self.setWindowTitle("PyQt5 & Matplotlib Example GUI")
 
-        self.pushButton_generate_random_signal.clicked.connect(self.update_graph)
-
+#        self.pushButton_generate_random_signal.clicked.connect(self.update_graph)
+        timer1 = QtCore.QTimer()
+        timer1.timeout.connect(self.update_graph)
+        timer1.start(100)
         self.addToolBar(NavigationToolbar(self.MplWidget.canvas, self))
 
 
@@ -41,6 +44,7 @@ class MatplotlibWidget(QMainWindow):
         self.MplWidget.canvas.axes.legend(('cosinus', 'sinus'),loc='upper right')
         self.MplWidget.canvas.axes.set_title('Cosinus - Sinus Signal')
         self.MplWidget.canvas.draw()
+#        plt.pause(0.001)
 
 
 app = QApplication([])

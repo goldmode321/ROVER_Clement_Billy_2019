@@ -8,4 +8,6 @@ RESOURCES += \
 DISTFILES += \
     image/background1.png \
     main.py \
-    mplwidget.py
+    main2.py \
+    mplwidget.py \
+    test_ui.py
