@@ -315,8 +315,9 @@ class Main(CarControl, MoveAlgorithm):
         '''Get vision data'''
         while self.vision_thread_server_run:
             self.vision_thread_server_status = self.vision_thread.is_alive()
-            self.vision_data = self.vision_thread_server.recv_list()
-            if self.vision_data is not None:
+            temp_vision_data_received = self.vision_thread_server.recv_list()
+            if temp_vision_data_received is not None:
+                self.vision_data = temp_vision_data_received
                 self.vision_x = self.vision_data[0]
                 self.vision_y = self.vision_data[1]
                 self.theta = self.vision_data[2]
@@ -324,7 +325,7 @@ class Main(CarControl, MoveAlgorithm):
                 self.vision_client_run = self.vision_data[4]
                 self.vision_thread_client_run = self.vision_data[5]
             else:
-                self.vision_data = [0, 0, 0, -1, 0, 0]
+                pass
             time.sleep(0.1)
 
     def end_vision_server(self):
@@ -453,37 +454,7 @@ class Main(CarControl, MoveAlgorithm):
         self.end_gui_server()
         self.end_car_control()
 
-    # def main_protocol(self):
-    #     try:
-    #         if self.main_receive is None:
-    #             print('Main : socket may got problem')
 
-    #         elif self.main_receive[0] == 'S':
-    #             if self.main_receive[1] == 'next':
-    #                 # self.commander_server.send_list(['C','next'])
-    #                 pass
-
-
-    #         elif self.main_receive[0] == 'V':
-    #             if self.main_receive[1] == 'next':
-    #                 pass
-
-
-    #         elif self.main_receive[0] == 'L':
-    #             if self.main_receive[1] == 'next':
-    #                 pass
-
-
-    #         else:
-    #             print('{} received . Wrong potorcol  !'.format(self.main_receive))
-    #             logging.info('{} received . Wrong potorcol  !'.format(self.main_receive))
-
-
-    #     except:
-    #         print('\nError from Main : main_protocol \n')
-    #         traceback.print_exc()
-    #         logging.exception('Got error : ')
-    #         print('\n\nForce abort current order')
 
 
     def main_show_vision_data(self):

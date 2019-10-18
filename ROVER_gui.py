@@ -12,6 +12,7 @@ import math
 import numpy
 import traceback
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 from matplotlib.animation import FuncAnimation
 
 class ROVER_gui():
@@ -22,8 +23,8 @@ class ROVER_gui():
         app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         MainWindow = QtWidgets.QMainWindow()
 
-        self.Keyboard_Control_Mode = False
-        self.get_data_from_rover_run = False
+        self.keyboard_control_run = False
+        self.animation_run = False
         self.lidar_data = [[0,0,0],[1,1,1]]
         self.lidar_angle = [0]
         self.lidar_angle2 = [0]
@@ -34,46 +35,55 @@ class ROVER_gui():
         self.vision_angle_radian = 0
 
 
-        # self.lidar_data_test = multiprocessing.Queue()
-        # self.lidar_angle_test = multiprocessing.Queue()
-        # self.lidar_radius_test = multiprocessing.Queue()
-
-        self.show_map_timer = None
-        # get_data_from_rover_thread = threading.Thread(target=self.get_data_from_rover, daemon=True)
-        # get_data_from_rover_thread.start()
-        # get_data_from_rover_process = multiprocessing.Process(target=self.get_data_from_rover, args=(self.lidar_data_test,\
-        #     self.lidar_angle_test, self.lidar_radius_test), daemon=True)
-        # get_data_from_rover_process.start()
-
 
         self.gui = GUI.Ui_MainWindow()
         self.gui.setupUi(MainWindow)
 
-        self.canvas = self.gui.LidarMap
-        # vertical_layout = QtWidgets.QVBoxLayout()
-        # vertical_layout.addWidget(self.canvas)
+
+
 
         self.gui.StopAllBtn.clicked.connect(self.StopAllBtn_click)
         self.gui.KeyboardControlBtn.clicked.connect(self.KeyboardControlBtn_click)
         self.gui.VisionBuildMapBtn.clicked.connect(self.BuildMapBtn_click)
         self.gui.VisionUseMapBtn.clicked.connect(self.GetLidarDataBtn_click)
         self.gui.ShowMapBtn.clicked.connect(self.show_map)
-        
-
-        self.gui_keyboard_control_client = rover_socket.UDP_client(50011, 0, '192.168.5.2')
 
 
-        self.lidar_plot, = self.canvas.lidar_axes.plot(0, 0, '.')
-        self.animation_run = False
+        self.gui_get_lidar_vision_client = rover_socket.UDP_client(50010, 0, '192.168.5.2')
+        self.get_data_timer = QtCore.QTimer()
+        self.get_data_timer.timeout.connect(self.get_data_from_rover)
+        self.get_data_timer.start(40)
+
+
+
 
         self.gui.tabWidget.setCurrentIndex(1)
-        # self.gui.tabWidget.currentChanged.connect(self.show_map)
 
-        # self.gui.LidarMap.plot(self.lidar_angle, self.lidar_radius)
-        # self.gui.LidarMap.show_plot()
 
         MainWindow.show()
         sys.exit(app.exec_())
+        self.get_data_timer.stop()
+        self.gui_get_lidar_vision_client.close()
+        print(self.gui_get_lidar_vision_client)
+
+
+    def get_data_from_rover(self):
+        
+        self.gui_get_lidar_vision_client.send_list([1]) # Send anything to make sure connection always open
+        temp_receive = self.gui_get_lidar_vision_client.recv_list(32768)
+        if temp_receive is not None:
+            self.lidar_data = temp_receive[0]
+            self.lidar_angle = [math.radians(-i[1]) + 0.0*math.pi for i in self.lidar_data]
+            self.lidar_radius = [i[2] for i in self.lidar_data]
+            self.vision_data = temp_receive[1]
+            # self.gui.console_1.append(str(temp_receive[1]))
+            if self.vision_data[3] == 4:
+                self.vision_angle_radian = math.radians(self.vision_data[2])
+                self.local_obstacle_x = numpy.cos(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
+                    numpy.array(self.lidar_radius) + self.vision_data[0]
+                self.local_obstacle_y = numpy.sin(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
+                    numpy.array(self.lidar_radius) + self.vision_data[1]
+
 
 
 
@@ -81,10 +91,12 @@ class ROVER_gui():
 
         # self.lidar_angle = [math.radians(-i[1]) + 0.5*math.pi for i in self.lidar_data]
         # self.lidar_radius = [i[2] for i in self.lidar_data]
-        def plot_map(i):
+        def plot_lidar_map(i):
             self.lidar_plot.set_xdata(self.lidar_angle)
             self.lidar_plot.set_ydata(self.lidar_radius)
-            self.canvas.fig.canvas.update()
+            self.gui.LidarMap.fig.canvas.update()
+
+            # self.gui.console_1.append(str(self.vision_data))
 
             return self.lidar_plot,
             # self.gui.LidarMap.clear()
@@ -99,37 +111,71 @@ class ROVER_gui():
             # self.gui.GlobalMap.draw()
             # self.gui.GlobalMap.canvas.start_event_loop(0.01)
 
-
-        def get_data_from_rover():
-            
-            self.gui_get_lidar_vision_client.send_list([1]) # Send anything to make sure connection always open
-            temp_receive = self.gui_get_lidar_vision_client.recv_list(32768)
-            if temp_receive is not None:
-                self.lidar_data = temp_receive[0]
-                self.lidar_angle = [math.radians(-i[1]) + 0.5*math.pi for i in self.lidar_data]
-                self.lidar_radius = [i[2] for i in self.lidar_data]
-                self.vision_data = temp_receive[1]
-                if self.vision_data[3] == 4:
-                    self.vision_angle_radian = math.radians(self.vision_data[2])
-                    self.local_obstacle_x = numpy.cos(numpy.array(self.lidar_angle)-self.vision_angle_radian)*\
-                        numpy.array(self.lidar_radius) + self.vision_data[0]
-                    self.local_obstacle_y = numpy.sin(numpy.array(self.lidar_angle)-self.vision_angle_radian)*\
-                        numpy.array(self.lidar_radius) + self.vision_data[1]
+        def plot_global_map(i):
+            self.global_map_plot_vision.set_data(self.vision_data[0], self.vision_data[1])
+            self.global_map_plot_obstacle.set_xdata(self.local_obstacle_x)
+            self.global_map_plot_obstacle.set_ydata(self.local_obstacle_y)
+            self.gui.GlobalMap.fig.canvas.update()
 
 
+            try:
+                self.global_map_arrow.remove()
+            except ValueError:
+                pass
+            except AttributeError:
+                pass
+
+
+
+            self.global_map_plot_arrow = self.gui.GlobalMap.global_map_axes.arrow(self.vision_data[0], \
+                self.vision_data[1], 200*math.cos(-self.vision_angle_radian+0.5*math.pi), \
+                    200*math.sin(-self.vision_angle_radian+0.5*math.pi), color='r', width=30)
+            self.global_map_arrow = self.gui.GlobalMap.global_map_axes.add_patch(self.global_map_plot_arrow)
+
+
+            return self.global_map_plot_obstacle, self.global_map_plot_vision, self.global_map_plot_arrow,
+
+        
         if not self.animation_run:
-            self.gui_get_lidar_vision_client = rover_socket.UDP_client(50010, 0, '192.168.5.2')
-            self.get_data_timer = QtCore.QTimer()
-            self.get_data_timer.timeout.connect(get_data_from_rover)
-            self.get_data_timer.start(40)
-            self.animation = FuncAnimation(self.canvas.figure, plot_map, blit=True, interval=50)
+            self.lidar_plot, = self.gui.LidarMap.lidar_axes.plot(0, 0, 'b.')
+
+            self.global_map_plot_vision, = self.gui.GlobalMap.global_map_axes.plot(self.vision_data[0], self.vision_data[1], 'r.')
+            self.global_map_plot_obstacle, = self.gui.GlobalMap.global_map_axes.plot(self.local_obstacle_x, self.local_obstacle_y, 'b.')
+            # self.global_map_plot_arrow = self.gui.GlobalMap.global_map_axes.arrow(self.vision_data[0], \
+            #     self.vision_data[1], 200*math.cos(-self.vision_angle_radian + 0.5*math.pi), \
+            #         200*math.sin(-self.vision_angle_radian + 0.5*math.pi), color='g', width=30)
+            # self.global_map_arrow = self.gui.GlobalMap.global_map_axes.add_patch(self.global_map_plot_arrow)
+            # self.global_map_arrow.remove()
+
+
+
+            self.lidar_animation = FuncAnimation(self.gui.LidarMap.figure, plot_lidar_map, blit=True, interval=50)
+            self.global_animation = FuncAnimation(self.gui.GlobalMap.figure, plot_global_map, blit=True, interval=50)
             self.gui.console_1.append("Show Map Start")
             self.animation_run = True
         else:
-            self.get_data_timer.stop()
-            self.animation._stop()
+            self.lidar_animation._stop()
+            self.global_animation._stop()
+
+            # self.gui.GlobalMap.global_map_axes.cla()
+            # self.gui.GlobalMap.fig.clf()
+            # self.gui.GlobalMap.reinitialize()
+            # self.gui.GlobalMap.fig = Figure()
+            # self.gui.GlobalMap.global_map_axes.cla()
+            # self.gui.GlobalMap.global_map_axes = self.gui.GlobalMap.fig.add_subplot(111)
+            # self.global_map_arrow.remove()
+            # self.gui.GlobalMap.fig.canvas.axes.clear()
+            # try:
+            #     self.global_map_arrow.remove()
+            # except ValueError:
+            #     pass
+            # except AttributeError:
+            #     pass
+
+
+
+
             self.gui.console_1.append("Show Map Stop")
-            self.gui_get_lidar_vision_client.close()
             self.animation_run = False
 
 
@@ -138,18 +184,15 @@ class ROVER_gui():
     def StopAllBtn_click(self):
         self.gui.console_1.append('Stop ALL')
 
-        if self.get_data_from_rover_run:
-            self.get_data_from_rover_run = False
-
         if self.animation_run:
-            self.animation._stop()
-            self.get_data_timer.stop()
-            self.gui_get_lidar_vision_client.close()
+            self.lidar_animation._stop()
+            self.global_animation._stop()
             self.animation_run = False
 
-        if self.Keyboard_Control_Mode:
+        if self.keyboard_control_run:
             self.gui.console_1.append('Stopped Keyboard control!')
             self.KeyboardControlTimer.stop()
+            self.gui_keyboard_control_client.close()
 
         
 
@@ -243,17 +286,19 @@ class ROVER_gui():
                 self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")               
                 self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
 
+        self.gui_keyboard_control_client = rover_socket.UDP_client(50011, 0, '192.168.5.2')
         self.KeyboardControlTimer = QtCore.QTimer()
         self.KeyboardControlTimer.timeout.connect(controller)            
 
-        if not self.Keyboard_Control_Mode:
+        if not self.keyboard_control_run:
             self.gui.console_1.append('Keyboard Control Start')
             self.KeyboardControlTimer.start(50)
-            self.Keyboard_Control_Mode = True
+            self.keyboard_control_run = True
         else:
             self.KeyboardControlTimer.stop()
+            self.gui_keyboard_control_client.close()
             self.gui.console_1.append('Keyboard Control Stop')
-            self.Keyboard_Control_Mode = False
+            self.keyboard_control_run = False
                     
             
     def WayPointBtn_click(self):
