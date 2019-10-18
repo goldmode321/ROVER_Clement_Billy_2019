@@ -54,17 +54,16 @@ class ROVER_gui():
         self.get_data_timer.timeout.connect(self.get_data_from_rover)
         self.get_data_timer.start(40)
 
+        self.gui.tabWidget.setCurrentIndex(0)
+        # self.gui.tabWidget.currentChanged.connect(self.show_map)
 
 
-
-        self.gui.tabWidget.setCurrentIndex(1)
 
 
         MainWindow.show()
+        # self.show_map()
         sys.exit(app.exec_())
-        self.get_data_timer.stop()
-        self.gui_get_lidar_vision_client.close()
-        print(self.gui_get_lidar_vision_client)
+
 
 
     def get_data_from_rover(self):
@@ -84,54 +83,30 @@ class ROVER_gui():
                 self.local_obstacle_y = numpy.sin(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
                     numpy.array(self.lidar_radius) + self.vision_data[1]
 
+                self.arrow_x = [self.vision_data[0], self.vision_data[0] + 200*math.cos(-self.vision_angle_radian+0.5*math.pi)]
+                self.arrow_y = [self.vision_data[1], self.vision_data[1] + 200*math.sin(-self.vision_angle_radian+0.5*math.pi)]
+
+
 
 
 
     def show_map(self):
 
-        # self.lidar_angle = [math.radians(-i[1]) + 0.5*math.pi for i in self.lidar_data]
-        # self.lidar_radius = [i[2] for i in self.lidar_data]
         def plot_lidar_map(i):
             self.lidar_plot.set_xdata(self.lidar_angle)
             self.lidar_plot.set_ydata(self.lidar_radius)
             self.gui.LidarMap.fig.canvas.update()
 
-            # self.gui.console_1.append(str(self.vision_data))
 
             return self.lidar_plot,
-            # self.gui.LidarMap.clear()
-            # self.gui.LidarMap.plot(self.lidar_angle, self.lidar_radius)
-            # self.gui.LidarMap.show_plot()
-            # self.gui.LidarMap.canvas.start_event_loop(0.01)
 
-            # self.gui.GlobalMap.clear()
-            # self.gui.GlobalMap.plot(self.local_obstacle_x, self.local_obstacle_y, 'bo')
-            # self.gui.GlobalMap.plot(self.vision_data[0], self.vision_data[1], 'ro')
-            # self.gui.GlobalMap.plot_arrow(self.vision_data[0], self.vision_data[1], 200*math.cos(-self.vision_angle_radian+0.5*math.pi), 200*math.sin(-self.vision_angle_radian+0.5*math.pi), width=30)
-            # self.gui.GlobalMap.draw()
-            # self.gui.GlobalMap.canvas.start_event_loop(0.01)
 
         def plot_global_map(i):
             self.global_map_plot_vision.set_data(self.vision_data[0], self.vision_data[1])
             self.global_map_plot_obstacle.set_xdata(self.local_obstacle_x)
             self.global_map_plot_obstacle.set_ydata(self.local_obstacle_y)
+            self.global_map_plot_arrow.set_data(self.arrow_x, self.arrow_y)
             self.gui.GlobalMap.fig.canvas.update()
-
-
-            try:
-                self.global_map_arrow.remove()
-            except ValueError:
-                pass
-            except AttributeError:
-                pass
-
-
-
-            self.global_map_plot_arrow = self.gui.GlobalMap.global_map_axes.arrow(self.vision_data[0], \
-                self.vision_data[1], 200*math.cos(-self.vision_angle_radian+0.5*math.pi), \
-                    200*math.sin(-self.vision_angle_radian+0.5*math.pi), color='r', width=30)
-            self.global_map_arrow = self.gui.GlobalMap.global_map_axes.add_patch(self.global_map_plot_arrow)
-
 
             return self.global_map_plot_obstacle, self.global_map_plot_vision, self.global_map_plot_arrow,
 
@@ -139,13 +114,11 @@ class ROVER_gui():
         if not self.animation_run:
             self.lidar_plot, = self.gui.LidarMap.lidar_axes.plot(0, 0, 'b.')
 
-            self.global_map_plot_vision, = self.gui.GlobalMap.global_map_axes.plot(self.vision_data[0], self.vision_data[1], 'r.')
+
+            self.global_map_plot_vision, = self.gui.GlobalMap.global_map_axes.plot(self.vision_data[0], self.vision_data[1], 'ro', linewidth=200)
             self.global_map_plot_obstacle, = self.gui.GlobalMap.global_map_axes.plot(self.local_obstacle_x, self.local_obstacle_y, 'b.')
-            # self.global_map_plot_arrow = self.gui.GlobalMap.global_map_axes.arrow(self.vision_data[0], \
-            #     self.vision_data[1], 200*math.cos(-self.vision_angle_radian + 0.5*math.pi), \
-            #         200*math.sin(-self.vision_angle_radian + 0.5*math.pi), color='g', width=30)
-            # self.global_map_arrow = self.gui.GlobalMap.global_map_axes.add_patch(self.global_map_plot_arrow)
-            # self.global_map_arrow.remove()
+            self.global_map_plot_arrow, = self.gui.GlobalMap.global_map_axes.plot(self.arrow_x, self.arrow_y, 'g', linewidth=3)
+
 
 
 
@@ -153,30 +126,30 @@ class ROVER_gui():
             self.global_animation = FuncAnimation(self.gui.GlobalMap.figure, plot_global_map, blit=True, interval=50)
             self.gui.console_1.append("Show Map Start")
             self.animation_run = True
-        else:
-            self.lidar_animation._stop()
-            self.global_animation._stop()
+        # else:
+        #     self.lidar_animation._stop()
+        #     self.global_animation._stop()
 
-            # self.gui.GlobalMap.global_map_axes.cla()
-            # self.gui.GlobalMap.fig.clf()
-            # self.gui.GlobalMap.reinitialize()
-            # self.gui.GlobalMap.fig = Figure()
-            # self.gui.GlobalMap.global_map_axes.cla()
-            # self.gui.GlobalMap.global_map_axes = self.gui.GlobalMap.fig.add_subplot(111)
-            # self.global_map_arrow.remove()
-            # self.gui.GlobalMap.fig.canvas.axes.clear()
-            # try:
-            #     self.global_map_arrow.remove()
-            # except ValueError:
-            #     pass
-            # except AttributeError:
-            #     pass
-
-
+        #     # self.gui.GlobalMap.global_map_axes.cla()
+        #     # self.gui.GlobalMap.fig.clf()
+        #     # self.gui.GlobalMap.reinitialize()
+        #     # self.gui.GlobalMap.fig = Figure()
+        #     # self.gui.GlobalMap.global_map_axes.cla()
+        #     # self.gui.GlobalMap.global_map_axes = self.gui.GlobalMap.fig.add_subplot(111)
+        #     # self.global_map_arrow.remove()
+        #     # self.gui.GlobalMap.fig.canvas.axes.clear()
+        #     # try:
+        #     #     self.global_map_arrow.remove()
+        #     # except ValueError:
+        #     #     pass
+        #     # except AttributeError:
+        #     #     pass
 
 
-            self.gui.console_1.append("Show Map Stop")
-            self.animation_run = False
+
+
+        #     self.gui.console_1.append("Show Map Stop")
+        #     self.animation_run = False
 
 
 

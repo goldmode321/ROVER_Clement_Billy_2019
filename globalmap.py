@@ -10,6 +10,7 @@ class GlobalMap(FigureCanvas):
 
         self.fig = Figure()
         self.global_map_axes = self.fig.add_subplot(111)
+        # self.global_map_axes.autoscale()
 
 
 
