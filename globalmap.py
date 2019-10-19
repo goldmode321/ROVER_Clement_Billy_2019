@@ -4,12 +4,9 @@ from PyQt5 import QtWidgets
 
 class GlobalMap(FigureCanvas):
     def __init__(self, parent=None):
-        self.parent = parent
-        self.FigureCanvas = FigureCanvas
-
-
         self.fig = Figure()
         self.global_map_axes = self.fig.add_subplot(111)
+        self.global_map_axes.autoscale(True)
         # self.global_map_axes.autoscale()
 
 
