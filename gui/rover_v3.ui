@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>915</width>
-    <height>850</height>
+    <width>828</width>
+    <height>766</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,8 +37,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>891</width>
-         <height>777</height>
+         <width>803</width>
+         <height>706</height>
         </rect>
        </property>
        <property name="styleSheet">
@@ -72,8 +72,8 @@
              </font>
             </property>
             <property name="styleSheet">
-             <string notr="true">background-color:transparent;
-background-color: rgb(255, 239, 57);</string>
+             <string notr="true">background-color: rgb(255, 239, 57);
+</string>
             </property>
             <property name="text">
              <string>Warring</string>
@@ -88,12 +88,12 @@ background-color: rgb(255, 239, 57);</string>
             <item>
              <layout class="QVBoxLayout" name="verticalLayout">
               <item>
-               <widget class="QPushButton" name="BridgeOnOffBtn">
+               <widget class="QPushButton" name="RoverMainOnOffBtn">
                 <property name="styleSheet">
                  <string notr="true">background-color: rgb(255, 0, 0);</string>
                 </property>
                 <property name="text">
-                 <string>Bridge</string>
+                 <string>Main</string>
                 </property>
                </widget>
               </item>
@@ -187,8 +187,8 @@ background-color: rgb(255, 239, 57);</string>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>200</width>
-                    <height>30</height>
+                    <width>180</width>
+                    <height>50</height>
                    </size>
                   </property>
                   <property name="styleSheet">
@@ -223,8 +223,44 @@ background-color: rgb(255, 239, 57);</string>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>200</width>
-                    <height>30</height>
+                    <width>180</width>
+                    <height>25</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_11">
+                <item>
+                 <widget class="QLabel" name="label_6">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Current Speed(pwm)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QTextEdit" name="CurrentSpeed_text">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>180</width>
+                    <height>25</height>
                    </size>
                   </property>
                   <property name="styleSheet">
@@ -259,8 +295,8 @@ background-color: rgb(255, 239, 57);</string>
                   </property>
                   <property name="maximumSize">
                    <size>
-                    <width>200</width>
-                    <height>30</height>
+                    <width>180</width>
+                    <height>25</height>
                    </size>
                   </property>
                   <property name="styleSheet">
@@ -275,34 +311,72 @@ background-color: rgb(255, 239, 57);</string>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_7">
               <item>
-               <widget class="QPushButton" name="KeyboardControlBtn">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>50</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Algerian</family>
-                  <pointsize>12</pointsize>
-                  <weight>50</weight>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(112, 155, 255);</string>
-                </property>
-                <property name="text">
-                 <string>Keyboard Control</string>
-                </property>
-               </widget>
+               <layout class="QVBoxLayout" name="verticalLayout_12">
+                <item>
+                 <widget class="QPushButton" name="KeyboardControlBtn">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>30</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Algerian</family>
+                    <pointsize>11</pointsize>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(112, 155, 255);</string>
+                  </property>
+                  <property name="text">
+                   <string>Keyboard Control (WASD)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_10">
+                  <item>
+                   <widget class="QPushButton" name="KeyboardControl_SetSpeedBtn">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(227, 227, 227);</string>
+                    </property>
+                    <property name="text">
+                     <string>Set Speed(0~100)</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSlider" name="KeyBoardControl_speed">
+                    <property name="maximum">
+                     <number>100</number>
+                    </property>
+                    <property name="value">
+                     <number>1</number>
+                    </property>
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="SetSpeed_label">
+                    <property name="text">
+                     <string>0</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
               </item>
               <item>
                <layout class="QGridLayout" name="gridLayout">
@@ -392,28 +466,42 @@ background-color: rgb(255, 239, 57);</string>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
-               <widget class="QPushButton" name="VisionBuildMapBtn">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>50</height>
-                 </size>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Algerian</family>
-                  <pointsize>12</pointsize>
-                  <weight>50</weight>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(112, 155, 255);</string>
-                </property>
-                <property name="text">
-                 <string>Vision Build Map</string>
-                </property>
-               </widget>
+               <layout class="QVBoxLayout" name="verticalLayout_14">
+                <item>
+                 <widget class="QPushButton" name="VisionBuildMapBtn">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>30</height>
+                   </size>
+                  </property>
+                  <property name="font">
+                   <font>
+                    <family>Algerian</family>
+                    <pointsize>12</pointsize>
+                    <weight>50</weight>
+                    <bold>false</bold>
+                   </font>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(112, 155, 255);</string>
+                  </property>
+                  <property name="text">
+                   <string>Vision Build Map</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="pushButton">
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(220, 220, 220);</string>
+                  </property>
+                  <property name="text">
+                   <string>Show Map List</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
               <item>
                <layout class="QVBoxLayout" name="VisionBuildMap">
@@ -449,12 +537,15 @@ background-color: rgb(255, 239, 57);</string>
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(255, 255, 255);</string>
                     </property>
+                    <property name="value">
+                     <number>1</number>
+                    </property>
                    </widget>
                   </item>
                  </layout>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="BuildMapStopBtn">
+                 <widget class="QPushButton" name="VisionBuildMapStopBtn">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -480,7 +571,7 @@ background-color: rgb(255, 239, 57);</string>
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
-                  <height>50</height>
+                  <height>30</height>
                  </size>
                 </property>
                 <property name="font">
@@ -527,12 +618,15 @@ background-color: rgb(255, 239, 57);</string>
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(255, 255, 255);</string>
                     </property>
+                    <property name="value">
+                     <number>1</number>
+                    </property>
                    </widget>
                   </item>
                  </layout>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="UseMapStopBtn">
+                 <widget class="QPushButton" name="VisionUseMapStopBtn">
                   <property name="styleSheet">
                    <string notr="true">background-color: rgb(221, 221, 221);</string>
                   </property>
@@ -552,7 +646,7 @@ background-color: rgb(255, 239, 57);</string>
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
-                  <height>50</height>
+                  <height>30</height>
                  </size>
                 </property>
                 <property name="font">
@@ -635,7 +729,7 @@ border-color: rgb(0, 0, 0);</string>
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
-                  <height>50</height>
+                  <height>30</height>
                  </size>
                 </property>
                 <property name="font">
@@ -680,7 +774,7 @@ border-color: rgb(0, 0, 0);</string>
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
-                  <height>50</height>
+                  <height>30</height>
                  </size>
                 </property>
                 <property name="font">
@@ -690,10 +784,13 @@ border-color: rgb(0, 0, 0);</string>
                  </font>
                 </property>
                 <property name="styleSheet">
-                 <string notr="true">background-color: rgb(112, 155, 255);</string>
+                 <string notr="true">background-color: rgb(112, 155, 255);
+
+
+</string>
                 </property>
                 <property name="text">
-                 <string>Build and Show Map</string>
+                 <string>Show data and build Map</string>
                 </property>
                </widget>
               </item>
@@ -728,7 +825,7 @@ border-color: rgb(0, 0, 0);</string>
               <property name="minimumSize">
                <size>
                 <width>0</width>
-                <height>50</height>
+                <height>30</height>
                </size>
               </property>
               <property name="font">
@@ -758,7 +855,7 @@ border-color: rgb(0, 0, 0);</string>
 border-color: rgb(255, 0, 0);</string>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="Console">
                <attribute name="title">
@@ -777,7 +874,7 @@ border-color: rgb(255, 0, 0);</string>
               </widget>
               <widget class="QWidget" name="lidarMap">
                <attribute name="title">
-                <string>Map</string>
+                <string>LiDAR</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_5">
                 <item>
@@ -787,7 +884,7 @@ border-color: rgb(255, 0, 0);</string>
               </widget>
               <widget class="QWidget" name="globalMap">
                <attribute name="title">
-                <string>頁面</string>
+                <string>Vision and LiDAR Map</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
@@ -812,7 +909,7 @@ border-color: rgb(255, 0, 0);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>915</width>
+     <width>828</width>
      <height>25</height>
     </rect>
    </property>

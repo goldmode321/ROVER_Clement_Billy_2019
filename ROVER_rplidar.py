@@ -18,6 +18,7 @@ class Lidar():
         self.lidar_client = None
         self.lidar_thread_client = None
         self.lidar_run_flag = False
+        self.lidar_state = []
         self.lidar_data = []
         self.lidar_connect = False
         ###############
@@ -88,6 +89,8 @@ class Lidar():
     def lidar_run_background(self):
         thread = threading.Thread(target = self.get_lidar_data ,daemon = True)
         thread.start()
+        # status_thread = threading.Thread(target=self.get_status, daemon=True)
+        # status_thread.start()
 
 
 #=============================================#
@@ -106,7 +109,7 @@ class Lidar():
                 logging.info('Scanning '+self.lidar_USB_port)
                 self.lidar = rplidar.RPLidar(self.lidar_USB_port)
                 time.sleep(0.1)
-                self.lidar_state = self.get_status()
+                self.lidar_state = self.lidar.get_health()
                 if self.lidar_state[0] == 'Good':
                     logging.info(self.lidar_state)
                     self.lidar_scanning_flag = False
@@ -134,8 +137,10 @@ class Lidar():
                 traceback.print_exc()
                 logging.exception("Got error\n")
 
-    def get_status(self):
-        return self.lidar.get_health()
+    # def get_status(self):
+    #     while self.lidar_run_flag:
+    #         self.lidar_state = self.lidar.get_health()
+    #         time.sleep(1)
 
 
     def stop(self):
@@ -156,7 +161,7 @@ class Lidar():
             for scan in self.lidar.iter_scans():
                 # self.lidar_data = scan
                 self.lidar_data = [list(scan) for scan in scan if scan[2] > 450]
-                self.lidar_thread_client.send_list([self.lidar_USB_port, self.lidar_data])
+                self.lidar_thread_client.send_list([self.lidar_USB_port, self.lidar_data, self.lidar_state[0], self.lidar_run_flag])
         except:
             self.reconnect()
             self.get_lidar_data()

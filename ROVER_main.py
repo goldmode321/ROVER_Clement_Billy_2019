@@ -2,6 +2,7 @@ import time
 import traceback
 import subprocess
 import threading
+import multiprocessing
 import logging
 import Adafruit_PCA9685
 import rover_socket
@@ -30,22 +31,17 @@ class CarControl(threading.Thread):
         self.car_control_server_run = True
         self.car_control_receive = None
         self.car_control_previous_receive = None
-        self.car_state = 'stop'
+        self.car_control_state = 'stop'
+        self.car_control_forward_pwm = 403
+        self.car_control_backward_pwm = 381
+        self.car_control_stop_pwm = 400
+        self.car_control_add_speed = 1 # Speed adjust from gui
         threading.Thread.__init__(self, daemon=True)
         thread = threading.Thread(target=self.car_control_main, daemon=True)
         thread.start()
 
     def car_control_main(self):
         while self.car_control_server_run:
-            # self.car_control_receive = self.car_control_server.recv_string(2)
-            # self.car_control_receive = self.car_control_server.recv_list()
-            # print(self.car_control_receive)
-            # if self.car_control_receive is None and self.car_control_previous_receive is not None:
-                # self.car_control_receive = self.car_control_previous_receive
-                # self.car_control_previous_receive = None
-                # time.sleep(0.05)
-            # print(self.car_control_receive)
-
 
             temp = self.car_control_server.recv_list()
             # print(temp)
@@ -85,7 +81,7 @@ class CarControl(threading.Thread):
             else:
                 self.stop()
             # if self.car_control_server.addr is not None:
-            #     self.car_control_server.send_list_back([self.car_state])
+            #     self.car_control_server.send_list_back([self.car_control_state])
                 # time.sleep(0.1)
             # if self.car_control_server.addr is not None:
             #     self.car_control_server.send_string_back('next')
@@ -97,66 +93,81 @@ class CarControl(threading.Thread):
     def car_control_protocol(self, car_control_receive):
         if car_control_receive is not None:
             if car_control_receive in ['w', 'wa', 'wd']:
-                if self.car_state == 'stop':
+                if self.car_control_state == 'stop':
                     self.forward()
-                    self.car_state = 'forward'
-                elif self.car_state == 'reverse':
+                    self.car_control_state = 'forward'
+                elif self.car_control_state == 'reverse':
                     self.forward_after_reverse()
-                    self.car_state = 'forward'
-                elif self.car_state == 'forward':
+                    self.car_control_state = 'forward'
+                elif self.car_control_state == 'forward':
                     self.forward()
 
             elif car_control_receive in ['s', 'sd', 'sa']:
-                if self.car_state == 'stop':
+                if self.car_control_state == 'stop':
                     self.reverse_after_forward()
                     # keep_reversing_after_reverse()
-                    self.car_state = 'reverse'
-                elif self.car_state == 'forward':
+                    self.car_control_state = 'reverse'
+                elif self.car_control_state == 'forward':
                     # self.reverse()
                     self.reverse_after_forward()
-                    self.car_state = 'reverse'
-                elif self.car_state == 'reverse':
+                    self.car_control_state = 'reverse'
+                elif self.car_control_state == 'reverse':
                     self.reverse()
             else:
                 self.stop()
-                self.car_state = 'stop'
+                self.car_control_state = 'stop'
 
 
         else:
             self.stop()
-            self.car_state = 'stop'
+            self.car_control_state = 'stop'
             # self.straight()
 
 
     def forward_after_reverse(self):
-        self.car_control.set_pwm(3,0,415)
+        self.car_control.set_pwm(3,0,self.car_control_stop_pwm)
         time.sleep(0.1)
-        self.car_control.set_pwm(3,0,400)
-        time.sleep(0.1)
-        self.car_control.set_pwm(3,0,415)
-        time.sleep(0.1)
-
-    def reverse_after_forward(self):
-        self.car_control.set_pwm(3,0,350)
-        time.sleep(0.1)
-        self.car_control.set_pwm(3,0,400)
-        time.sleep(0.1)
-        self.car_control.set_pwm(3,0,383)
-        time.sleep(0.1)
-
-
-    def stop(self):
-        self.car_control.set_pwm(3,0,400)
-        # time.sleep(0.15)
+        self.car_control.set_pwm(3,0,self.car_control_forward_pwm + self.car_control_add_speed)
         time.sleep(0.05)
+
+        # self.car_control.set_pwm(3,0,415)
+        # time.sleep(0.1)
+        # self.car_control.set_pwm(3,0,400)
+        # time.sleep(0.1)
+        # self.car_control.set_pwm(3,0,415)
+        # time.sleep(0.1)
+    def reverse_after_forward(self):
+        self.car_control.set_pwm(3,0,self.car_control_stop_pwm)
+        time.sleep(0.1)
+        self.car_control.set_pwm(3,0,self.car_control_backward_pwm - self.car_control_add_speed)
+        time.sleep(0.05)
+
+        # self.car_control.set_pwm(3,0,350)
+        # time.sleep(0.1)
+        # self.car_control.set_pwm(3,0,400)
+        # time.sleep(0.1)
+        # self.car_control.set_pwm(3,0,383)
+        # time.sleep(0.1)
+    def stop(self):
+        self.car_control.set_pwm(3,0,self.car_control_stop_pwm)
+        time.sleep(0.05)
+
+        # self.car_control.set_pwm(3,0,400)
+        # time.sleep(0.15)
+        # time.sleep(0.05)
 
     def forward(self):
-        self.car_control.set_pwm(3, 0, 413)
+        self.car_control.set_pwm(3, 0, self.car_control_forward_pwm + self.car_control_add_speed)
         time.sleep(0.05)
-    
+
+        # self.car_control.set_pwm(3, 0, 413)
+        # time.sleep(0.05)
     def reverse(self):
-        self.car_control.set_pwm(3, 0, 383)
+        self.car_control.set_pwm(3, 0, self.car_control_backward_pwm - self.car_control_add_speed)
         time.sleep(0.05)
+
+        # self.car_control.set_pwm(3, 0, 383)
+        # time.sleep(0.05)
 
     def turn_left(self):
         self.car_control.set_pwm(1,0,495)
@@ -207,6 +218,10 @@ class Main(CarControl, MoveAlgorithm):
         self.vision_thread_client_run = False
         self.main_show_vision_data_run = False
         self.vision_thread = None
+        self.vision_idle = False
+        self.vision_build_map_mode = False
+        self.vision_use_map_mode = False
+
 
         # Lidar initial variables
         self.lidar_data = []
@@ -214,10 +229,9 @@ class Main(CarControl, MoveAlgorithm):
         self.lidar_thread_server_run = False
         self.lidar_thread_server_status = 0
         self.lidar_usb_port = ""
+        self.lidar_state = [""]
         self.lidar_client_run = False
-        self.lidar_thread_client_run = False
         self.lidar_thread = None
-        self.lidar_package = [self.lidar_data, self.lidar_usb_port]
 
         # Algorithm initial variables
         self.algorithm_run = False
@@ -253,7 +267,12 @@ class Main(CarControl, MoveAlgorithm):
 ########### Send to GUI ##############
     def gui_connection_init(self):
         self.gui_udp_client = rover_socket.UDP_server(50010, 0, "192.168.5.2")
+        self.gui_send_status_udp_server = rover_socket.UDP_server(50012, 0, "192.168.5.2")
+        self.gui_get_command_udp_server = rover_socket.UDP_server(50013, 0, '192.168.5.2')
         self.gui_server_run = True
+        self.gui_command = {"gss": self._gui_set_speed, "gbm": self._gui_bm, "gum":self._gui_um, \
+            "gbms": self._gui_bm_stop, "gums":self._gui_um_stop}
+
         thread_gui = threading.Thread(target=self.gui_send_and_read, daemon=True)
         thread_gui.start()
 
@@ -261,15 +280,60 @@ class Main(CarControl, MoveAlgorithm):
     def gui_send_and_read(self):
         while self.gui_server_run:
             self.gui_receive = self.gui_udp_client.recv_list()
+            self.gui_send_status_receive = self.gui_send_status_udp_server.recv_list()
+            self.gui_get_command_receive = self.gui_get_command_udp_server.recv_list()
             if self.gui_receive is not None:
-                # self.gui_udp_client.send_list_back([self.lidar_data])
-                # pass
                 self.gui_udp_client.send_list_back([self.lidar_data, self.vision_data[0:4]])
+            if self.gui_send_status_receive is not None:
+                self.gui_send_status_udp_server.send_list_back([self.lidar_usb_port, self.lidar_state, self.lidar_client_run, \
+                    self.vision_status, self.vision_server_run, self.vision_idle, self.main_run, self.car_control_add_speed, \
+                        self.vision_build_map_mode, self.vision_use_map_mode])
+            if self.gui_get_command_receive is not None:
+                if self.gui_get_command_receive[0] in self.gui_command:
+                    self.gui_command[self.gui_get_command_receive[0]]()
+                elif self.gui_get_command_receive[0] in self.command_dictionary:
+                    self.command_dictionary[self.gui_get_command_receive[0]]() # Referenced from CommanderDictionary
+                elif self.gui_get_command_receive[0] in self.command_vision_dictionary:
+                    self.command_vision_dictionary[self.gui_get_command_receive[0]]()
+                elif self.gui_get_command_receive[0] in self.command_lidar_dictionary:
+                    self.command_lidar_dictionary[self.gui_get_command_receive[0]]()
+                else:
+                    print('Unknown Command')
             time.sleep(0.05)
+
 
     def end_gui_server(self):
         self.gui_server_run = False
         self.gui_udp_client.close()
+        self.gui_get_command_udp_server.close()
+        self.gui_send_status_udp_server.close()
+
+    def _gui_set_speed(self):
+        self.car_control_add_speed = self.gui_get_command_receive[1]
+    def _gui_bm(self):
+        self.vision_server.send_list(['V', 'bm', self.gui_get_command_receive[1]])
+        self.vision_idle = False
+        self.vision_build_map_mode = True
+    def _gui_bm_stop(self):
+        print("Vision save, please wait")
+        self.vision_server.send_list(['V', 'sv'])
+        self.main_receive = self.vision_server.recv_list()
+        print("Vision reset, please wait")
+        self.vision_server.send_list(['V', 'rs'])
+        self.main_receive = self.vision_server.recv_list()
+        print("Vision is now idling")
+        self.vision_idle = True
+        self.vision_build_map_mode = False
+    def _gui_um(self):
+        self.vision_server.send_list(['V', 'um', self.gui_get_command_receive[1]])
+        self.vision_idle = False
+        self.vision_use_map_mode = True
+    def _gui_um_stop(self):
+        print("Vision reset, please wait")
+        self.vision_server.send_list(['V', 'rs'])
+        self.main_receive = self.vision_server.recv_list()
+        self.vision_idle = True
+        self.vision_use_map_mode = False
 
 
 ################## Vision ##############
@@ -287,6 +351,7 @@ class Main(CarControl, MoveAlgorithm):
                     \ncommunication center get : {} \n".format(receive))
                 self.vision_server_run = True
                 self.vision_thread_server_run = True
+                self.vision_idle = True
                 self.vision_start_background_thread()
             else:
                 self.end_vision_server()
@@ -341,12 +406,13 @@ class Main(CarControl, MoveAlgorithm):
 
     def end_vision_thread_server(self):
         '''Stop getting data from vision module'''
-        self.vision_thread_server.close()
         if self.vision_thread_server_run:
-            self.vision_thread_server_run = False
-            self.vision_thread.join()
-            self.vision_thread_server_status = self.vision_thread.is_alive()
-        logging.info('Vision thread stop')
+            self.vision_thread_server.close()
+            if self.vision_thread_server_run:
+                self.vision_thread_server_run = False
+                self.vision_thread.join()
+                self.vision_thread_server_status = self.vision_thread.is_alive()
+            logging.info('Vision thread stop')
 
 
 ################## LiDAR ######################
@@ -393,6 +459,8 @@ class Main(CarControl, MoveAlgorithm):
                 if temp_lidar_data is not None:
                     self.lidar_usb_port = temp_lidar_data[0]
                     self.lidar_data = temp_lidar_data[1]
+                    self.lidar_state = temp_lidar_data[2]
+                    self.lidar_client_run = temp_lidar_data[3]
             time.sleep(0.05)
 
     def end_lidar_server(self):
@@ -408,12 +476,13 @@ class Main(CarControl, MoveAlgorithm):
 
     def end_lidar_thread_server(self):
         '''Stop storing lidar data'''
-        self.lidar_thread_server.close()
         if self.lidar_thread_server_run:
-            self.lidar_thread_server_run = False
-            self.lidar_thread.join()
-            self.lidar_thread_server_status = self.lidar_thread.is_alive()
-        logging.info('LiDAR thread end')
+            self.lidar_thread_server.close()
+            if self.lidar_thread_server_run:
+                self.lidar_thread_server_run = False
+                self.lidar_thread.join()
+                self.lidar_thread_server_status = self.lidar_thread.is_alive()
+            logging.info('LiDAR thread end')
 
 
 ############ Main main ###################
