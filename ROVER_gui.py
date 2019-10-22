@@ -1,27 +1,31 @@
-import sys
-import os
-import threading
-from PyQt5 import QtWidgets, QtCore, QtGui
-import gui.rover_ui_file as GUI
-import keyboard
-import time
-import rover_socket
-import multiprocessing
-import queue
 import math
-import numpy
+import multiprocessing
+import os
+import queue
+import sys
+import threading
+import time
 import traceback
+
+import keyboard
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import numpy
 from matplotlib.animation import FuncAnimation
+from matplotlib.figure import Figure
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+import gui.rover_ui_file as GUI
+import gui.rover_calibration as C_GUI
+import rover_socket
+
 
 class ROVER_gui():
     def __init__(self):
-
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
         app = QtWidgets.QApplication(sys.argv)
         app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         MainWindow = QtWidgets.QMainWindow()
+        calibration_MainWindow = QtWidgets.QMainWindow()
 
         self.keyboard_control_run = False
         self.animation_run = False
@@ -54,7 +58,8 @@ class ROVER_gui():
 
         self.gui = GUI.Ui_MainWindow()
         self.gui.setupUi(MainWindow)
-
+        self.calibration_gui = C_GUI.Ui_MainWindow()
+        self.calibration_gui.setupUi(calibration_MainWindow)
 
 
         self.gui.StopAllBtn.clicked.connect(self.StopAllBtn_click)
@@ -132,7 +137,6 @@ class ROVER_gui():
         else:
             self.gui.VisionUseMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")    
 
-
     def get_rover_status(self):
         '''Specialize for getting rover status'''
         def show_vision_status():
@@ -203,8 +207,14 @@ class ROVER_gui():
 
 
 
-
-
+    def calibration(self):
+        if not self.vision_idle and self.vision_server_run and self.lidar_server_run:
+            pass
+        else:
+            self.gui.MessageBox_Edit.setText("For calibration, lidar, vision should be 'On' and \
+                vision should be either build map mode or use map mode")
+            self.gui.console_1.append("For calibration, lidar, vision should be 'On' and \
+                vision should be either build map mode or use map mode")
 
     def show_map(self):
 
@@ -257,11 +267,13 @@ class ROVER_gui():
             self.lidar_animation = FuncAnimation(self.gui.LidarMap.figure, plot_lidar_map, blit=True, interval=50)
             self.global_animation = FuncAnimation(self.gui.GlobalMap.fig, plot_global_map, blit=True, interval=50)
             self.gui.console_1.append("Show Map Start")
+            self.gui.MessageBox_Edit.setText("Show Map Start")
             self.animation_run = True
         else:
             self.lidar_animation._stop()
             self.global_animation._stop()
             self.gui.console_1.append("Show Map Stop")
+            self.gui.MessageBox_Edit.setText("Show Map Stop")
             self.animation_run = False
 
 
@@ -271,6 +283,7 @@ class ROVER_gui():
 
     def StopAllBtn_click(self):
         self.gui.console_1.append('Stop ALL')
+        self.gui.MessageBox_Edit.setText("Stop ALL")
 
 
         if self.animation_run:
@@ -281,6 +294,7 @@ class ROVER_gui():
 
         if self.keyboard_control_run:
             self.gui.console_1.append('Stopped Keyboard control!')
+            self.gui.MessageBox_Edit.setText("Stop Keyboard control")
             self.KeyboardControlTimer.stop()
             self.gui_keyboard_control_client.close()
 
@@ -394,43 +408,60 @@ class ROVER_gui():
     def KeyboardControl_SetSpeedBtn_click(self):
         if self.rover_run:
             self.gui_rover_command_client.send_list(["gss", self.gui.KeyBoardControl_speed.value()])
-            self.gui.console_1.append("Set Car Speed")
+            self.gui.console_1.append("Set Car Speed " + str(self.gui.KeyBoardControl_speed.value()))
+            self.gui.MessageBox_Edit.setText("Set Car Speed" + str(self.gui.KeyBoardControl_speed.value()))
         else:
             self.gui.console_1.append("Warring : Rover is not running")
+            self.gui.MessageBox_Edit.setText("Warring : Rover is not running")
 
     def KeyBoardControl_speed_value_change(self):
         self.gui.SetSpeed_label.setText(str(self.gui.KeyBoardControl_speed.value()))
 
     def WayPointBtn_click(self):
         self.gui.console_1.append('Way point mode start')
+        self.gui.MessageBox_Edit.setText("Way point mode Start")
 
 
     def VisionUseMapBtn_click(self):
         if self.vision_idle:
             self.gui_rover_command_client.send_list(['gum', self.gui.UseMapID.value()])
             self.gui.console_1.append('Vision start use map')
+            self.gui.MessageBox_Edit.setText("Vision start use map")
         else:
-            self.gui.console_1.append('Vision module is busy')
+            if self.vision_server_run:
+                self.gui.console_1.append('Vision module is busy')
+                self.gui.MessageBox_Edit.setText("Vision module is busy")
+            else:
+                self.gui.console_1.append('Vision is not working')
+                self.gui.MessageBox_Edit.setText("Vision is not working")
 
 
     def VisionBuildMapBtn_click(self):
         if self.vision_idle:
             self.gui_rover_command_client.send_list(['gbm', self.gui.BuildMapID.value()])
             self.gui.console_1.append('Vision start building map')
+            self.gui.MessageBox_Edit.setText("Vision start building map")
         else:
-            self.gui.console_1.append('Vision module is busy')
+            if self.vision_server_run:
+                self.gui.console_1.append('Vision module is busy')
+                self.gui.MessageBox_Edit.setText("Vision module is busy")
+            else:
+                self.gui.console_1.append('Vision is not working')
+                self.gui.MessageBox_Edit.setText("Vision is not working")
 
     def VisionBuildMapStopBtn_click(self):
         if not self.vision_idle and self.vision_build_map_mode:
             self.gui_rover_command_client.send_list(['gbms'])
         else:
             self.gui.console_1.append("Vision is either idling or in use map mode")
+            self.gui.MessageBox_Edit.setText("Vision is either idling or in use map mode")
 
     def VisionUseMapStopBtn_click(self):
         if not self.vision_idle and self.vision_use_map_mode:
             self.gui_rover_command_client.send_list(['gums'])
         else:
             self.gui.console_1.append("Vision is either idling or in build map mode")
+            self.gui.MessageBox_Edit.setText("Vision is wither idling or in build map mode")
 
 
 

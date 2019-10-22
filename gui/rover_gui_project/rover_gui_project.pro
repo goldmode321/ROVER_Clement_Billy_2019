@@ -1,4 +1,5 @@
 FORMS += \
+    ../rover_calibration.ui \
     ../rover_v3.ui \
     qt_designer.ui
 

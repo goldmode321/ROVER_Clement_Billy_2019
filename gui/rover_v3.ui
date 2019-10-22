@@ -38,7 +38,7 @@
          <x>0</x>
          <y>0</y>
          <width>803</width>
-         <height>706</height>
+         <height>733</height>
         </rect>
        </property>
        <property name="styleSheet">
@@ -157,6 +157,31 @@
          </layout>
         </item>
         <item>
+         <widget class="QTextEdit" name="MessageBox_Edit">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>25</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(255, 255, 255);</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="MiddleLayout">
           <item>
            <layout class="QVBoxLayout" name="FunctionBtnLayout">
@@ -188,7 +213,7 @@
                   <property name="maximumSize">
                    <size>
                     <width>180</width>
-                    <height>50</height>
+                    <height>45</height>
                    </size>
                   </property>
                   <property name="styleSheet">
@@ -821,7 +846,7 @@ border-color: rgb(0, 0, 0);</string>
              </layout>
             </item>
             <item>
-             <widget class="QPushButton" name="Btnnnnn">
+             <widget class="QPushButton" name="CalibrationBtn">
               <property name="minimumSize">
                <size>
                 <width>0</width>
@@ -840,7 +865,7 @@ border-color: rgb(0, 0, 0);</string>
                <string notr="true">background-color: rgb(112, 155, 255);</string>
               </property>
               <property name="text">
-               <string>Future Work</string>
+               <string>Calibration</string>
               </property>
              </widget>
             </item>
