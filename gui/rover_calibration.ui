@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>802</width>
-    <height>704</height>
+    <width>859</width>
+    <height>748</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>778</width>
-         <height>639</height>
+         <width>814</width>
+         <height>714</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -53,6 +53,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QLabel" name="VisionData_label">
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="Calibration" name="Calibration" native="true">
           <property name="minimumSize">
            <size>
@@ -63,11 +70,11 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_2">
+           <layout class="QVBoxLayout" name="verticalLayout_8">
             <item>
-             <widget class="QLabel" name="XCalibration_label">
+             <widget class="QLabel" name="XCalibration_constant_label">
               <property name="font">
                <font>
                 <family>Bahnschrift Light</family>
@@ -83,7 +90,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QSlider" name="XCalibration_slider">
+             <widget class="QSlider" name="XCalibration_constant_slider">
               <property name="minimum">
                <number>-100</number>
               </property>
@@ -93,8 +100,175 @@
               <property name="singleStep">
                <number>1</number>
               </property>
+              <property name="value">
+               <number>0</number>
+              </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="XCalibration_constant_spinBox">
+              <property name="minimum">
+               <number>-100</number>
+              </property>
+              <property name="maximum">
+               <number>100</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <item>
+             <widget class="QLabel" name="YCalibration_constant_label">
+              <property name="font">
+               <font>
+                <family>Bahnschrift Light</family>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Y Calibration  : </string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSlider" name="YCalibration_constant_slider">
+              <property name="styleSheet">
+               <string notr="true">border-color: rgb(0, 0, 0);</string>
+              </property>
+              <property name="minimum">
+               <number>-100</number>
+              </property>
+              <property name="maximum">
+               <number>100</number>
+              </property>
+              <property name="value">
+               <number>0</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="invertedAppearance">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="YCalibration_constant_spinBox">
+              <property name="minimum">
+               <number>-100</number>
+              </property>
+              <property name="maximum">
+               <number>100</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <item>
+             <widget class="QLabel" name="AngleCalibration_constant_label">
+              <property name="font">
+               <font>
+                <family>Bahnschrift Light</family>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Angle Calibration : </string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSlider" name="AngleCalibration_constant_slider">
+              <property name="minimum">
+               <number>-30</number>
+              </property>
+              <property name="maximum">
+               <number>30</number>
+              </property>
+              <property name="value">
+               <number>0</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="AngleCalibration_constant_spinBox">
+              <property name="minimum">
+               <number>-30</number>
+              </property>
+              <property name="maximum">
+               <number>30</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="QLabel" name="XCalibration_label">
+              <property name="font">
+               <font>
+                <family>Bahnschrift Light</family>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>X Calibration multiple : </string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSlider" name="XCalibration_slider">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>300</number>
+              </property>
+              <property name="singleStep">
+               <number>1</number>
+              </property>
+              <property name="value">
+               <number>100</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="XCalibration_spinBox">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>300</number>
+              </property>
+              <property name="value">
+               <number>100</number>
               </property>
              </widget>
             </item>
@@ -111,7 +285,7 @@
                </font>
               </property>
               <property name="text">
-               <string>Y Calibration : </string>
+               <string>Y Calibration multiple : </string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
@@ -120,14 +294,36 @@
             </item>
             <item>
              <widget class="QSlider" name="YCalibration_slider">
+              <property name="styleSheet">
+               <string notr="true">border-color: rgb(0, 0, 0);</string>
+              </property>
               <property name="minimum">
-               <number>-100</number>
+               <number>1</number>
               </property>
               <property name="maximum">
+               <number>300</number>
+              </property>
+              <property name="value">
                <number>100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="invertedAppearance">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="YCalibration_spinBox">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>300</number>
+              </property>
+              <property name="value">
+               <number>100</number>
               </property>
              </widget>
             </item>
@@ -144,7 +340,7 @@
                </font>
               </property>
               <property name="text">
-               <string>Angle Calibration : </string>
+               <string>Angle Calibration multiple : </string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
@@ -154,13 +350,29 @@
             <item>
              <widget class="QSlider" name="AngleCalibration_slider">
               <property name="minimum">
-               <number>-30</number>
+               <number>1</number>
               </property>
               <property name="maximum">
-               <number>30</number>
+               <number>300</number>
+              </property>
+              <property name="value">
+               <number>100</number>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="AngleCalibration_spinBox">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>300</number>
+              </property>
+              <property name="value">
+               <number>100</number>
               </property>
              </widget>
             </item>
@@ -197,6 +409,45 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="ExportBtn">
+            <property name="font">
+             <font>
+              <family>3ds</family>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Export</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="ImportBtn">
+            <property name="font">
+             <font>
+              <family>3ds</family>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Import</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="ConfirmBtn">
+            <property name="font">
+             <font>
+              <family>3ds</family>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Confirm</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="ExitBtn">
             <property name="font">
              <font>
@@ -222,8 +473,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>802</width>
-     <height>21</height>
+     <width>859</width>
+     <height>25</height>
     </rect>
    </property>
   </widget>

@@ -7,6 +7,7 @@ class Calibration(FigureCanvas):
         self.fig = Figure()
         self.calibration_map_axes = self.fig.add_subplot(111)
         self.calibration_map_axes.autoscale(True)
+        # self.fig.legend("Initial", "Current", "Calibrated")
         # self.global_map_axes.autoscale()
 
 
@@ -15,3 +16,4 @@ class Calibration(FigureCanvas):
         QtWidgets.QWidget.__init__(self, parent, figure=self.figure)
         self.setParent(parent)
         FigureCanvas.updateGeometry(self)
+
