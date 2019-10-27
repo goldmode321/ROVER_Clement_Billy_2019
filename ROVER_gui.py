@@ -687,7 +687,5 @@ class ROVER_gui():
             self.gui.console_1.append("Vision is either idling or in build map mode")
             self.gui.MessageBox_Edit.setText("Vision is wither idling or in build map mode")
 
-
-
 if __name__ == "__main__":
     ROVER_gui()
