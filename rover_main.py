@@ -268,18 +268,19 @@ class Main(CarControl, MoveAlgorithm):
     def gui_connection_init(self):
         self.gui_udp_client = rover_socket.UDP_server(50010, 0, "192.168.5.2")
         self.gui_send_status_udp_server = rover_socket.UDP_server(50012, 0, "192.168.5.2")
-        self.gui_get_command_udp_server = rover_socket.UDP_server(50013, 0, '192.168.5.2')
         self.gui_server_run = True
         self.gui_command = {"gss": self._gui_set_speed, "gbm": self._gui_bm, "gum":self._gui_um, \
             "gbms": self._gui_bm_stop, "gums":self._gui_um_stop}
 
-        thread_gui = threading.Thread(target=self.gui_send_and_read, daemon=True)
-        thread_gui.start()
+        self.thread_gui = threading.Thread(target=self.gui_send_and_read, daemon=True)
+        self.thread_gui.start()
+        self.thread_gui_get_command = threading.Thread(target=self.gui_get_command, daemon=True)
+        self.thread_gui_get_command.start()
 
     def gui_get_command(self):
         while self.gui_server_run:
             self.gui_get_command_udp_server = rover_socket.UDP_server(50013, 0, '192.168.5.2')
-            time.sleep(0.05)
+            time.sleep(0.1)
             self.gui_get_command_receive = self.gui_get_command_udp_server.recv_list()
             if self.gui_get_command_receive is not None:
                 if self.gui_get_command_receive[0] in self.gui_command:
@@ -305,11 +306,14 @@ class Main(CarControl, MoveAlgorithm):
                 self.gui_send_status_udp_server.send_list_back([self.lidar_usb_port, self.lidar_state, self.lidar_client_run, \
                     self.vision_status, self.vision_server_run, self.vision_idle, self.main_run, self.car_control_add_speed, \
                         self.vision_build_map_mode, self.vision_use_map_mode])
+            time.sleep(0.05)
 
 
 
     def end_gui_server(self):
         self.gui_server_run = False
+        self.thread_gui.join()
+        self.thread_gui_get_command.join()
         self.gui_udp_client.close()
         self.gui_get_command_udp_server.close()
         self.gui_send_status_udp_server.close()

@@ -22,7 +22,7 @@ class UDP_server(object):
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.setblocking(self.setblocking)
             self.sock.bind((self.ip, self.port))
-            print('Server initiate - '+ self.ip+ ' : '+ str(self.port))
+            # print('Server initiate - '+ self.ip+ ' : '+ str(self.port))
             # self.recv_string()
             self.server_alive = True
 
