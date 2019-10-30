@@ -66,7 +66,7 @@ class CarControl(threading.Thread):
 
 
             else:
-                time.sleep(0.05)
+                # time.sleep(0.05)
                 self.straight()
                 # self.car_control_previous_receive = self.car_control_receive
             # time.sleep(0.15)
