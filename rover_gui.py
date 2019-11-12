@@ -18,6 +18,69 @@ import gui.rover_ui_file as GUI
 import gui.rover_calibration as C_GUI
 import rover_socket
 
+class SharedVariables():
+    def __init__(self):
+        self.calibration()
+        self.obstacle()
+        self.sensor_data()
+        self.map_plotting()
+        self.gui_object()
+
+    def obstacle(self):
+        self.local_obstacle_x = numpy.array([0, 1, 2])
+        self.local_obstacle_y = numpy.array([0, 1, 2])
+        self.global_obstacle_x = numpy.array([])
+        self.global_obstacle_y = numpy.array([])
+
+    def sensor_data(self):
+        self.lidar_data = [[0,0,0],[1,1,1]]
+        self.lidar_angle = [0]
+        self.lidar_radius = [0]
+        self.vision_angle_radian = 0
+        self.vision_status = -1
+        self.vision_data = [0, 0, 0, self.vision_status]
+        self.vision_x = list()
+        self.vision_y = list()
+
+
+    def map_plotting(self):
+        self.arrow_x = [0]
+        self.arrow_y = [0]
+
+    def calibration(self):
+        self.calibrate_x = 0
+        self.calibrate_y = 0
+        self.calibrate_angle = 0
+        self.calibrate_x_multi = 1
+        self.calibrate_y_multi = 1
+        self.calibrate_angle_multi = 1
+        self.calibrate_difference_between_lidar_and_vision = 130
+        self.temp_calibrate_difference_between_lidar_and_vision = 130
+        self.calibration_run = False
+
+    def gui_object(self):
+        self.gui = None
+
+
+
+class Calculator:
+    def __init__(self, SharedVariables_class):
+        self.SV = SharedVariables_class
+
+    def calculate_local_obstacle(
+                        self, vision_x, vision_y, vision_angle_radian, 
+                        lidar_radius, lidar_angle
+                        ):
+        return numpy.cos(numpy.array(lidar_angle) - vision_angle_radian + 0.5*math.pi)*\
+                    numpy.array(lidar_radius) + vision_x, \
+                numpy.sin(numpy.array(lidar_angle) - vision_angle_radian + 0.5*math.pi)*\
+                    numpy.array(lidar_radius) + vision_y
+
+    def calculate_arrow(self, vision_x, vision_y, vision_angle_radian):
+        return [vision_x, vision_x + 200*math.cos(-vision_angle_radian + 0.5*math.pi)], \
+                [vision_y, vision_y + 200*math.sin(-vision_angle_radian + 0.5*math.pi)]
+
+
 
 class ROVER_gui():
     def __init__(self):
@@ -26,6 +89,7 @@ class ROVER_gui():
         app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         MainWindow = QtWidgets.QMainWindow()
 
+
         self.keyboard_control_run = False
         self.animation_run = False
 
@@ -33,49 +97,55 @@ class ROVER_gui():
 
         self.current_speed = 0
 
-        self.lidar_data = [[0,0,0],[1,1,1]]
-        self.lidar_angle = [0]
-        self.lidar_radius = [0]
+        # self.lidar_data = [[0,0,0],[1,1,1]]
+        # self.lidar_angle = [0]
+        # self.lidar_radius = [0]
         self.lidar_server_run = False
 
         self.vision_server_run = False
-        self.vision_status = -1
-        self.vision_data = [0, 0, 0, self.vision_status]
+        # self.vision_status = -1
+        # self.vision_data = [0, 0, 0, self.vision_status]
         self.vision_idle = False
         self.vision_build_map_mode = False
         self.vision_use_map_mode = False
-        self.vision_x = 0
-        self.vision_y = 0
+        # self.vision_x = 0
+        # self.vision_y = 0
 
-        self.local_obstacle_x = numpy.array([0, 1, 2])
-        self.local_obstacle_y = numpy.array([0, 1, 2])
-        self.global_obstacle_x = numpy.array([])
-        self.global_obstacle_y = numpy.array([])
-        self.vision_angle_radian = 0
-        self.arrow_x = [0]
-        self.arrow_y = [0]
+        # self.local_obstacle_x = numpy.array([0, 1, 2])
+        # self.local_obstacle_y = numpy.array([0, 1, 2])
+        # self.global_obstacle_x = numpy.array([])
+        # self.global_obstacle_y = numpy.array([])
+        # self.vision_angle_radian = 0
+        # self.arrow_x = [0]
+        # self.arrow_y = [0]
 
-        self.calibrate_difference_between_lidar_and_vision = 130
-        self.temp_calibrate_difference_between_lidar_and_vision = 130
+        # self.calibrate_difference_between_lidar_and_vision = 130
+        # self.temp_calibrate_difference_between_lidar_and_vision = 130
         self.calibration_run = False
-        self.calibrate_x = 0
-        self.calibrate_y = 0
-        self.calibrate_angle = 0
-        self.calibrate_x_multi = 1
-        self.calibrate_y_multi = 1
-        self.calibrate_angle_multi = 1
-        self.temp_calibrate_x = 0
-        self.temp_calibrate_y = 0
-        self.temp_calibrate_angle = 0
-        self.temp_calibrate_x_multi = 1
-        self.temp_calibrate_y_multi = 1
-        self.temp_calibrate_angle_multi = 1
-
+        # self.calibrate_x = 0
+        # self.calibrate_y = 0
+        # self.calibrate_angle = 0
+        # self.calibrate_x_multi = 1
+        # self.calibrate_y_multi = 1
+        # self.calibrate_angle_multi = 1
 
 
         self.gui = GUI.Ui_MainWindow()
         self.gui.setupUi(MainWindow)
 
+        # self.CAL_GUI = CalibrationUI()
+        # self.variables_pass_to_calibration = {
+        #     "gui":self.gui, "vision_data":self.vision_data, 
+        #     "lidar_angle":self.lidar_angle, "lidar_radius":self.lidar_radius,
+        #     "local_obstacle_x":self.local_obstacle_x, "local_obstacle_y":self.local_obstacle_y,
+        #     "calibrate_x":self.calibrate_x, "calibrate_y":self.calibrate_y, 
+        #     "calibrate_angle":self.calibrate_angle,
+        #     "calibrate_x_multi":self.calibrate_x_multi, "calibrate_y_multi":self.calibrate_y_multi,
+        #     "calibrate_angle_multi":self.calibrate_angle_multi
+        # }
+        self.SV = SharedVariables()
+        self.SV.gui = self.gui
+        self.CALCULATOR = Calculator(self.SV)
 
         self.gui.StopAllBtn.clicked.connect(self.StopAllBtn_click)
         self.gui.KeyboardControlBtn.clicked.connect(self.KeyboardControlBtn_click)
@@ -153,7 +223,7 @@ class ROVER_gui():
         else:
             self.gui.VisionUseMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
 
-        if self.calibration_run:
+        if self.SV.calibration_run:
             self.gui.CalibrationBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
         else:
             self.gui.CalibrationBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
@@ -162,20 +232,20 @@ class ROVER_gui():
         '''Specialize for getting rover status'''
         def show_vision_status():
             '''Explain vision status meanning'''
-            if self.vision_status == 0:
-                self.gui.VisionStatus_text.setText(str(self.vision_status) + ":Booting")
-            elif self.vision_status == 1:
-                self.gui.VisionStatus_text.setText(str(self.vision_status) + ":Waiting for command")
-            elif self.vision_status == 2:
-                self.gui.VisionStatus_text.setText(str(self.vision_status) + ":Loading data")
-            elif self.vision_status == 3:
-                self.gui.VisionStatus_text.setText(str(self.vision_status) + ":Locating, please move around")
-            elif self.vision_status == 4:
-                self.gui.VisionStatus_text.setText(str(self.vision_status) + ":Working normally")
-            elif self.vision_status == 5:
-                self.gui.VisionStatus_text.setText(str(self.vision_status) + ":Lost current position")
+            if self.SV.vision_status == 0:
+                self.gui.VisionStatus_text.setText(str(self.SV.vision_status) + ":Booting")
+            elif self.SV.vision_status == 1:
+                self.gui.VisionStatus_text.setText(str(self.SV.vision_status) + ":Waiting for command")
+            elif self.SV.vision_status == 2:
+                self.gui.VisionStatus_text.setText(str(self.SV.vision_status) + ":Loading data")
+            elif self.SV.vision_status == 3:
+                self.gui.VisionStatus_text.setText(str(self.SV.vision_status) + ":Locating, please move around")
+            elif self.SV.vision_status == 4:
+                self.gui.VisionStatus_text.setText(str(self.SV.vision_status) + ":Working normally")
+            elif self.SV.vision_status == 5:
+                self.gui.VisionStatus_text.setText(str(self.SV.vision_status) + ":Lost current position")
             else:
-                self.gui.VisionStatus_text.setText(str(self.vision_status) + ": unkonwn")
+                self.gui.VisionStatus_text.setText(str(self.SV.vision_status) + ": unkonwn")
 
         self.gui_get_rover_status_client.send_list([1])
         temp_rover_status_receive = self.gui_get_rover_status_client.recv_list()
@@ -183,7 +253,7 @@ class ROVER_gui():
             self.gui.LidarUSB_text.setText("USB Port: " + str(temp_rover_status_receive[0]) \
                 + "\n Status: " + str(temp_rover_status_receive[1]))
             self.lidar_server_run = temp_rover_status_receive[2]
-            self.vision_status = temp_rover_status_receive[3]
+            self.SV.vision_status = temp_rover_status_receive[3]
             self.vision_server_run = temp_rover_status_receive[4]
             self.vision_idle = temp_rover_status_receive[5]
             self.rover_run = temp_rover_status_receive[6]
@@ -211,23 +281,38 @@ class ROVER_gui():
         self.gui_get_lidar_vision_client.send_list([1]) # Send anything to make sure connection always open
         temp_lidar_vision_receive = self.gui_get_lidar_vision_client.recv_list(32768)
         if temp_lidar_vision_receive is not None:
-            self.lidar_data = temp_lidar_vision_receive[0]
-            self.lidar_angle = [math.radians(-i[1]) + 0.0*math.pi for i in self.lidar_data]
-            self.lidar_radius = [i[2] for i in self.lidar_data]
-            self.vision_data = temp_lidar_vision_receive[1]
+            self.SV.lidar_data = numpy.asarray(temp_lidar_vision_receive[0])
+            # self.SV.lidar_angle = [math.radians(-i[1]) + 0.0*math.pi for i in self.SV.lidar_data]
+            # self.SV.lidar_radius = [i[2] for i in self.SV.lidar_data]
+            self.SV.lidar_angle = self.SV.lidar_data[:, 1]* (-1) + 0.0*math.pi
+            self.SV.lidar_radius = self.SV.lidar_data[:, 2]
+            self.SV.vision_data = temp_lidar_vision_receive[1]
             # self.gui.console_1.append(str(temp_lidar_vision_receive[1]))
-            if self.vision_data[3] == 4:
-                self.vision_angle_radian = math.radians(self.vision_data[2] * self.calibrate_angle_multi + self.calibrate_angle)
-                self.vision_x = self.vision_data[0] * self.calibrate_x_multi + self.calibrate_x
-                self.vision_y = self.vision_data[1] * self.calibrate_y_multi + self.calibrate_y
+            if self.SV.vision_data[3] == 4:
+                self.SV.vision_angle_radian = math.radians(self.SV.vision_data[2] * self.SV.calibrate_angle_multi + self.SV.calibrate_angle)
+                self.SV.vision_x = self.SV.vision_data[0] * self.SV.calibrate_x_multi + self.SV.calibrate_x
+                self.SV.vision_y = self.SV.vision_data[1] * self.SV.calibrate_y_multi + self.SV.calibrate_y
 
-                self.local_obstacle_x = numpy.cos(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
-                    numpy.array(self.lidar_radius) + self.vision_x
-                self.local_obstacle_y = numpy.sin(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
-                    numpy.array(self.lidar_radius) + self.vision_y
+                # self.vision_x = self.vision_data[0] * self.calibrate_x_multi + self.calibrate_x
+                # self.vision_y = self.vision_data[1] * self.calibrate_y_multi + self.calibrate_y
 
-                self.arrow_x = [self.vision_x, self.vision_x + 200*math.cos(-self.vision_angle_radian+0.5*math.pi)]
-                self.arrow_y = [self.vision_y, self.vision_y + 200*math.sin(-self.vision_angle_radian+0.5*math.pi)]
+                # self.local_obstacle_x = numpy.cos(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
+                #     numpy.array(self.lidar_radius) + self.vision_x
+                # self.local_obstacle_y = numpy.sin(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
+                #     numpy.array(self.lidar_radius) + self.vision_y
+                self.SV.local_obstacle_x, self.SV.local_obstacle_y = self.CALCULATOR.calculate_local_obstacle(
+                                            self.SV.vision_x, self.SV.vision_y, 
+                                            self.SV.vision_angle_radian,
+                                            self.SV.lidar_radius, self.SV.lidar_angle
+                                            )
+
+
+                # self.SV.arrow_x = [self.vision_x, self.vision_x + 200*math.cos(-self.SV.vision_angle_radian+0.5*math.pi)]
+                # self.SV.arrow_y = [self.vision_y, self.vision_y + 200*math.sin(-self.SV.vision_angle_radian+0.5*math.pi)]
+                self.SV.arrow_x, self.SV.arrow_y = self.CALCULATOR.calculate_arrow(
+                                                            self.SV.vision_x, self.SV.vision_y, 
+                                                            self.SV.vision_angle_radian
+                                                            )
 
                 # self.gui.VisionData_text.setText(str(self.vision_data))
 
@@ -238,196 +323,17 @@ class ROVER_gui():
 
 
     def calibration(self):
-        def x_spin():
-            self.temp_calibrate_x = self.calibration_gui.XCalibration_constant_spinBox.value()
-            self.calibration_gui.XCalibration_constant_label.setText("X Calibration : {}".format(self.temp_calibrate_x))
-            self.calibration_gui.XCalibration_constant_slider.setValue(self.temp_calibrate_x)
-
-        def x_spin_multi():
-            self.temp_calibrate_x_multi = self.calibration_gui.XCalibration_spinBox.value() / 100
-            self.calibration_gui.XCalibration_label.setText("X Calibration multiply: {} %".format(self.calibration_gui.XCalibration_spinBox.value()))
-            self.calibration_gui.XCalibration_slider.setValue(self.calibration_gui.XCalibration_spinBox.value())
-
-        def x_slider():
-            self.temp_calibrate_x = self.calibration_gui.XCalibration_constant_slider.value()
-            self.calibration_gui.XCalibration_constant_label.setText("X Calibration : {}".format(self.temp_calibrate_x))
-            self.calibration_gui.XCalibration_constant_spinBox.setValue(self.temp_calibrate_x)
-
-        def x_slider_multi():
-            self.temp_calibrate_x_multi = self.calibration_gui.XCalibration_slider.value() / 100
-            self.calibration_gui.XCalibration_label.setText("X Calibration multiply: {} %".format(self.calibration_gui.XCalibration_slider.value()))
-            self.calibration_gui.XCalibration_spinBox.setValue(self.calibration_gui.XCalibration_slider.value())
-
-        def y_spin():
-            self.temp_calibrate_y = self.calibration_gui.YCalibration_constant_spinBox.value()
-            self.calibration_gui.YCalibration_constant_label.setText("Y Calibration : {}".format(self.temp_calibrate_y))
-            self.calibration_gui.YCalibration_constant_slider.setValue(self.temp_calibrate_y)
-
-        def y_spin_multi():
-            self.temp_calibrate_y_multi = self.calibration_gui.YCalibration_spinBox.value() / 100
-            self.calibration_gui.YCalibration_label.setText("Y Calibration multiply : {} %".format(self.calibration_gui.YCalibration_spinBox.value()))
-            self.calibration_gui.YCalibration_slider.setValue(self.calibration_gui.YCalibration_spinBox.value())
-
-        def y_slider():
-            self.temp_calibrate_y = self.calibration_gui.YCalibration_constant_slider.value()
-            self.calibration_gui.YCalibration_constant_label.setText("Y Calibration : {}".format(self.temp_calibrate_y))
-            self.calibration_gui.YCalibration_constant_spinBox.setValue(self.temp_calibrate_y)
-
-        def y_slider_multi():
-            self.temp_calibrate_y_multi = self.calibration_gui.YCalibration_slider.value() / 100
-            self.calibration_gui.YCalibration_label.setText("Y Calibration multiply: {} %".format(self.calibration_gui.YCalibration_slider.value()))
-            self.calibration_gui.YCalibration_spinBox.setValue(self.calibration_gui.YCalibration_slider.value())
-
-        def angle_spin():
-            self.temp_calibrate_angle = self.calibration_gui.AngleCalibration_constant_spinBox.value()
-            self.calibration_gui.AngleCalibration_constant_label.setText("Angle Calibration : {}".format(self.temp_calibrate_angle))
-            self.calibration_gui.AngleCalibration_constant_slider.setValue(self.temp_calibrate_angle)
-
-        def angle_spin_multi():
-            self.temp_calibrate_angle_multi = self.calibration_gui.AngleCalibration_spinBox.value() / 100
-            self.calibration_gui.AngleCalibration_label.setText("Angle Calibration multiply : {} %".format(self.calibration_gui.AngleCalibration_spinBox.value()))
-            self.calibration_gui.AngleCalibration_slider.setValue(self.calibration_gui.AngleCalibration_spinBox.value())
-
-        def angle_slider():
-            self.temp_calibrate_angle = self.calibration_gui.AngleCalibration_constant_slider.value()
-            self.calibration_gui.AngleCalibration_constant_label.setText("Angle Calibration : {}".format(self.temp_calibrate_angle))
-            self.calibration_gui.AngleCalibration_constant_spinBox.setValue(self.temp_calibrate_angle)
-
-        def angle_slider_multi():
-            self.temp_calibrate_angle_multi = self.calibration_gui.AngleCalibration_slider.value() / 100
-            self.calibration_gui.AngleCalibration_label.setText("Angle Calibration multiply: {} %".format(self.calibration_gui.AngleCalibration_slider.value()))
-            self.calibration_gui.AngleCalibration_spinBox.setValue(self.calibration_gui.AngleCalibration_slider.value())
-
-        def ConfirmBtn_click():
-            self.calibrate_x = self.temp_calibrate_x
-            self.calibrate_y = self.temp_calibrate_y
-            self.calibrate_angle = self.temp_calibrate_angle
-            self.calibrate_x_multi = self.temp_calibrate_x_multi
-            self.calibrate_y_multi = self.temp_calibrate_y_multi
-            self.calibrate_angle_multi = self.temp_calibrate_angle_multi
-            self.gui.console_1.append("Confirm calibration : x : {} , y : {} , angle : {} \n \
-                x multi : {} , y multi : {} , angle multi : {}" \
-                .format(self.calibrate_x, self.calibrate_y, self.calibrate_angle, \
-                    self.calibrate_x_multi, self.calibrate_y_multi, self.calibrate_angle_multi))
-            self.gui.MessageBox_Edit.setText("Confirm calibration : x : {} , y : {} , angle : {}  \
-                x multi : {} , y multi : {} , angle multi : {}" \
-                .format(self.calibrate_x, self.calibrate_y, self.calibrate_angle, \
-                    self.calibrate_x_multi, self.calibrate_y_multi, self.calibrate_angle_multi))
-
-        def ResetBtn_click():
-            self.initial_line.set_data(self.local_obstacle_x, self.local_obstacle_y)
-
-        def closeEvent(event):
-            # print("closeEvent")
-            self.gui.console_1.append("Calibration stop")
-            self.gui.MessageBox_Edit.setText("Calibration stop")
-            self.calibration_animation._stop()
-            self.calibration_run = False
-            event.accept()
-
-        def animation(i):
-            self.calibration_gui.VisionData_label.setText(str(self.vision_data))
-
-            temp_vision_x = self.vision_data[0] * self.temp_calibrate_x_multi + self.temp_calibrate_x
-            temp_vision_y = self.vision_data[1] * self.temp_calibrate_y_multi + self.temp_calibrate_y
-            temp_vision_angle_radian = math.radians(self.vision_data[2] * self.temp_calibrate_angle_multi + self.temp_calibrate_angle)
-            temp_local_obstacle_x = numpy.cos(numpy.array(self.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
-                numpy.array(self.lidar_radius) + temp_vision_x
-            temp_local_obstacle_y = numpy.sin(numpy.array(self.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
-                numpy.array(self.lidar_radius) + temp_vision_y
-
-            self.current_line.set_data(self.local_obstacle_x, self.local_obstacle_y)
-            self.calibrate_line.set_data(temp_local_obstacle_x, temp_local_obstacle_y)
-            self.position_line.set_data(self.vision_data[0], self.vision_data[1])
-            self.calibrate_position_line.set_data(temp_vision_x, temp_vision_y)
-            self.calibration_gui.Calibration.calibration_map_axes.autoscale(True)
-
-            return self.current_line, self.calibrate_line, self.position_line, self.calibrate_position_line, self.initial_line,
-            # return self.current_line, self.calibrate_line, self.position_line, self.calibrate_position_line,
-
-        def ExportBtn_click():
-            try:
-                name = QtWidgets.QFileDialog.getSaveFileName(self.calibration_MainWindow, \
-                    'Save File', "", "Rover Calibration Files (*.calibration);;Text Files (*.txt);;All Files (*)")
-                if name != ("", ""):
-                    file = open(name[0],'w')
-                    text = "x{}xm{}y{}ym{}a{}am{}".format(self.calibrate_x, self.calibrate_x_multi, \
-                        self.calibrate_y, self.calibrate_y_multi, self.calibrate_angle, self.calibrate_angle_multi)
-                    file.write(text)
-                    file.close()
-            except TypeError:
-                traceback.print_exc()
-
-        def ImportBtn_click():
-            name = QtWidgets.QFileDialog.getOpenFileName(self.calibration_MainWindow, \
-                'Open File', "", "Rover Calibration Files (*.calibration);;Text Files (*.txt);;All Files (*)")
-            if name != ("", ""):
-                file = open(name[0],'r')
-                text = file.read()
-                # print(text)
-                # print("x {}\nxm {}\ny {}\nym {}\na {}\nam {}".format(text[text.index("x") + 1 : text.index("xm")], \
-                #     text[text.index("xm") + 2 : text.index("y")], text[text.index("y") + 1 : text.index("ym")], \
-                #         text[text.index("ym") + 2 : text.index("a")], text[text.index("a") + 1 : text.index("am")], \
-                #             text[text.index("am") + 2 : len(text)]))
-                # self.calibrate_x = self.temp_calibrate_x = int(text[text.index("x") + 1 : text.index("xm")])
-                # self.calibrate_x_multi = self.temp_calibrate_x_multi = float(text[text.index("xm") + 2 : text.index("y")])
-                # self.calibrate_y = self.temp_calibrate_y = int(text[text.index("y") + 1 : text.index("ym")])
-                # self.calibrate_y_multi = self.temp_calibrate_y_multi = float(text[text.index("ym") + 2 : text.index("a")])
-                # self.calibrate_y = self.temp_calibrate_y = int(text[text.index("a") + 1 : text.index("am")])
-                # self.calibrate_y_multi = self.temp_calibrate_y_multi = float(text[text.index("am") + 2 : len(text)])
-                self.temp_calibrate_x = int(text[text.index("x") + 1 : text.index("xm")])
-                self.temp_calibrate_x_multi = float(text[text.index("xm") + 2 : text.index("y")])*100
-                self.temp_calibrate_y = int(text[text.index("y") + 1 : text.index("ym")])
-                self.temp_calibrate_y_multi = float(text[text.index("ym") + 2 : text.index("a")])*100
-                self.temp_calibrate_angle = int(text[text.index("a") + 1 : text.index("am")])
-                self.temp_calibrate_angle_multi = float(text[text.index("am") + 2 : len(text)])*100
-                self.calibration_gui.XCalibration_constant_slider.setValue(self.temp_calibrate_x)
-                self.calibration_gui.YCalibration_constant_slider.setValue(self.temp_calibrate_y)
-                self.calibration_gui.AngleCalibration_constant_slider.setValue(self.temp_calibrate_angle)
-                self.calibration_gui.XCalibration_slider.setValue(self.temp_calibrate_x_multi)
-                self.calibration_gui.YCalibration_slider.setValue(self.temp_calibrate_y_multi)
-                self.calibration_gui.AngleCalibration_slider.setValue(self.temp_calibrate_angle_multi)
-
-                file.close()
+        if not hasattr(self, "CAL_GUI"):
+            # self.CAL_GUI = CalibrationUI(self.variables_pass_to_calibration
+            self.CAL_GUI = CalibrationUI(self.SV)
 
         if not self.vision_idle and self.vision_server_run and self.lidar_server_run:
-            if not self.calibration_run:
-                self.calibration_MainWindow = QtWidgets.QMainWindow()
-                self.calibration_gui = C_GUI.Ui_MainWindow()
-                self.calibration_gui.setupUi(self.calibration_MainWindow)
-
-                self.calibration_gui.XCalibration_constant_spinBox.valueChanged.connect(x_spin)
-                self.calibration_gui.YCalibration_constant_spinBox.valueChanged.connect(y_spin)
-                self.calibration_gui.AngleCalibration_constant_spinBox.valueChanged.connect(angle_spin)
-                self.calibration_gui.XCalibration_spinBox.valueChanged.connect(x_spin_multi)
-                self.calibration_gui.YCalibration_spinBox.valueChanged.connect(y_spin_multi)
-                self.calibration_gui.AngleCalibration_spinBox.valueChanged.connect(angle_spin_multi)
-                self.calibration_gui.XCalibration_constant_slider.valueChanged.connect(x_slider)
-                self.calibration_gui.YCalibration_constant_slider.valueChanged.connect(y_slider)
-                self.calibration_gui.AngleCalibration_constant_slider.valueChanged.connect(angle_slider)
-                self.calibration_gui.XCalibration_slider.valueChanged.connect(x_slider_multi)
-                self.calibration_gui.YCalibration_slider.valueChanged.connect(y_slider_multi)
-                self.calibration_gui.AngleCalibration_slider.valueChanged.connect(angle_slider_multi)
-                self.calibration_MainWindow.closeEvent = closeEvent
-                self.calibration_gui.ExitBtn.clicked.connect(self.calibration_MainWindow.close)
-                self.calibration_gui.ConfirmBtn.clicked.connect(ConfirmBtn_click)
-                self.calibration_gui.ResetBtn.clicked.connect(ResetBtn_click)
-                self.calibration_gui.ExportBtn.clicked.connect(ExportBtn_click)
-                self.calibration_gui.ImportBtn.clicked.connect(ImportBtn_click)
-
-                self.initial_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.local_obstacle_x, self.local_obstacle_y, 'g.')
-                self.current_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.local_obstacle_x, self.local_obstacle_y, 'b.')
-                self.calibrate_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.local_obstacle_x, self.local_obstacle_y, 'r.')
-                self.position_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.vision_data[0], self.vision_data[1], 'bo')
-                self.calibrate_position_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.vision_data[0], self.vision_data[1], 'ro')
-
-
-                self.calibration_MainWindow.show()
-                self.calibration_animation = FuncAnimation(self.calibration_gui.Calibration.figure, animation, blit=True, interval=50)
-                self.calibration_run = True
+            if not self.SV.calibration_run and not self.CAL_GUI.calibration_MainWindow.isVisible():
+                self.CAL_GUI.show_window()
+                self.SV.calibration_run = True
             else:
-                self.calibration_MainWindow.close()
-
+                self.CAL_GUI.close_window()
+                self.SV.calibration_run = False
         else:
             self.gui.MessageBox_Edit.setText("For calibration, lidar, vision should be 'On' and \
                 vision should be either build map mode or use map mode")
@@ -437,31 +343,34 @@ class ROVER_gui():
 
 
 
-
     def show_map(self):
 
         def plot_lidar_map(i):
-            self.lidar_plot.set_xdata(self.lidar_angle)
-            self.lidar_plot.set_ydata(self.lidar_radius)
+            self.lidar_plot.set_xdata(self.SV.lidar_angle)
+            self.lidar_plot.set_ydata(self.SV.lidar_radius)
             # self.gui.LidarMap.fig.canvas.update()
             return self.lidar_plot,
 
 
         def plot_global_map(i):
             self.gui.GlobalMap.global_map_axes.set_xlim(numpy.concatenate((\
-                self.local_obstacle_x, self.global_obstacle_x)).min(), numpy.concatenate((\
-                    self.local_obstacle_x, self.global_obstacle_x)).max())
+                self.SV.local_obstacle_x, self.SV.global_obstacle_x)).min(), numpy.concatenate((\
+                    self.SV.local_obstacle_x, self.SV.global_obstacle_x)).max())
             self.gui.GlobalMap.global_map_axes.set_ylim(numpy.concatenate((\
-                self.local_obstacle_y, self.global_obstacle_y)).min(), numpy.concatenate((\
-                    self.local_obstacle_y, self.global_obstacle_y)).max())
-            self.global_map_plot_vision.set_xdata(self.vision_x)
-            self.global_map_plot_vision.set_ydata(self.vision_y)
-            self.global_map_plot_local_obstacle.set_xdata(self.local_obstacle_x)
-            self.global_map_plot_local_obstacle.set_ydata(self.local_obstacle_y)
-            self.global_map_plot_arrow.set_xdata(self.arrow_x)
-            self.global_map_plot_arrow.set_ydata(self.arrow_y)
-            self.global_map_plot_global_obstacle.set_xdata(self.global_obstacle_x)
-            self.global_map_plot_global_obstacle.set_ydata(self.global_obstacle_y)
+                self.SV.local_obstacle_y, self.SV.global_obstacle_y)).min(), numpy.concatenate((\
+                    self.SV.local_obstacle_y, self.SV.global_obstacle_y)).max())
+            self.global_map_plot_vision.set_data(self.SV.vision_x, self.SV.vision_y)
+            self.global_map_plot_local_obstacle.set_data(self.SV.local_obstacle_x, self.SV.local_obstacle_y)
+            self.global_map_plot_arrow.set_data(self.SV.arrow_x, self.SV.arrow_y)
+            self.global_map_plot_global_obstacle.set_data(self.SV.global_obstacle_x, self.SV.global_obstacle_y)
+            # self.global_map_plot_vision.set_xdata(self.vision_x)
+            # self.global_map_plot_vision.set_ydata(self.vision_y)
+            # self.global_map_plot_local_obstacle.set_xdata(self.local_obstacle_x)
+            # self.global_map_plot_local_obstacle.set_ydata(self.local_obstacle_y)
+            # self.global_map_plot_arrow.set_xdata(self.arrow_x)
+            # self.global_map_plot_arrow.set_ydata(self.arrow_y)
+            # self.global_map_plot_global_obstacle.set_xdata(self.global_obstacle_x)
+            # self.global_map_plot_global_obstacle.set_ydata(self.global_obstacle_y)
             # self.gui.GlobalMap.fig.canvas.update()
 
             # return self.global_map_plot_local_obstacle, self.global_map_plot_vision, self.global_map_plot_arrow, self.global_map_plot_initial_position,
@@ -498,8 +407,8 @@ class ROVER_gui():
 
 
     def ShowMap_AddBtn_click(self):
-        self.global_obstacle_x = numpy.concatenate((self.local_obstacle_x, self.global_obstacle_x))
-        self.global_obstacle_y = numpy.concatenate((self.local_obstacle_y, self.global_obstacle_y))
+        self.SV.global_obstacle_x = numpy.concatenate((self.SV.local_obstacle_x, self.SV.global_obstacle_x))
+        self.SV.global_obstacle_y = numpy.concatenate((self.SV.local_obstacle_y, self.SV.global_obstacle_y))
 
     def StopAllBtn_click(self):
         self.gui.console_1.append('Stop ALL')
@@ -686,6 +595,232 @@ class ROVER_gui():
         else:
             self.gui.console_1.append("Vision is either idling or in build map mode")
             self.gui.MessageBox_Edit.setText("Vision is wither idling or in build map mode")
+
+
+
+
+
+class CalibrationUI(Calculator):
+    def __init__(self, SharedVariables_class, calculator_class):
+        self.SV = SharedVariables_class
+        self.CALCULATOR = calculator_class
+    # def __init__(self, input_dict):
+        # self.gui = input_dict["gui"]
+        # self.vision_data = input_dict["vision_data"]
+        # self.lidar_angle = input_dict["lidar_angle"]
+        # self.lidar_radius = input_dict["lidar_radius"]
+        # self.local_obstacle_x = input_dict["local_obstacle_x"]
+        # self.local_obstacle_y = input_dict["local_obstacle_y"]
+        # self.calibrate_x = input_dict["calibrate_x"]
+        # self.calibrate_y = input_dict["calibrate_y"]
+        # self.calibrate_angle = input_dict["calibrate_angle"]
+        # self.calibrate_x_multi = input_dict["calibrate_x_multi"]
+        # self.calibrate_y_multi = input_dict["calibrate_y_multi"]
+        # self.calibrate_angle_multi = input_dict["calibrate_angle_multi"]
+
+        self.calibration_MainWindow = QtWidgets.QMainWindow()
+        self.calibration_gui = C_GUI.Ui_MainWindow()
+        self.calibration_gui.setupUi(self.calibration_MainWindow)
+
+        self.temp_calibrate_x = self.SV.calibrate_x
+        self.temp_calibrate_y = self.SV.calibrate_y
+        self.temp_calibrate_angle = self.SV.calibrate_angle
+        self.temp_calibrate_x_multi = self.SV.calibrate_x_multi
+        self.temp_calibrate_y_multi = self.SV.calibrate_y_multi
+        self.temp_calibrate_angle_multi = self.SV.calibrate_angle_multi
+
+
+        self.calibration_gui.XCalibration_constant_spinBox.valueChanged.connect(self.x_spin)
+        self.calibration_gui.YCalibration_constant_spinBox.valueChanged.connect(self.y_spin)
+        self.calibration_gui.AngleCalibration_constant_spinBox.valueChanged.connect(self.angle_spin)
+        self.calibration_gui.XCalibration_spinBox.valueChanged.connect(self.x_spin_multi)
+        self.calibration_gui.YCalibration_spinBox.valueChanged.connect(self.y_spin_multi)
+        self.calibration_gui.AngleCalibration_spinBox.valueChanged.connect(self.angle_spin_multi)
+        self.calibration_gui.XCalibration_constant_slider.valueChanged.connect(self.x_slider)
+        self.calibration_gui.YCalibration_constant_slider.valueChanged.connect(self.y_slider)
+        self.calibration_gui.AngleCalibration_constant_slider.valueChanged.connect(self.angle_slider)
+        self.calibration_gui.XCalibration_slider.valueChanged.connect(self.x_slider_multi)
+        self.calibration_gui.YCalibration_slider.valueChanged.connect(self.y_slider_multi)
+        self.calibration_gui.AngleCalibration_slider.valueChanged.connect(self.angle_slider_multi)
+        self.calibration_MainWindow.closeEvent = self.closeEvent
+        self.calibration_gui.ExitBtn.clicked.connect(self.calibration_MainWindow.close)
+        self.calibration_gui.ConfirmBtn.clicked.connect(self.ConfirmBtn_click)
+        self.calibration_gui.ResetBtn.clicked.connect(self.ResetBtn_click)
+        self.calibration_gui.ExportBtn.clicked.connect(self.ExportBtn_click)
+        self.calibration_gui.ImportBtn.clicked.connect(self.ImportBtn_click)
+
+        self.initial_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.local_obstacle_x, self.SV.local_obstacle_y, 'g.')
+        self.current_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.local_obstacle_x, self.SV.local_obstacle_y, 'b.')
+        self.calibrate_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.local_obstacle_x, self.SV.local_obstacle_y, 'r.')
+        self.position_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.vision_data[0], self.SV.vision_data[1], 'bo')
+        self.calibrate_position_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.vision_data[0], self.SV.vision_data[1], 'ro')
+
+    def show_window(self):
+        self.calibration_MainWindow.show()
+        self.calibration_animation = FuncAnimation(self.calibration_gui.Calibration.figure, self.animation, blit=True, interval=50)
+
+    def close_window(self):
+        self.calibration_MainWindow.close()
+
+
+    def x_spin(self):
+        self.temp_calibrate_x = self.calibration_gui.XCalibration_constant_spinBox.value()
+        self.calibration_gui.XCalibration_constant_label.setText("X Calibration : {}".format(self.temp_calibrate_x))
+        self.calibration_gui.XCalibration_constant_slider.setValue(self.temp_calibrate_x)
+
+    def x_spin_multi(self):
+        self.temp_calibrate_x_multi = self.calibration_gui.XCalibration_spinBox.value() / 100
+        self.calibration_gui.XCalibration_label.setText("X Calibration multiply: {} %".format(self.calibration_gui.XCalibration_spinBox.value()))
+        self.calibration_gui.XCalibration_slider.setValue(self.calibration_gui.XCalibration_spinBox.value())
+
+    def x_slider(self):
+        self.temp_calibrate_x = self.calibration_gui.XCalibration_constant_slider.value()
+        self.calibration_gui.XCalibration_constant_label.setText("X Calibration : {}".format(self.temp_calibrate_x))
+        self.calibration_gui.XCalibration_constant_spinBox.setValue(self.temp_calibrate_x)
+
+    def x_slider_multi(self):
+        self.temp_calibrate_x_multi = self.calibration_gui.XCalibration_slider.value() / 100
+        self.calibration_gui.XCalibration_label.setText("X Calibration multiply: {} %".format(self.calibration_gui.XCalibration_slider.value()))
+        self.calibration_gui.XCalibration_spinBox.setValue(self.calibration_gui.XCalibration_slider.value())
+
+    def y_spin(self):
+        self.temp_calibrate_y = self.calibration_gui.YCalibration_constant_spinBox.value()
+        self.calibration_gui.YCalibration_constant_label.setText("Y Calibration : {}".format(self.temp_calibrate_y))
+        self.calibration_gui.YCalibration_constant_slider.setValue(self.temp_calibrate_y)
+
+    def y_spin_multi(self):
+        self.temp_calibrate_y_multi = self.calibration_gui.YCalibration_spinBox.value() / 100
+        self.calibration_gui.YCalibration_label.setText("Y Calibration multiply : {} %".format(self.calibration_gui.YCalibration_spinBox.value()))
+        self.calibration_gui.YCalibration_slider.setValue(self.calibration_gui.YCalibration_spinBox.value())
+
+    def y_slider(self):
+        self.temp_calibrate_y = self.calibration_gui.YCalibration_constant_slider.value()
+        self.calibration_gui.YCalibration_constant_label.setText("Y Calibration : {}".format(self.temp_calibrate_y))
+        self.calibration_gui.YCalibration_constant_spinBox.setValue(self.temp_calibrate_y)
+
+    def y_slider_multi(self):
+        self.temp_calibrate_y_multi = self.calibration_gui.YCalibration_slider.value() / 100
+        self.calibration_gui.YCalibration_label.setText("Y Calibration multiply: {} %".format(self.calibration_gui.YCalibration_slider.value()))
+        self.calibration_gui.YCalibration_spinBox.setValue(self.calibration_gui.YCalibration_slider.value())
+
+    def angle_spin(self):
+        self.temp_calibrate_angle = self.calibration_gui.AngleCalibration_constant_spinBox.value()
+        self.calibration_gui.AngleCalibration_constant_label.setText("Angle Calibration : {}".format(self.temp_calibrate_angle))
+        self.calibration_gui.AngleCalibration_constant_slider.setValue(self.temp_calibrate_angle)
+
+    def angle_spin_multi(self):
+        self.temp_calibrate_angle_multi = self.calibration_gui.AngleCalibration_spinBox.value() / 100
+        self.calibration_gui.AngleCalibration_label.setText("Angle Calibration multiply : {} %".format(self.calibration_gui.AngleCalibration_spinBox.value()))
+        self.calibration_gui.AngleCalibration_slider.setValue(self.calibration_gui.AngleCalibration_spinBox.value())
+
+    def angle_slider(self):
+        self.temp_calibrate_angle = self.calibration_gui.AngleCalibration_constant_slider.value()
+        self.calibration_gui.AngleCalibration_constant_label.setText("Angle Calibration : {}".format(self.temp_calibrate_angle))
+        self.calibration_gui.AngleCalibration_constant_spinBox.setValue(self.temp_calibrate_angle)
+
+    def angle_slider_multi(self):
+        self.temp_calibrate_angle_multi = self.calibration_gui.AngleCalibration_slider.value() / 100
+        self.calibration_gui.AngleCalibration_label.setText("Angle Calibration multiply: {} %".format(self.calibration_gui.AngleCalibration_slider.value()))
+        self.calibration_gui.AngleCalibration_spinBox.setValue(self.calibration_gui.AngleCalibration_slider.value())
+
+    def ConfirmBtn_click(self):
+        self.SV.calibrate_x = self.temp_calibrate_x
+        self.SV.calibrate_y = self.temp_calibrate_y
+        self.SV.calibrate_angle = self.temp_calibrate_angle
+        self.SV.calibrate_x_multi = self.temp_calibrate_x_multi
+        self.SV.calibrate_y_multi = self.temp_calibrate_y_multi
+        self.SV.calibrate_angle_multi = self.temp_calibrate_angle_multi
+        self.SV.gui.console_1.append("Confirm calibration : x : {} , y : {} , angle : {} \n \
+            x multi : {} , y multi : {} , angle multi : {}" \
+            .format(self.SV.calibrate_x, self.SV.calibrate_y, self.SV.calibrate_angle, \
+                self.SV.calibrate_x_multi, self.SV.calibrate_y_multi, self.SV.calibrate_angle_multi))
+        self.SV.gui.MessageBox_Edit.setText("Confirm calibration : x : {} , y : {} , angle : {}  \
+            x multi : {} , y multi : {} , angle multi : {}" \
+            .format(self.SV.calibrate_x, self.SV.calibrate_y, self.SV.calibrate_angle, \
+                self.SV.calibrate_x_multi, self.SV.calibrate_y_multi, self.SV.calibrate_angle_multi))
+
+    def ResetBtn_click(self):
+        self.initial_line.set_data(self.SV.local_obstacle_x, self.SV.local_obstacle_y)
+
+    def closeEvent(self, event):
+        # print("closeEvent")
+        self.SV.gui.console_1.append("Calibration stop")
+        self.SV.gui.MessageBox_Edit.setText("Calibration stop")
+        self.calibration_animation._stop()
+        self.SV.calibration_run = False
+        event.accept()
+
+    def animation(self, i):
+        self.calibration_gui.VisionData_label.setText(str(self.SV.vision_data))
+
+        temp_vision_x = self.SV.vision_data[0] * self.temp_calibrate_x_multi + self.temp_calibrate_x
+        temp_vision_y = self.SV.vision_data[1] * self.temp_calibrate_y_multi + self.temp_calibrate_y
+        temp_vision_angle_radian = math.radians(self.SV.vision_data[2] * self.temp_calibrate_angle_multi + self.temp_calibrate_angle)
+        # temp_local_obstacle_x = numpy.cos(numpy.array(self.SV.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
+        #     numpy.array(self.lidar_radius) + temp_vision_x
+        # temp_local_obstacle_y = numpy.sin(numpy.array(self.SV.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
+        #     numpy.array(self.lidar_radius) + temp_vision_y
+        temp_local_obstacle_x, temp_local_obstacle_y = self.CALCULATOR.calculate_local_obstacle(
+                                                temp_vision_x, temp_vision_y, 
+                                                temp_vision_angle_radian,
+                                                self.SV.lidar_radius, self.SV.lidar_angle
+                                                )
+
+        self.current_line.set_data(self.SV.local_obstacle_x, self.SV.local_obstacle_y)
+        self.calibrate_line.set_data(temp_local_obstacle_x, temp_local_obstacle_y)
+        self.position_line.set_data(self.SV.vision_data[0], self.SV.vision_data[1])
+        self.calibrate_position_line.set_data(temp_vision_x, temp_vision_y)
+        self.calibration_gui.Calibration.calibration_map_axes.autoscale(True)
+
+        return self.current_line, self.calibrate_line, self.position_line, self.calibrate_position_line, self.initial_line,
+        # return self.current_line, self.calibrate_line, self.position_line, self.calibrate_position_line,
+
+    def ExportBtn_click(self):
+        try:
+            name = QtWidgets.QFileDialog.getSaveFileName(self.calibration_MainWindow, \
+                'Save File', "", "Rover Calibration Files (*.calibration);;Text Files (*.txt);;All Files (*)")
+            if name != ("", ""):
+                file = open(name[0],'w')
+                text = "x{}xm{}y{}ym{}a{}am{}".format(self.SV.calibrate_x, self.SV.calibrate_x_multi, \
+                    self.SV.calibrate_y, self.SV.calibrate_y_multi, self.SV.calibrate_angle, self.SV.calibrate_angle_multi)
+                file.write(text)
+                file.close()
+        except TypeError:
+            traceback.print_exc()
+
+    def ImportBtn_click(self):
+        name = QtWidgets.QFileDialog.getOpenFileName(self.calibration_MainWindow, \
+            'Open File', "", "Rover Calibration Files (*.calibration);;Text Files (*.txt);;All Files (*)")
+        if name != ("", ""):
+            file = open(name[0],'r')
+            text = file.read()
+            self.temp_calibrate_x = int(text[text.index("x") + 1 : text.index("xm")])
+            self.temp_calibrate_x_multi = float(text[text.index("xm") + 2 : text.index("y")])
+            self.temp_calibrate_y = int(text[text.index("y") + 1 : text.index("ym")])
+            self.temp_calibrate_y_multi = float(text[text.index("ym") + 2 : text.index("a")])
+            self.temp_calibrate_angle = int(text[text.index("a") + 1 : text.index("am")])
+            self.temp_calibrate_angle_multi = float(text[text.index("am") + 2 : len(text)])
+            self.calibration_gui.XCalibration_constant_slider.setValue(self.temp_calibrate_x)
+            self.calibration_gui.YCalibration_constant_slider.setValue(self.temp_calibrate_y)
+            self.calibration_gui.AngleCalibration_constant_slider.setValue(self.temp_calibrate_angle)
+            self.calibration_gui.XCalibration_slider.setValue(self.temp_calibrate_x_multi * 100)
+            self.calibration_gui.YCalibration_slider.setValue(self.temp_calibrate_y_multi * 100)
+            self.calibration_gui.AngleCalibration_slider.setValue(self.temp_calibrate_angle_multi * 100)
+            print(
+                self.temp_calibrate_x, self.temp_calibrate_x_multi,
+                self.temp_calibrate_y, self.temp_calibrate_y_multi,
+                self.temp_calibrate_angle, self.temp_calibrate_angle_multi
+                )
+
+            file.close()
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     ROVER_gui()
