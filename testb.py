@@ -407,24 +407,51 @@
 #     ex.show()
 #     app.exec_()
 
+# import time
+# class aaa():
+#     def f1(self, i):
+#         print(i)
+# class bbb(aaa):
+#     def __init__(self):
+#         self.bbb1 = 10
+#         self.f1(3)
+# class ccc(bbb):
+#     def __init__(self):
+#         bbb.__init__(self)
+#         print(self.bbb1)
+
+
+# class info():
+#     def __init__(self):
+#         self.a = 1
+#         self.b = 2
+#         self.c = 3
+# class a1(info):
+#     super().__init__()
+
+
 import time
-class aaa():
-    def f1(self, i):
-        print(i)
-class bbb(aaa):
-    def __init__(self):
-        self.bbb1 = 10
-        self.f1(3)
-class ccc(bbb):
-    def __init__(self):
-        bbb.__init__(self)
-        print(self.bbb1)
+
+def f1(a=None):
+    a = a if not a is None else 1
+    return a
+
+global b
+b = 2
+def f2(z = 1):
+    return z
+# class c:
+#     def __init__(self):
+#         self.x = 2
+#     def re(self):
+#         return self.x
+# cc = c()
 
 
-class info():
-    def __init__(self):
-        self.a = 1
-        self.b = 2
-        self.c = 3
-class a1(info):
-    super().__init__()
+for j in range(5):
+    st = time.time()
+    for i in range(1000000):
+        b = f2(8)
+        # cc.re()
+    et = time.time()
+    print(et-st)

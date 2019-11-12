@@ -67,7 +67,28 @@ class Calculator:
     def __init__(self, SharedVariables_class):
         self.SV = SharedVariables_class
 
-    def calculate_local_obstacle(
+    def calculate_local_obstacle(self):
+        self.SV.local_obstacle_x = numpy.round(numpy.cos(numpy.array(self.SV.lidar_angle) - \
+            self.SV.vision_angle_radian + 0.5*math.pi)*\
+            numpy.array(self.SV.lidar_radius) + self.SV.vision_x, 0)
+        self.SV.local_obstacle_y = numpy.round(numpy.sin(numpy.array(self.SV.lidar_angle) - \
+            self.SV.vision_angle_radian + 0.5*math.pi)*\
+            numpy.array(self.SV.lidar_radius) + self.SV.vision_y, 0)
+
+    # def calculate_arrow(self, vision_x, vision_y, vision_angle_radian):
+    #     return [vision_x, vision_x + 200*math.cos(-vision_angle_radian + 0.5*math.pi)], \
+    #             [vision_y, vision_y + 200*math.sin(-vision_angle_radian + 0.5*math.pi)]
+    def calculate_arrow(self):
+        self.SV.arrow_x = [self.SV.vision_x, self.SV.vision_x + 200*math.cos(-self.SV.vision_angle_radian+0.5*math.pi)]
+        self.SV.arrow_y = [self.SV.vision_y, self.SV.vision_y + 200*math.sin(-self.SV.vision_angle_radian+0.5*math.pi)]
+
+    def calculate_vision_xy(self):
+        self.SV.vision_x = self.SV.vision_data[0] * self.SV.calibrate_x_multi + self.SV.calibrate_x
+        self.SV.vision_y = self.SV.vision_data[1] * self.SV.calibrate_y_multi + self.SV.calibrate_y
+
+
+
+    def calculate_temp_local_obstacle(
                         self, vision_x, vision_y, vision_angle_radian, 
                         lidar_radius, lidar_angle
                         ):
@@ -76,10 +97,10 @@ class Calculator:
                 numpy.sin(numpy.array(lidar_angle) - vision_angle_radian + 0.5*math.pi)*\
                     numpy.array(lidar_radius) + vision_y
 
-    def calculate_arrow(self, vision_x, vision_y, vision_angle_radian):
-        return [vision_x, vision_x + 200*math.cos(-vision_angle_radian + 0.5*math.pi)], \
-                [vision_y, vision_y + 200*math.sin(-vision_angle_radian + 0.5*math.pi)]
-
+    def calculate_temp_xy_angle(self):
+        return self.SV.vision_data[0] * self.temp_calibrate_x_multi + self.temp_calibrate_x, \
+            self.SV.vision_data[1] * self.temp_calibrate_y_multi + self.temp_calibrate_y, \
+                math.radians(self.SV.vision_data[2] * self.temp_calibrate_angle_multi + self.temp_calibrate_angle),\
 
 
 class ROVER_gui():
@@ -300,11 +321,7 @@ class ROVER_gui():
                 #     numpy.array(self.lidar_radius) + self.vision_x
                 # self.local_obstacle_y = numpy.sin(numpy.array(self.lidar_angle) - self.vision_angle_radian + 0.5*math.pi)*\
                 #     numpy.array(self.lidar_radius) + self.vision_y
-                self.SV.local_obstacle_x, self.SV.local_obstacle_y = self.CALCULATOR.calculate_local_obstacle(
-                                            self.SV.vision_x, self.SV.vision_y, 
-                                            self.SV.vision_angle_radian,
-                                            self.SV.lidar_radius, self.SV.lidar_angle
-                                            )
+                self.CALCULATOR.calculate_local_obstacle()
 
 
                 # self.SV.arrow_x = [self.vision_x, self.vision_x + 200*math.cos(-self.SV.vision_angle_radian+0.5*math.pi)]
@@ -325,7 +342,7 @@ class ROVER_gui():
     def calibration(self):
         if not hasattr(self, "CAL_GUI"):
             # self.CAL_GUI = CalibrationUI(self.variables_pass_to_calibration
-            self.CAL_GUI = CalibrationUI(self.SV)
+            self.CAL_GUI = CalibrationUI(self.SV, self.CALCULATOR)
 
         if not self.vision_idle and self.vision_server_run and self.lidar_server_run:
             if not self.SV.calibration_run and not self.CAL_GUI.calibration_MainWindow.isVisible():
@@ -753,14 +770,15 @@ class CalibrationUI(Calculator):
     def animation(self, i):
         self.calibration_gui.VisionData_label.setText(str(self.SV.vision_data))
 
-        temp_vision_x = self.SV.vision_data[0] * self.temp_calibrate_x_multi + self.temp_calibrate_x
-        temp_vision_y = self.SV.vision_data[1] * self.temp_calibrate_y_multi + self.temp_calibrate_y
-        temp_vision_angle_radian = math.radians(self.SV.vision_data[2] * self.temp_calibrate_angle_multi + self.temp_calibrate_angle)
+        temp_vision_x, temp_vision_y, temp_vision_angle_radian = self.CALCULATOR.calculate_temp_xy_angle()
+        # temp_vision_x = self.SV.vision_data[0] * self.temp_calibrate_x_multi + self.temp_calibrate_x
+        # temp_vision_y = self.SV.vision_data[1] * self.temp_calibrate_y_multi + self.temp_calibrate_y
+        # temp_vision_angle_radian = math.radians(self.SV.vision_data[2] * self.temp_calibrate_angle_multi + self.temp_calibrate_angle)
         # temp_local_obstacle_x = numpy.cos(numpy.array(self.SV.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
         #     numpy.array(self.lidar_radius) + temp_vision_x
         # temp_local_obstacle_y = numpy.sin(numpy.array(self.SV.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
         #     numpy.array(self.lidar_radius) + temp_vision_y
-        temp_local_obstacle_x, temp_local_obstacle_y = self.CALCULATOR.calculate_local_obstacle(
+        temp_local_obstacle_x, temp_local_obstacle_y = self.CALCULATOR.calculate_temp_local_obstacle(
                                                 temp_vision_x, temp_vision_y, 
                                                 temp_vision_angle_radian,
                                                 self.SV.lidar_radius, self.SV.lidar_angle
