@@ -82,10 +82,12 @@ class Calculator:
         self.SV.arrow_x = [self.SV.vision_x, self.SV.vision_x + 200*math.cos(-self.SV.vision_angle_radian+0.5*math.pi)]
         self.SV.arrow_y = [self.SV.vision_y, self.SV.vision_y + 200*math.sin(-self.SV.vision_angle_radian+0.5*math.pi)]
 
-    def calculate_vision_xy(self):
+    def calculate_vision_xy_angle(self):
         self.SV.vision_x = self.SV.vision_data[0] * self.SV.calibrate_x_multi + self.SV.calibrate_x
         self.SV.vision_y = self.SV.vision_data[1] * self.SV.calibrate_y_multi + self.SV.calibrate_y
-
+        self.SV.vision_angle_radian = math.radians(
+            self.SV.vision_data[2] * self.SV.calibrate_angle_multi + self.SV.calibrate_angle
+            )
 
 
     def calculate_temp_local_obstacle(
@@ -97,10 +99,12 @@ class Calculator:
                 numpy.sin(numpy.array(lidar_angle) - vision_angle_radian + 0.5*math.pi)*\
                     numpy.array(lidar_radius) + vision_y
 
-    def calculate_temp_xy_angle(self):
-        return self.SV.vision_data[0] * self.temp_calibrate_x_multi + self.temp_calibrate_x, \
-            self.SV.vision_data[1] * self.temp_calibrate_y_multi + self.temp_calibrate_y, \
-                math.radians(self.SV.vision_data[2] * self.temp_calibrate_angle_multi + self.temp_calibrate_angle),\
+    def calculate_temp_vision_xy_angle(self, temp_calibrate_x, temp_calibrate_y,
+                        temp_calibrate_x_multi, temp_calibrate_y_multi, 
+                        temp_calibrate_angle, temp_calibrate_angle_multi):
+        return self.SV.vision_data[0] * temp_calibrate_x_multi + temp_calibrate_x, \
+            self.SV.vision_data[1] * temp_calibrate_y_multi + temp_calibrate_y, \
+                math.radians(self.SV.vision_data[2] * temp_calibrate_angle_multi + temp_calibrate_angle),\
 
 
 class ROVER_gui():
@@ -110,63 +114,56 @@ class ROVER_gui():
         app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         MainWindow = QtWidgets.QMainWindow()
 
-
-        self.keyboard_control_run = False
-        self.animation_run = False
-
-        self.rover_run = False
-
-        self.current_speed = 0
-
-        # self.lidar_data = [[0,0,0],[1,1,1]]
-        # self.lidar_angle = [0]
-        # self.lidar_radius = [0]
-        self.lidar_server_run = False
-
-        self.vision_server_run = False
-        # self.vision_status = -1
-        # self.vision_data = [0, 0, 0, self.vision_status]
-        self.vision_idle = False
-        self.vision_build_map_mode = False
-        self.vision_use_map_mode = False
-        # self.vision_x = 0
-        # self.vision_y = 0
-
-        # self.local_obstacle_x = numpy.array([0, 1, 2])
-        # self.local_obstacle_y = numpy.array([0, 1, 2])
-        # self.global_obstacle_x = numpy.array([])
-        # self.global_obstacle_y = numpy.array([])
-        # self.vision_angle_radian = 0
-        # self.arrow_x = [0]
-        # self.arrow_y = [0]
-
-        # self.calibrate_difference_between_lidar_and_vision = 130
-        # self.temp_calibrate_difference_between_lidar_and_vision = 130
-        self.calibration_run = False
-        # self.calibrate_x = 0
-        # self.calibrate_y = 0
-        # self.calibrate_angle = 0
-        # self.calibrate_x_multi = 1
-        # self.calibrate_y_multi = 1
-        # self.calibrate_angle_multi = 1
-
-
         self.gui = GUI.Ui_MainWindow()
         self.gui.setupUi(MainWindow)
 
-        # self.CAL_GUI = CalibrationUI()
-        # self.variables_pass_to_calibration = {
-        #     "gui":self.gui, "vision_data":self.vision_data, 
-        #     "lidar_angle":self.lidar_angle, "lidar_radius":self.lidar_radius,
-        #     "local_obstacle_x":self.local_obstacle_x, "local_obstacle_y":self.local_obstacle_y,
-        #     "calibrate_x":self.calibrate_x, "calibrate_y":self.calibrate_y, 
-        #     "calibrate_angle":self.calibrate_angle,
-        #     "calibrate_x_multi":self.calibrate_x_multi, "calibrate_y_multi":self.calibrate_y_multi,
-        #     "calibrate_angle_multi":self.calibrate_angle_multi
-        # }
         self.SV = SharedVariables()
         self.SV.gui = self.gui
         self.CALCULATOR = Calculator(self.SV)
+
+
+        self.current_speed = 0
+
+
+        # self.rover_run = False
+        # self.lidar_server_run = False
+        # self.vision_server_run = False
+        # self.animation_run = False
+        # self.vision_build_map_mode = False
+        # self.vision_use_map_mode = False
+        # self.SV.calibration_run = False
+        # self.keyboard_control_run = False
+        # self.vision_idle = False
+        self.rover_run, self.lidar_server_run, self.vision_server_run, \
+        self.animation_run, self.vision_build_map_mode, self.vision_use_map_mode, \
+        self.SV.calibration_run, self.keyboard_control_run, self.vision_idle \
+            = False, False, False, False, False, False, False, False, False
+
+        self.check_status_rover_run_list = [
+            self.rover_run, self.vision_server_run, self.lidar_server_run
+        ]
+
+        self.check_status_rover_Btn_list = [
+            self.gui.RoverMainOnOffBtn,
+            self.gui.VisionOnOffBtn,
+            self.gui.LidarOnOffBtn
+        ]
+
+        self.check_status_func_run_list = [
+            self.animation_run,
+            self.vision_build_map_mode, 
+            self.vision_use_map_mode,
+            self.SV.calibration_run,
+            self.keyboard_control_run
+        ]
+
+        self.check_status_func_Btn_list = [
+            self.gui.ShowMapBtn,
+            self.gui.VisionBuildMapBtn,
+            self.gui.VisionUseMapBtn,
+            self.gui.CalibrationBtn,
+            self.gui.KeyboardControlBtn
+        ]
 
         self.gui.StopAllBtn.clicked.connect(self.StopAllBtn_click)
         self.gui.KeyboardControlBtn.clicked.connect(self.KeyboardControlBtn_click)
@@ -179,7 +176,6 @@ class ROVER_gui():
         self.gui.KeyboardControl_SetSpeedBtn.clicked.connect(self.KeyboardControl_SetSpeedBtn_click)
         self.gui.KeyBoardControl_speed.valueChanged.connect(self.KeyBoardControl_speed_value_change)
         self.gui.CalibrationBtn.clicked.connect(self.calibration)
-
 
         self.gui_get_lidar_vision_client = rover_socket.UDP_client(50010, 0, '192.168.5.2')
         self.gui_get_rover_status_client = rover_socket.UDP_client(50012, 0, '192.168.5.2')
@@ -207,47 +203,59 @@ class ROVER_gui():
 
 
 
-
         MainWindow.show()
         # self.show_map()
         sys.exit(app.exec_())
 
 
     def check_status(self):
-        if self.rover_run:
-            self.gui.RoverMainOnOffBtn.setStyleSheet("background-color: rgb(0, 255, 0);")
-        else:
-            self.gui.RoverMainOnOffBtn.setStyleSheet("background-color: rgb(255, 0, 0);")
+        for i, j in zip([self.rover_run, self.vision_server_run, self.lidar_server_run], 
+                    range(len(self.check_status_rover_run_list))):
+            if i:
+                 self.check_status_rover_Btn_list[j].setStyleSheet("background-color: rgb(0, 255, 0);")
+            else:
+                self.check_status_rover_Btn_list[j].setStyleSheet("background-color: rgb(255, 0, 0);")
+        for i, j in zip([self.animation_run, self.vision_build_map_mode, self.vision_use_map_mode,
+                    self.SV.calibration_run, self.keyboard_control_run], 
+                    range(len(self.check_status_func_run_list))):
+            if i:
+                self.check_status_func_Btn_list[j].setStyleSheet("background-color: rgb(0, 255, 93);")
+            else:
+                self.check_status_func_Btn_list[j].setStyleSheet("background-color: rgb(112, 155, 255);")
+        # if self.rover_run:
+        #     self.gui.RoverMainOnOffBtn.setStyleSheet("background-color: rgb(0, 255, 0);")
+        # else:
+        #     self.gui.RoverMainOnOffBtn.setStyleSheet("background-color: rgb(255, 0, 0);")
 
-        if self.vision_server_run:
-            self.gui.VisionOnOffBtn.setStyleSheet("background-color: rgb(0, 255, 0);")
-        else:
-            self.gui.VisionOnOffBtn.setStyleSheet("background-color: rgb(255, 0, 0);")
+        # if self.vision_server_run:
+        #     self.gui.VisionOnOffBtn.setStyleSheet("background-color: rgb(0, 255, 0);")
+        # else:
+        #     self.gui.VisionOnOffBtn.setStyleSheet("background-color: rgb(255, 0, 0);")
 
-        if self.lidar_server_run:
-            self.gui.LidarOnOffBtn.setStyleSheet("background-color: rgb(0, 255, 0);")
-        else:
-            self.gui.LidarOnOffBtn.setStyleSheet("background-color: rgb(255, 0, 0);")
+        # if self.lidar_server_run:
+        #     self.gui.LidarOnOffBtn.setStyleSheet("background-color: rgb(0, 255, 0);")
+        # else:
+        #     self.gui.LidarOnOffBtn.setStyleSheet("background-color: rgb(255, 0, 0);")
 
-        if self.animation_run:
-            self.gui.ShowMapBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
-        else:
-            self.gui.ShowMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
+        # if self.animation_run:
+        #     self.gui.ShowMapBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
+        # else:
+        #     self.gui.ShowMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
         
-        if self.vision_build_map_mode:
-            self.gui.VisionBuildMapBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
-        else:
-            self.gui.VisionBuildMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
+        # if self.vision_build_map_mode:
+        #     self.gui.VisionBuildMapBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
+        # else:
+        #     self.gui.VisionBuildMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
 
-        if self.vision_use_map_mode:
-            self.gui.VisionUseMapBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
-        else:
-            self.gui.VisionUseMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
+        # if self.vision_use_map_mode:
+        #     self.gui.VisionUseMapBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
+        # else:
+        #     self.gui.VisionUseMapBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
 
-        if self.SV.calibration_run:
-            self.gui.CalibrationBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
-        else:
-            self.gui.CalibrationBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
+        # if self.SV.calibration_run:
+        #     self.gui.CalibrationBtn.setStyleSheet("background-color: rgb(0, 255, 93);")
+        # else:
+        #     self.gui.CalibrationBtn.setStyleSheet("background-color: rgb(112, 155, 255);")
 
     def get_rover_status(self):
         '''Specialize for getting rover status'''
@@ -310,10 +318,10 @@ class ROVER_gui():
             self.SV.vision_data = temp_lidar_vision_receive[1]
             # self.gui.console_1.append(str(temp_lidar_vision_receive[1]))
             if self.SV.vision_data[3] == 4:
-                self.SV.vision_angle_radian = math.radians(self.SV.vision_data[2] * self.SV.calibrate_angle_multi + self.SV.calibrate_angle)
-                self.SV.vision_x = self.SV.vision_data[0] * self.SV.calibrate_x_multi + self.SV.calibrate_x
-                self.SV.vision_y = self.SV.vision_data[1] * self.SV.calibrate_y_multi + self.SV.calibrate_y
-
+                # self.SV.vision_angle_radian = math.radians(self.SV.vision_data[2] * self.SV.calibrate_angle_multi + self.SV.calibrate_angle)
+                # self.SV.vision_x = self.SV.vision_data[0] * self.SV.calibrate_x_multi + self.SV.calibrate_x
+                # self.SV.vision_y = self.SV.vision_data[1] * self.SV.calibrate_y_multi + self.SV.calibrate_y
+                self.CALCULATOR.calculate_vision_xy_angle()
                 # self.vision_x = self.vision_data[0] * self.calibrate_x_multi + self.calibrate_x
                 # self.vision_y = self.vision_data[1] * self.calibrate_y_multi + self.calibrate_y
 
@@ -326,10 +334,7 @@ class ROVER_gui():
 
                 # self.SV.arrow_x = [self.vision_x, self.vision_x + 200*math.cos(-self.SV.vision_angle_radian+0.5*math.pi)]
                 # self.SV.arrow_y = [self.vision_y, self.vision_y + 200*math.sin(-self.SV.vision_angle_radian+0.5*math.pi)]
-                self.SV.arrow_x, self.SV.arrow_y = self.CALCULATOR.calculate_arrow(
-                                                            self.SV.vision_x, self.SV.vision_y, 
-                                                            self.SV.vision_angle_radian
-                                                            )
+                self.CALCULATOR.calculate_arrow()
 
                 # self.gui.VisionData_text.setText(str(self.vision_data))
 
@@ -770,19 +775,16 @@ class CalibrationUI(Calculator):
     def animation(self, i):
         self.calibration_gui.VisionData_label.setText(str(self.SV.vision_data))
 
-        temp_vision_x, temp_vision_y, temp_vision_angle_radian = self.CALCULATOR.calculate_temp_xy_angle()
-        # temp_vision_x = self.SV.vision_data[0] * self.temp_calibrate_x_multi + self.temp_calibrate_x
-        # temp_vision_y = self.SV.vision_data[1] * self.temp_calibrate_y_multi + self.temp_calibrate_y
-        # temp_vision_angle_radian = math.radians(self.SV.vision_data[2] * self.temp_calibrate_angle_multi + self.temp_calibrate_angle)
-        # temp_local_obstacle_x = numpy.cos(numpy.array(self.SV.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
-        #     numpy.array(self.lidar_radius) + temp_vision_x
-        # temp_local_obstacle_y = numpy.sin(numpy.array(self.SV.lidar_angle) - temp_vision_angle_radian + 0.5*math.pi)*\
-        #     numpy.array(self.lidar_radius) + temp_vision_y
+        temp_vision_x, temp_vision_y, temp_vision_angle_radian = self.CALCULATOR.calculate_temp_vision_xy_angle(
+                                    self.temp_calibrate_x, self.temp_calibrate_y, 
+                                    self.temp_calibrate_x_multi, self.temp_calibrate_y_multi,
+                                    self.temp_calibrate_angle, self.temp_calibrate_angle_multi
+                                )
         temp_local_obstacle_x, temp_local_obstacle_y = self.CALCULATOR.calculate_temp_local_obstacle(
                                                 temp_vision_x, temp_vision_y, 
                                                 temp_vision_angle_radian,
                                                 self.SV.lidar_radius, self.SV.lidar_angle
-                                                )
+                                            )
 
         self.current_line.set_data(self.SV.local_obstacle_x, self.SV.local_obstacle_y)
         self.calibrate_line.set_data(temp_local_obstacle_x, temp_local_obstacle_y)
@@ -824,11 +826,11 @@ class CalibrationUI(Calculator):
             self.calibration_gui.XCalibration_slider.setValue(self.temp_calibrate_x_multi * 100)
             self.calibration_gui.YCalibration_slider.setValue(self.temp_calibrate_y_multi * 100)
             self.calibration_gui.AngleCalibration_slider.setValue(self.temp_calibrate_angle_multi * 100)
-            print(
-                self.temp_calibrate_x, self.temp_calibrate_x_multi,
-                self.temp_calibrate_y, self.temp_calibrate_y_multi,
-                self.temp_calibrate_angle, self.temp_calibrate_angle_multi
-                )
+            # print(
+            #     self.temp_calibrate_x, self.temp_calibrate_x_multi,
+            #     self.temp_calibrate_y, self.temp_calibrate_y_multi,
+            #     self.temp_calibrate_angle, self.temp_calibrate_angle_multi
+            #     )
 
             file.close()
 
