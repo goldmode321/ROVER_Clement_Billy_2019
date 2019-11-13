@@ -447,11 +447,21 @@ def f2(z = 1):
 #         return self.x
 # cc = c()
 
+def func(a):
+    b = a if a%2==0 else 0
+def func2(a):
+    if a%2==0:
+        b=a
+    else:
+        b=0
 
+a = 0
 for j in range(5):
     st = time.time()
     for i in range(1000000):
-        b = f2(8)
+        func(a)
+        a += 1
+        # b = f2(8)
         # cc.re()
     et = time.time()
     print(et-st)

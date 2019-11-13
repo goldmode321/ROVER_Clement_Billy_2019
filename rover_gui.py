@@ -456,90 +456,58 @@ class ROVER_gui():
 
         def controller():
             if keyboard.is_pressed('w') and not keyboard.is_pressed('a') and not keyboard.is_pressed('d'):
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['w'])
-
-
             elif keyboard.is_pressed('w') and keyboard.is_pressed('a') and not keyboard.is_pressed('d'):
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(0, 255, 0);")
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['wa'])
-
-
             elif keyboard.is_pressed('w') and not keyboard.is_pressed('a') and keyboard.is_pressed('d'):
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(0, 255, 0);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['wd'])
-
-
             elif keyboard.is_pressed('s') and not keyboard.is_pressed('a') and not keyboard.is_pressed('d'):
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['s'])
-
-
             elif keyboard.is_pressed('s') and keyboard.is_pressed('a') and not keyboard.is_pressed('d'):
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(0, 255, 0);")
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['sa'])
-
-
             elif keyboard.is_pressed('s') and not keyboard.is_pressed('a') and keyboard.is_pressed('d'):
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(0, 255, 0);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['sd'])
-
-
             elif keyboard.is_pressed('d') and not keyboard.is_pressed('w') and not keyboard.is_pressed('s'):
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['d'])
-
-
             elif keyboard.is_pressed('a') and not keyboard.is_pressed('w') and not keyboard.is_pressed('s'):
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(0, 255, 0);")
-
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyDown.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")
-
                 self.gui_keyboard_control_client.send_list(['a'])
 
 
-            else:
-                self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
+            self.gui.KeyUp.setStyleSheet("background-color: rgb(0, 255, 0);") \
+                if keyboard.is_pressed('w') else \
+                    self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
+
+            self.gui.KeyDown.setStyleSheet("background-color: rgb(0, 255, 0);") \
+                if keyboard.is_pressed('s') else \
                 self.gui.KeyDown.setStyleSheet("background-color: rgb(255, 255, 255);")
-                self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")               
-                self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
+ 
+            self.gui.KeyRight.setStyleSheet("background-color: rgb(0, 255, 0);") \
+                if keyboard.is_pressed('d') else \
+                self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")
+
+            self.gui.KeyLeft.setStyleSheet("background-color: rgb(0 255, 0);") \
+                if keyboard.is_pressed('a') else \
+                    self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
+
+
+
+            # if keyboard.is_pressed('w'):
+            #     self.gui.KeyUp.setStyleSheet("background-color: rgb(0, 255, 0);")
+            # else:
+            #     self.gui.KeyUp.setStyleSheet("background-color: rgb(255, 255, 255);")
+            # if keyboard.is_pressed('s'):
+            #     self.gui.KeyDown.setStyleSheet("background-color: rgb(0, 255, 0);")
+            # else:
+            #     self.gui.KeyDown.setStyleSheet("background-color: rgb(255, 255, 255);")
+            # if keyboard.is_pressed('d'):
+            #     self.gui.KeyRight.setStyleSheet("background-color: rgb(0, 255, 0);")
+            # else:
+            #     self.gui.KeyRight.setStyleSheet("background-color: rgb(255, 255, 255);")
+            # if keyboard.is_pressed('a'):
+            #     self.gui.KeyLeft.setStyleSheet("background-color: rgb(0 255, 0);")
+            # else:
+            #     self.gui.KeyLeft.setStyleSheet("background-color: rgb(255, 255, 255);")
+
 
         self.gui_keyboard_control_client = rover_socket.UDP_client(50011, 0, '192.168.5.2')
         self.KeyboardControlTimer = QtCore.QTimer()
@@ -626,19 +594,7 @@ class CalibrationUI(Calculator):
     def __init__(self, SharedVariables_class, calculator_class):
         self.SV = SharedVariables_class
         self.CALCULATOR = calculator_class
-    # def __init__(self, input_dict):
-        # self.gui = input_dict["gui"]
-        # self.vision_data = input_dict["vision_data"]
-        # self.lidar_angle = input_dict["lidar_angle"]
-        # self.lidar_radius = input_dict["lidar_radius"]
-        # self.local_obstacle_x = input_dict["local_obstacle_x"]
-        # self.local_obstacle_y = input_dict["local_obstacle_y"]
-        # self.calibrate_x = input_dict["calibrate_x"]
-        # self.calibrate_y = input_dict["calibrate_y"]
-        # self.calibrate_angle = input_dict["calibrate_angle"]
-        # self.calibrate_x_multi = input_dict["calibrate_x_multi"]
-        # self.calibrate_y_multi = input_dict["calibrate_y_multi"]
-        # self.calibrate_angle_multi = input_dict["calibrate_angle_multi"]
+
 
         self.calibration_MainWindow = QtWidgets.QMainWindow()
         self.calibration_gui = C_GUI.Ui_MainWindow()
