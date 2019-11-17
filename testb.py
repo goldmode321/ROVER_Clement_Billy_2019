@@ -430,104 +430,112 @@
 #     super().__init__()
 
 
-import time
+# import time
 
-def f1(a=None):
-    a = a if not a is None else 1
-    return a
+# def f1(a=None):
+#     a = a if not a is None else 1
+#     return a
 
-global b
-b = 2
-def f2(z = 1):
-    return z
-# class c:
-#     def __init__(self):
-#         self.x = 2
-#     def re(self):
-#         return self.x
-# cc = c()
+# global b
+# b = 2
+# def f2(z = 1):
+#     return z
+# # class c:
+# #     def __init__(self):
+# #         self.x = 2
+# #     def re(self):
+# #         return self.x
+# # cc = c()
 
-################
-def func(a):
-    b = a if a%2==0 else 0
-#################
-def func2(a):
-    if a%2==0:
-        b=a
-    else:
-        b=0
+# ################
+# def func(a):
+#     b = a if a%2==0 else 0
+# #################
+# def func2(a):
+#     if a%2==0:
+#         b=a
+#     else:
+#         b=0
 
-##########################
-def fun3():
-    a=1
-    a2=1
-    a3=1
-    a4=1
-    a5=1
-    a6=1
-    a7=1
-    a8=1
-    a9=1
-    a10=1
+# ##########################
+# def fun3():
+#     a=1
+#     a2=1
+#     a3=1
+#     a4=1
+#     a5=1
+#     a6=1
+#     a7=1
+#     a8=1
+#     a9=1
+#     a10=1
 
-#ooooooooooooooooooooooooooooooooo
-def fun4():
-    a,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10=1,1,1,1,1,1,1,1,1,1,1
+# #ooooooooooooooooooooooooooooooooo
+# def fun4():
+#     a,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10=1,1,1,1,1,1,1,1,1,1,1
 
-#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-def fun5():
-    a=list()
-    for i in range(10):
-        a.append(i)
+# #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+# def fun5():
+#     a=list()
+#     for i in range(10):
+#         a.append(i)
 
-global dic1
-dic1 = {0:0,1:0,2:0,3:0,4:0,5:0}
-#OOOOOOOOOOOOOOOOOOOOOOOOO
-def fun6(a):
-    if a%5 in dic1:
-        b = dic1[a%5]
-#XXXXXXXXXXXXXXXXXXXXX
-def fun7(a):
-    if a%5==0:
-        b = 0
-    elif a%5==1:
-        b=0
-    elif a%5==2:
-        b=0
-    elif a%5==3:
-        b=0
-    elif a%5==4:
-        b=0
-    elif a%5==5:
-        b=0
+# global dic1
+# dic1 = {0:0,1:0,2:0,3:0,4:0,5:0}
+# #OOOOOOOOOOOOOOOOOOOOOOOOO
+# def fun6(a):
+#     if a%5 in dic1:
+#         b = dic1[a%5]
+# #XXXXXXXXXXXXXXXXXXXXX
+# def fun7(a):
+#     if a%5==0:
+#         b = 0
+#     elif a%5==1:
+#         b=0
+#     elif a%5==2:
+#         b=0
+#     elif a%5==3:
+#         b=0
+#     elif a%5==4:
+#         b=0
+#     elif a%5==5:
+#         b=0
 
-global l1
-l1 = [1,2,3,4,5]
-#XXXXXXXXXXXXXXXXXXX
-def fun8():
-    a = l1[0]
-    a1 = l1[1]
-    a2 = l1[2]
-    a3 = l1[3]
-    a4 = l1[4]
-#OOOOOOOOOOOOOOOOOOO
-def fun9():
-    a,a1,a2,a3,a4=l1
+# global l1
+# l1 = [1,2,3,4,5]
+# #XXXXXXXXXXXXXXXXXXX
+# def fun8():
+#     a = l1[0]
+#     a1 = l1[1]
+#     a2 = l1[2]
+#     a3 = l1[3]
+#     a4 = l1[4]
+# #OOOOOOOOOOOOOOOOOOO
+# def fun9():
+#     a,a1,a2,a3,a4=l1
 
 
 
-a = 0
-for j in range(5):
-    st = time.time()
-    for i in range(1000000):
-        # func(a)
-        # a += 1
-        # b = f2(8)
-        # cc.re()
-        # fun4()
-        # fun5()
-        # fun7(a)
-        # fun8()
-        fun9()
-    et = time.time()
-    print(et-st)
+# a = 0
+# for j in range(5):
+#     st = time.time()
+#     for i in range(1000000):
+#         # func(a)
+#         # a += 1
+#         # b = f2(8)
+#         # cc.re()
+#         # fun4()
+#         # fun5()
+#         # fun7(a)
+#         # fun8()
+#         fun9()
+#     et = time.time()
+#     print(et-st)
+
+
+class tt():
+    def __init__(self):
+        self.O = self.OO
+        self.O()
+    def OO(self):
+        self.a = 1
