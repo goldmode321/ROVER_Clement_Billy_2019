@@ -70,12 +70,12 @@ class Calculator:
         self.SV = SharedVariables_class
 
     def calculate_local_obstacle(self):
-        self.SV.local_obstacle_x = numpy.round(numpy.cos(numpy.array(self.SV.lidar_angle) - \
+        self.SV.local_obstacle_x = numpy.round(numpy.cos(self.SV.lidar_angle - \
             self.SV.vision_angle_radian + 0.5*math.pi)*\
-            numpy.array(self.SV.lidar_radius) + self.SV.vision_x, 0)
-        self.SV.local_obstacle_y = numpy.round(numpy.sin(numpy.array(self.SV.lidar_angle) - \
+            self.SV.lidar_radius + self.SV.vision_x, 0)
+        self.SV.local_obstacle_y = numpy.round(numpy.sin(self.SV.lidar_angle - \
             self.SV.vision_angle_radian + 0.5*math.pi)*\
-            numpy.array(self.SV.lidar_radius) + self.SV.vision_y, 0)
+            self.SV.lidar_radius + self.SV.vision_y, 0)
 
     def calculate_arrow(self):
         self.SV.arrow_x = [self.SV.vision_x, self.SV.vision_x + 200*math.cos(-self.SV.vision_angle_radian+0.5*math.pi)]
@@ -283,7 +283,7 @@ class ROVER_gui():
         temp_lidar_vision_receive = self.gui_get_lidar_vision_client.recv_list(32768)
         if temp_lidar_vision_receive is not None:
             self.SV.lidar_data = numpy.asarray(temp_lidar_vision_receive[0])
-            self.SV.lidar_angle = self.SV.lidar_data[:, 1]* (-1) + 0.0*math.pi
+            self.SV.lidar_angle = numpy.radians(self.SV.lidar_data[:, 1]* (-1)) + 0.0*math.pi
             self.SV.lidar_radius = self.SV.lidar_data[:, 2]
             self.SV.vision_data = temp_lidar_vision_receive[1]
 

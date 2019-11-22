@@ -11,12 +11,15 @@ class Lidar():
         logging.basicConfig(filename='LiDAR.log', filemode='w', level=logging.INFO)
         logging.info("Initializing RPLidar")
         self.LI = SharedVariable_lidar
+        self.init()
 
+
+    def init(self):
         try:
             logging.info("Initializing Lidar_client")
             self.lidar_scan_port()
             if self.LI.lidar_connect:
-                self.LI.lidar_run_flag = True
+                self.LI.lidar_run = True
                 self.lidar_main()
             else:
                 print(("LiDAR is not initialized"))
@@ -75,10 +78,9 @@ class Lidar():
                 traceback.print_exc()
                 logging.exception("Got error\n")
 
-
-
-
-    def stop(self):
+    def end(self):
+        self.LI.lidar_run = False
+        self.LI.lidar_thread.join()
         self.lidar.stop()  
         self.lidar.disconnect()
         logging.info("RPLidar disconnect")  
@@ -90,17 +92,22 @@ class Lidar():
 
 class LidarGetDataThread(threading.Thread):
     def __init__(self,SharedVariable_lidar, daemon=True):
-        threading.Thread.__init__(self, daemon=daemon)
         self.LI = SharedVariable_lidar
-
+        threading.Thread.__init__(self, daemon=daemon)
+        self.start()
     def run(self):
         try:
             for scan in self.LI.lidar.iter_scans():
                 self.LI.lidar_data = [list(i) for i in scan if i[2] > 450]
 
+                if not self.LI.lidar_run:
+                    time.sleep(0.1)
+                    raise KeyboardInterrupt
+
         except:
             self.LI.lidar.stop()
             self.LI.lidar = self.LI.lidar = rplidar.RPLidar(self.LI.lidar_USB_port)
+
 
 
 

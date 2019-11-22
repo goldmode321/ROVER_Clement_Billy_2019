@@ -27,6 +27,7 @@ class Vision:
         self.vision_thread = None
         self.vision_run = False
         self.reset_flag = False
+        self.vision_idle = False
         self.vision_x = 0
         self.vision_y = 0
         self.vision_theta = 0
@@ -42,7 +43,7 @@ class Lidar:
         self.lidar = None
         self.lidar_thread = None
         self.lidar_USB_port = ""
-        self.lidar_run_flag = False
+        self.lidar_run = False
         self.lidar_connect = False
         self.lidar_state = list()
         self.lidar_minimum_radius = 450
@@ -70,13 +71,14 @@ class Calibration:
 
 class CarControl:
     def __init__(self):
+        self.car_control_server = None
         self.car_control = Adafruit_PCA9685.PCA9685()
         self.car_control.set_pwm_freq(60)
-        self.car_control_server_run = True
+        self.car_control_server_run = False
         self.car_control_receive = None
         self.car_control_previous_receive = None
         self.car_control_state = 'stop'
         self.car_control_forward_pwm = 410 # 403
         self.car_control_backward_pwm = 370  # 381
         self.car_control_stop_pwm = 400
-        self.car_control_add_speed = 1
+        self.car_control_add_speed = 1 # Speed adjust from gui

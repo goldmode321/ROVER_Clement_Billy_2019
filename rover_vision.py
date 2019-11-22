@@ -33,6 +33,7 @@ class Vision:
             if self.vision.alive() == [0, 'Alive']:
                 logging.info('Connection to Vision module establiished , Vision module status : {}\n'.format(self.vision.alive()))
                 self.VI.vision_run = True
+                self.start_background_thread()
             else:
                 logging.info('Vision module is not Alive\n')
                 raise KeyboardInterrupt
@@ -48,9 +49,12 @@ class Vision:
         logging.info('Thread running')
 
 
-    def stop(self):
+    def end(self):
         self.VI.vision_run = False
-        logging.info("'exit' command received, start terminating program")
+        if not self.VI.vision_idle:
+            self.reset()
+        time.sleep(0.5)
+        logging.info("'exit' command received, terminating program")
 
     def alive(self):
         alive_resp = self.vision.alive()
@@ -69,6 +73,7 @@ class Vision:
         print('\nget_status(), response: {}'.format(status_resp))
 
     def save(self):
+        print("Vision do save process and reset, please wait")
         self.reset_flag = False
         save_resp = self.vision.save_db()
         time.sleep(3)
@@ -80,6 +85,7 @@ class Vision:
         time.sleep(0.2)
         reset_resp = self.vision.reset()
         print('\nreset(), response: {}'.format(reset_resp))
+        print("Please wait for 10 seconds")
         time.sleep(10)
         self.VI.vision_run = True
         self.start_background_thread()
@@ -105,14 +111,16 @@ class Vision:
 
 class VisionGetDataThread(threading.Thread):
     def __init__(self, SharedVariable_vision, daemon=True):
-        threading.Thread.__init__(self, daemon=daemon)
         self.VI = SharedVariable_vision
+        threading.Thread.__init__(self, daemon=daemon)
+        self.start()
 
 
     def run(self):
         '''Send vision data to bridge'''
         while self.VI.vision_run:
             try:
+                # print('v')
                 if self.VI.reset_flag:
                     # time.sleep(7)
                     self.VI.reset_flag = False
@@ -126,6 +134,10 @@ class VisionGetDataThread(threading.Thread):
                     self.VI.vision_y = pose[4]
                     self.VI.vision_theta = pose[5]
                     self.VI.vision_angle_radian = math.radians(pose[5])
+                    if self.VI.vision_status == 1:
+                        self.VI.vision_idle = True
+                    else:
+                        self.VI.vision_idle = False
 
                 time.sleep(0.15)
             except:
