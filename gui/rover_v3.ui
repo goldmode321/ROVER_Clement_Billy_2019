@@ -793,15 +793,18 @@ border-color: rgb(0, 0, 0);</string>
                <item>
                 <layout class="QVBoxLayout" name="verticalLayout_11">
                  <item>
-                  <widget class="QLineEdit" name="lineEdit">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
+                  <widget class="QPushButton" name="pushButton_3">
+                   <property name="font">
+                    <font>
+                     <family>Algerian</family>
+                     <pointsize>12</pointsize>
+                    </font>
                    </property>
                    <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 255);</string>
+                    <string notr="true">background-color: rgb(112, 155, 255);</string>
+                   </property>
+                   <property name="text">
+                    <string>Import MAP</string>
                    </property>
                   </widget>
                  </item>
@@ -914,7 +917,7 @@ border-color: rgb(0, 0, 0);</string>
 border-color: rgb(255, 0, 0);</string>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="Console">
                <attribute name="title">

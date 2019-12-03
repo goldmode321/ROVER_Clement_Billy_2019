@@ -13,6 +13,8 @@ import numpy
 from matplotlib.animation import FuncAnimation
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
+import pyqtgraph
+
 
 import gui.rover_ui_file as GUI
 import gui.rover_calibration as C_GUI
@@ -138,10 +140,10 @@ class ROVER_gui():
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
         app = QtWidgets.QApplication(sys.argv)
         app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-        MainWindow = QtWidgets.QMainWindow()
+        self.MainWindow = QtWidgets.QMainWindow()
 
         self.gui = GUI.Ui_MainWindow()
-        self.gui.setupUi(MainWindow)
+        self.gui.setupUi(self.MainWindow)
 
         self.SV = SharedVariables()
         self.SV.gui = self.gui
@@ -195,6 +197,7 @@ class ROVER_gui():
         self.gui.KeyboardControl_SetSpeedBtn.clicked.connect(self.KeyboardControl_SetSpeedBtn_click)
         self.gui.KeyBoardControl_speed.valueChanged.connect(self.KeyBoardControl_speed_value_change)
         self.gui.CalibrationBtn.clicked.connect(self.calibration)
+        self.gui.SaveMapBtn.clicked.connect(self.SaveMapBtn_click)
 
         self.gui_get_lidar_vision_client = rover_socket.UDP_client(50010, 0, '192.168.5.2')
         self.gui_get_rover_status_client = rover_socket.UDP_client(50012, 0, '192.168.5.2')
@@ -218,7 +221,7 @@ class ROVER_gui():
         # self.gui.tabWidget.currentChanged.connect(self.show_map)
 
 
-        MainWindow.show()
+        self.MainWindow.show()
         sys.exit(app.exec_())
 
 
@@ -355,6 +358,17 @@ class ROVER_gui():
 
     def ShowMap_AddBtn_click(self):
         self.CALCULATOR.get_global_obstacle()
+
+    def SaveMapBtn_click(self):
+        try:
+            name = QtWidgets.QFileDialog.getSaveFileName(self, \
+                'Save File', "", "Rover Map Files (*.rovermap);;All Files (*)")
+            if name != ("", ""):
+                file = open(name[0],'w')
+                numpy.save(file, arr=self.SV.global_obstacle, allow_pickle=False)
+                file.close()
+        except TypeError:
+            traceback.print_exc()
 
     def StopAllBtn_click(self):
         self.CALCULATOR.show_message("Stop ALL")
