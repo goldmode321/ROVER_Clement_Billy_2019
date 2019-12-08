@@ -29,7 +29,8 @@ class Vision:
         try:
             time.sleep(0.2) # Make sure server initialize first
             logging.basicConfig(filename='Vision_main.log', filemode='w', level=logging.INFO)
-            self.vision = self.VI.vision = xmlrpclib.ServerProxy("http://{}:8080".format(self.VI.vision_ip))
+            # self.vision = self.VI.vision = xmlrpclib.ServerProxy("http://{}:8080".format(self.VI.vision_ip))
+            self.vision = xmlrpclib.ServerProxy("http://{}:8080".format(self.VI.vision_ip))
             if self.vision.alive() == [0, 'Alive']:
                 logging.info('Connection to Vision module establiished , Vision module status : {}\n'.format(self.vision.alive()))
                 self.VI.vision_run = True
@@ -45,7 +46,7 @@ class Vision:
 
 
     def start_background_thread(self):
-        self.VI.vision_thread = VisionGetDataThread(self.VI)
+        self.VI.vision_thread = VisionGetDataThread(self.VI, vision=self.vision)
         logging.info('Thread running')
 
 
@@ -110,7 +111,7 @@ class Vision:
 
 
 class VisionGetDataThread(threading.Thread):
-    def __init__(self, SharedVariable_vision, daemon=True):
+    def __init__(self, SharedVariable_vision, vision, daemon=True):
         self.VI = SharedVariable_vision
         threading.Thread.__init__(self, daemon=daemon)
         self.start()
@@ -127,8 +128,8 @@ class VisionGetDataThread(threading.Thread):
                     # time.sleep(1)
                     pass
                 else:
-                    status = self.VI.vision.get_status()
-                    pose = self.VI.vision.get_pose()
+                    status = self.vision.get_status()
+                    pose = self.vision.get_pose()
                     self.VI.vision_status = status[0]
                     self.VI.vision_x = pose[3]
                     self.VI.vision_y = pose[4]

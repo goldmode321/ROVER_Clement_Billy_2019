@@ -78,7 +78,44 @@ class UDP_server(object):
             self.close()
             raise KeyboardInterrupt
 
-            
+    def recv_object(self, length = 4096):
+        try:
+            receive_object_flag = True
+            receive_object = None
+            while receive_object_flag:
+                try:
+                    temp_receive_object, self.addr = self.sock.recvfrom(length)
+                    receive_object += temp_receive_object
+                    if sys.getsizeof(temp_receive_object) < length:
+                        receive_object_flag = False
+                except:
+                    receive_object_flag = False
+            # print(receive_object)
+            if receive_object != [b''] and receive_object != None:
+                receive_object = pickle.loads(b"".join(receive_object)) 
+                return receive_object
+        
+        except socket.timeout: # if server didn't get any data in a period of time 
+            pass               # Do nothing and pass  , the return data is 'None' 
+        except KeyboardInterrupt: 
+            self.close() # Unbind socket from the adress
+        except:
+            traceback.print_exc()
+            self.close()
+            raise KeyboardInterrupt
+
+
+    def send_object_back(self, objects=None):
+        if objects is not None:
+            try:
+                if self.addr is None:
+                    print('UDP server needs receive from UDP client first')
+                else:
+                    self.sock.sendto(pickle.dumps(objects), self.addr)
+            except TypeError as err:
+                print(err)
+        else:
+            pass
 
     # def send_string(self, message = '', port=50000, ip = '127.0.0.1'):
     def send_string(self, message = ''):
@@ -195,6 +232,47 @@ class UDP_client(object):
             traceback.print_exc()
             self.close()
             raise KeyboardInterrupt
+
+
+    def recv_object(self, length = 4096):
+        try:
+            receive_object_flag = True
+            receive_object = None
+            while receive_object_flag:
+                try:
+                    temp_receive_object, self.addr = self.sock.recvfrom(length)
+                    receive_object += temp_receive_object
+                    if sys.getsizeof(temp_receive_object) < length:
+                        receive_object_flag = False
+                except:
+                    receive_object_flag = False
+            # print(receive_object)
+            if receive_object != [b''] and receive_object != None:
+                receive_object = pickle.loads(b"".join(receive_object)) 
+                return receive_object
+        
+        except socket.timeout: # if server didn't get any data in a period of time 
+            pass               # Do nothing and pass  , the return data is 'None' 
+        except KeyboardInterrupt: 
+            self.close() # Unbind socket from the adress
+        except:
+            traceback.print_exc()
+            self.close()
+            raise KeyboardInterrupt
+
+
+    def send_object_back(self, objects=None):
+        if objects is not None:
+            try:
+                self.sock.sendto(pickle.dumps(objects) , (self.ip, self.port) )
+            except :
+                self.close()
+                traceback.print_exc()
+                raise KeyboardInterrupt
+        else:
+            pass
+
+
 
     def send_string(self, message = '', port=50000, ip = '127.0.0.1'):
         ''' Send string to target port (default IP is 127.0.0.1)'''

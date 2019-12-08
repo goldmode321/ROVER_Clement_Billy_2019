@@ -4,17 +4,22 @@ import rover_socket
 
 class SharedVariables():
     def __init__(self):
-        self.OBS = Obstacle()
-        self.VI = Vision()
-        self.LI = Lidar()
-        self.MAP = MapPlotting()
-        self.CAL = Calibration()
-        self.CC = CarControl()
+        
+        self.VI = Vision()                 # 50015
+        self.LI = Lidar()                  # 50016
+        self.MAP = MapPlotting()           # 50017
+        self.CAL = Calibration()           # 50018
+        self.CC = CarControl()             # 50019
+        self.LOBS = LocalObstacle()        # 50020
+        self.GOBS = GlobalObstacle()       # 50021
+        self.GUI = GuiObject()
 
-class Obstacle:
+class LocalObstacle:
     def __init__(self):
         self.local_obstacle_x = numpy.array([0, 1, 2])
         self.local_obstacle_y = numpy.array([0, 1, 2])
+class GlobalObstacle:
+    def __init__(self):
         self.global_obstacle_x = numpy.array([])
         self.global_obstacle_y = numpy.array([])
         self.global_obstacle = numpy.array([])
@@ -23,7 +28,6 @@ class Obstacle:
 class Vision:
     def __init__(self):
         self.vision_ip = "192.168.5.101"
-        self.vision = None
         self.vision_thread = None
         self.vision_run = False
         self.reset_flag = False
@@ -72,8 +76,11 @@ class Calibration:
 class CarControl:
     def __init__(self):
         self.car_control_server = None
-        self.car_control = Adafruit_PCA9685.PCA9685()
-        self.car_control.set_pwm_freq(60)
+        try:
+            self.car_control = Adafruit_PCA9685.PCA9685()
+            self.car_control.set_pwm_freq(60)
+        except:
+            print("carControl not activated")
         self.car_control_server_run = False
         self.car_control_receive = None
         self.car_control_previous_receive = None
@@ -82,3 +89,10 @@ class CarControl:
         self.car_control_backward_pwm = 370  # 381
         self.car_control_stop_pwm = 400
         self.car_control_add_speed = 1 # Speed adjust from gui
+
+class GuiObject:
+    def __init__(self):
+        self.gui = None
+
+if __name__ == "__main__":
+   SharedVariables() 

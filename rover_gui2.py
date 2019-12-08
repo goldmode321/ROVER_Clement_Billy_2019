@@ -19,52 +19,8 @@ import pyqtgraph
 import gui.rover_ui_file as GUI
 import gui.rover_calibration as C_GUI
 import rover_socket
-
-class SharedVariables():
-    def __init__(self):
-        self.calibration()
-        self.obstacle()
-        self.sensor_data()
-        self.map_plotting()
-        self.gui_object()
-
-    def obstacle(self):
-        self.local_obstacle_x = numpy.array([0, 1, 2])
-        self.local_obstacle_y = numpy.array([0, 1, 2])
-        self.global_obstacle_x = numpy.array([])
-        self.global_obstacle_y = numpy.array([])
-        self.global_obstacle = numpy.array([])
-        self.global_obstacle_buffer = list()
-
-    def sensor_data(self):
-        self.lidar_data = [[0,0,0],[1,1,1]]
-        self.lidar_angle = [0]
-        self.lidar_radius = [0]
-        self.vision_angle_radian = 0
-        self.vision_status = -1
-        self.vision_data = [0, 0, 0, self.vision_status]
-        self.vision_x = list()
-        self.vision_y = list()
-
-
-    def map_plotting(self):
-        self.arrow_x = [0]
-        self.arrow_y = [0]
-
-    def calibration(self):
-        self.calibrate_x = 0
-        self.calibrate_y = 0
-        self.calibrate_angle = 0
-        self.calibrate_x_multi = 1
-        self.calibrate_y_multi = 1
-        self.calibrate_angle_multi = 1
-        self.calibrate_difference_between_lidar_and_vision = 130
-        self.temp_calibrate_difference_between_lidar_and_vision = 130
-        self.calibration_run = False
-
-    def gui_object(self):
-        self.gui = None
-
+import rover_shared_variable
+import rover_map_builder
 
 
 class Calculator:
@@ -144,8 +100,16 @@ class ROVER_gui():
         self.gui = GUI.Ui_MainWindow()
         self.gui.setupUi(self.MainWindow)
 
-        self.SV = SharedVariables()
-        self.SV.gui = self.gui
+        self.SV = rover_shared_variable.SharedVariables()
+        self.VI = self.SV.VI
+        self.LI = self.SV.LI
+        self.MAP = self.SV.MAP
+        self.CAL = self.SV.CAL
+        self.CC = self.SV.CC
+        self.LOBS = self.SV.LOBS
+        self.GOBS = self.SV.GOBS
+        self.GUI = self.SV.GUI
+        self.GUI.gui = self.gui
         self.CALCULATOR = Calculator(self.SV)
 
 
@@ -202,6 +166,13 @@ class ROVER_gui():
         self.gui_get_lidar_vision_client = rover_socket.UDP_client(50010, 0, '192.168.5.2')
         self.gui_get_rover_status_client = rover_socket.UDP_client(50012, 0, '192.168.5.2')
         self.gui_rover_command_client = rover_socket.UDP_client(50013, 0, '192.168.5.2')
+        self.gui_get_vision_udp_client = rover_socket.UDP_client(50015, ip="192.168.5.2")
+        self.gui_get_lidar_udp_client = rover_socket.UDP_client(50016, ip="192.168.5.2")
+        self.gui_get_map_udp_client = rover_socket.UDP_client(50017, ip="192.168.5.2")
+        self.gui_get_calibration_udp_client = rover_socket.UDP_client(50018, ip="192.168.5.2")
+        self.gui_get_car_control_udp_client = rover_socket.UDP_client(50019, ip="192.168.5.2")
+        self.gui_get_local_obstacle_udp_client = rover_socket.UDP_client(50020, 0, "192.168.5.2")
+        self.gui_get_global_obstacle_udp_client = rover_socket.UDP_client(50021, 0, "192.168.5.2")
 
         self.get_data_retry = 0
         self.get_data_timer = QtCore.QTimer()
@@ -281,8 +252,16 @@ class ROVER_gui():
     def get_data_from_rover(self):
         '''Get data from rover and turn into map'''
         self.gui_get_lidar_vision_client.send_list([1]) # Send anything to make sure connection always open
-        temp_lidar_vision_receive = self.gui_get_lidar_vision_client.recv_list(32768)
+        temp_lidar_vision_receive = self.gui_get_lidar_vision_client.recv_list(16)
         if temp_lidar_vision_receive is not None:
+            self.gui_get_vision_udp_client
+            self.gui_get_lidar_udp_client
+            self.gui_get_map_udp_client
+            self.gui_get_calibration_udp_client
+            self.gui_get_car_control_udp_client
+            self.gui_get_local_obstacle_udp_client
+            self.gui_get_global_obstacle_udp_client
+
             self.SV.lidar_data = numpy.asarray(temp_lidar_vision_receive[0])
             self.SV.lidar_angle = numpy.radians(self.SV.lidar_data[:, 1]* (-1)) + 0.0*math.pi
             self.SV.lidar_radius = self.SV.lidar_data[:, 2]
