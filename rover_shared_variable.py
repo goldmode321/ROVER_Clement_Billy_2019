@@ -1,6 +1,5 @@
 import numpy
-import Adafruit_PCA9685
-import rover_socket
+
 
 class SharedVariables():
     def __init__(self):
@@ -18,6 +17,7 @@ class LocalObstacle:
     def __init__(self):
         self.local_obstacle_x = numpy.array([0, 1, 2])
         self.local_obstacle_y = numpy.array([0, 1, 2])
+
 class GlobalObstacle:
     def __init__(self):
         self.global_obstacle_x = numpy.array([])
@@ -76,11 +76,6 @@ class Calibration:
 class CarControl:
     def __init__(self):
         self.car_control_server = None
-        try:
-            self.car_control = Adafruit_PCA9685.PCA9685()
-            self.car_control.set_pwm_freq(60)
-        except:
-            print("carControl not activated")
         self.car_control_server_run = False
         self.car_control_receive = None
         self.car_control_previous_receive = None

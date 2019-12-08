@@ -1,6 +1,6 @@
 import time
 import threading
-
+import Adafruit_PCA9685
 import rover_socket
 
 class CarControl:
@@ -9,6 +9,11 @@ class CarControl:
         self.init()
 
     def init(self):
+        try:
+            self.car_control = Adafruit_PCA9685.PCA9685()
+            self.car_control.set_pwm_freq(60)
+        except:
+            print("carControl not activated")
         self.CC.car_control_server = rover_socket.UDP_server(50011, 0, "192.168.5.2")
         self.CC.car_control_server_run = True
         Tunning(self.CC)

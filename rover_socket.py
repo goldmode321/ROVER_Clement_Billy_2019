@@ -3,6 +3,7 @@ import time
 import sys
 import pickle
 import traceback
+import dill
 #import struct
 #from multiprocessing.connection import Listener, Client
 
@@ -111,7 +112,7 @@ class UDP_server(object):
                 if self.addr is None:
                     print('UDP server needs receive from UDP client first')
                 else:
-                    self.sock.sendto(pickle.dumps(objects), self.addr)
+                    self.sock.sendto(dill.dumps(objects), self.addr)
             except TypeError as err:
                 print(err)
         else:
@@ -154,7 +155,7 @@ class UDP_server(object):
             if self.addr is None:
                 print('UDP server needs receive from UDP client first')
             else:
-                self.sock.sendto(pickle.dumps(list), self.addr)
+                self.sock.sendto(dill.dumps(list), self.addr)
         except TypeError as err:
             print(err)
 
@@ -237,18 +238,20 @@ class UDP_client(object):
     def recv_object(self, length = 4096):
         try:
             receive_object_flag = True
-            receive_object = None
+            receive_object = bytes()
             while receive_object_flag:
                 try:
-                    temp_receive_object, self.addr = self.sock.recvfrom(length)
+                    temp_receive_object = self.sock.recv(length)
                     receive_object += temp_receive_object
                     if sys.getsizeof(temp_receive_object) < length:
                         receive_object_flag = False
                 except:
                     receive_object_flag = False
+                    traceback.print_exc()
             # print(receive_object)
             if receive_object != [b''] and receive_object != None:
-                receive_object = pickle.loads(b"".join(receive_object)) 
+                # receive_object = pickle.loads(b"".join(receive_object))
+                receive_object = dill.loads(receive_object)
                 return receive_object
         
         except socket.timeout: # if server didn't get any data in a period of time 
@@ -258,7 +261,7 @@ class UDP_client(object):
         except:
             traceback.print_exc()
             self.close()
-            raise KeyboardInterrupt
+
 
 
     def send_object_back(self, objects=None):
