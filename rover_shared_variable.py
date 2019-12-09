@@ -3,15 +3,20 @@ import numpy
 
 class SharedVariables():
     def __init__(self):
-        
+        self.ROV = Rover()                 # 50012
         self.VI = Vision()                 # 50015
         self.LI = Lidar()                  # 50016
         self.MAP = MapPlotting()           # 50017
         self.CAL = Calibration()           # 50018
         self.CC = CarControl()             # 50019
         self.LOBS = LocalObstacle()        # 50020
-        self.GOBS = GlobalObstacle()       # 50021
+        self.GOBS = GlobalObstacle()       
         self.GUI = GuiObject()
+
+class Rover:
+    def __init__(self):
+        self.rover_run = False
+
 
 class LocalObstacle:
     def __init__(self):
@@ -28,7 +33,7 @@ class GlobalObstacle:
 class Vision:
     def __init__(self):
         self.vision_ip = "192.168.5.101"
-        self.vision_thread = None
+
         self.vision_run = False
         self.reset_flag = False
         self.vision_idle = False
@@ -36,6 +41,8 @@ class Vision:
         self.vision_y = 0
         self.vision_theta = 0
 
+        self.vision_use_map_mode = False
+        self.vision_build_map_mode = False
 
         self.vision_angle_radian = 0
         self.vision_status = -1
@@ -75,7 +82,6 @@ class Calibration:
 
 class CarControl:
     def __init__(self):
-        self.car_control_server = None
         self.car_control_server_run = False
         self.car_control_receive = None
         self.car_control_previous_receive = None

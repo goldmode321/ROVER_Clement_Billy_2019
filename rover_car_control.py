@@ -14,18 +14,19 @@ class CarControl:
             self.car_control.set_pwm_freq(60)
         except:
             print("carControl not activated")
-        self.CC.car_control_server = rover_socket.UDP_server(50011, 0, "192.168.5.2")
+        self.car_control_server = rover_socket.UDP_server(50011, 0, "192.168.5.2")
         self.CC.car_control_server_run = True
-        Tunning(self.CC)
-        ForwardOrReverse(self.CC)
+        Tunning(self.car_control_server, self.CC)
+        ForwardOrReverse(self.car_control_server, self.CC)
 
     def end_car_control(self):
         self.CC.car_control_server_run = False
         time.sleep(0.1)
-        self.CC.car_control_server.close()
+        self.car_control_server.close()
 
 class Tunning(threading.Thread):
-    def __init__(self, shared_variable_car_control):
+    def __init__(self, car_control_server, shared_variable_car_control):
+        self.car_control_server = car_control_server
         self.CC = shared_variable_car_control
         threading.Thread.__init__(self, daemon=True)
         self.start()
@@ -34,7 +35,7 @@ class Tunning(threading.Thread):
     def run(self):
         while self.CC.car_control_server_run:
 
-            temp = self.CC.car_control_server.recv_list()
+            temp = self.car_control_server.recv_list()
             if temp is None and self.CC.car_control_previous_receive is not None:
                 self.CC.car_control_receive = self.CC.car_control_previous_receive
                 self.CC.car_control_previous_receive = None
@@ -70,7 +71,8 @@ class Tunning(threading.Thread):
 
 
 class ForwardOrReverse(threading.Thread):
-    def __init__(self, shared_variable_car_control):
+    def __init__(self, car_control_server, shared_variable_car_control):
+        self.car_control_server = car_control_server
         self.CC =shared_variable_car_control
         threading.Thread.__init__(self, daemon=True)
         self.start()

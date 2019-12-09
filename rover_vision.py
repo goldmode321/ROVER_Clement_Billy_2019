@@ -46,7 +46,7 @@ class Vision:
 
 
     def start_background_thread(self):
-        self.VI.vision_thread = VisionGetDataThread(self.VI, vision=self.vision)
+        self.vision_thread = VisionGetDataThread(self.VI, vision=self.vision)
         logging.info('Thread running')
 
 
@@ -113,6 +113,7 @@ class Vision:
 class VisionGetDataThread(threading.Thread):
     def __init__(self, SharedVariable_vision, vision, daemon=True):
         self.VI = SharedVariable_vision
+        self.vision = vision
         threading.Thread.__init__(self, daemon=daemon)
         self.start()
 
