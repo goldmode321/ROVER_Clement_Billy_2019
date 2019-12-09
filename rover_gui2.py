@@ -6,10 +6,10 @@ import sys
 import threading
 import time
 import traceback
+import numpy
 
 import keyboard
 import matplotlib.pyplot as plt
-import numpy
 from matplotlib.animation import FuncAnimation
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -29,6 +29,18 @@ class Calculator:
         self.LOBS = SharedVariables.LOBS
         self.GOBS = SharedVariables.GOBS
         self.VI = SharedVariables.VI
+
+    def get_global_obstacle(self):
+        # combine it into form of (x1,y1), (x2, y2),...
+        temp_global_obstacle = numpy.vstack((self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)).T
+        # Filt old obstacle data
+        new_global_obstacle = numpy.asarray([i for i in temp_global_obstacle if not i in self.GOBS.global_obstacle])
+        self.GOBS.global_obstacle = numpy.append(self.GOBS.global_obstacle, new_global_obstacle)
+        self.GOBS.global_obstacle_x = self.GOBS.global_obstacle[:, 0]
+        self.GOBS.global_obstacle_y = self.GOBS.global_obstacle[:, 1]
+        self.GOBS.global_obstacle_buffer = [self.GOBS.global_obstacle_buffer, new_global_obstacle]
+        print(len(self.GOBS.global_obstacle_buffer))
+
 
     def show_message(self, message):
         self.GUI.gui.MessageBox_Edit.setText(message)
@@ -73,6 +85,7 @@ class ROVER_gui():
         self.gui.setupUi(self.MainWindow)
 
         self.SV = rover_shared_variable.SharedVariables()
+        self.ROV = self.SV.ROV
         self.VI = self.SV.VI
         self.LI = self.SV.LI
         self.MAP = self.SV.MAP
@@ -82,8 +95,9 @@ class ROVER_gui():
         self.GOBS = self.SV.GOBS
         self.GUI = self.SV.GUI
 
+
         self.GUI.gui = self.gui
-        self.CALCULATOR = Calculator()
+        self.CALCULATOR = Calculator(self.SV)
 
 
         self.current_speed = 0
@@ -91,13 +105,13 @@ class ROVER_gui():
             3:":Locating, please move around", 4:":Working normally",
             5:":Lost current position"}
 
-        self.rover_run, self.lidar_server_run, self.vision_server_run, \
-        self.animation_run, self.vision_build_map_mode, self.vision_use_map_mode, \
-        self.CAL.calibration_run, self.keyboard_control_run, self.vision_idle \
+        self.ROV.rover_run, self.LI.ldar_run, self.VI.vision_run, \
+        self.animation_run, self.VI.vision_build_map_mode, self.VI.vision_use_map_mode, \
+        self.CAL.calibration_run, self.keyboard_control_run, self.VI.vision_idle \
             = False, False, False, False, False, False, False, False, False
 
         self.check_status_rover_run_list = [
-            self.rover_run, self.vision_server_run, self.lidar_server_run
+            self.ROV.rover_run, self.VI.vision_run, self.LI.ldar_run
         ]
 
         self.check_status_rover_Btn_list = [
@@ -108,8 +122,8 @@ class ROVER_gui():
 
         self.check_status_func_run_list = [
             self.animation_run,
-            self.vision_build_map_mode, 
-            self.vision_use_map_mode,
+            self.VI.vision_build_map_mode, 
+            self.VI.vision_use_map_mode,
             self.CAL.calibration_run,
             self.keyboard_control_run
         ]
@@ -136,25 +150,26 @@ class ROVER_gui():
         self.gui.SaveMapBtn.clicked.connect(self.SaveMapBtn_click)
         self.gui.ImportMapBtn.clicked.connect(self.ImportMapBtn_click)
 
-        self.gui_get_lidar_vision_client = rover_socket.UDP_client(50010, 0, '192.168.5.2')
-        self.gui_get_rover_status_client = rover_socket.UDP_client(50012, 0, '192.168.5.2')
+
         self.gui_rover_command_client = rover_socket.UDP_client(50013, 0, '192.168.5.2')
+
+        self.gui_get_rover_udp_client = rover_socket.UDP_client(50012, 0, '192.168.5.2')
         self.gui_get_vision_udp_client = rover_socket.UDP_client(50015, ip="192.168.5.2")
         self.gui_get_lidar_udp_client = rover_socket.UDP_client(50016, ip="192.168.5.2")
         self.gui_get_map_udp_client = rover_socket.UDP_client(50017, ip="192.168.5.2")
         self.gui_get_calibration_udp_client = rover_socket.UDP_client(50018, ip="192.168.5.2")
         self.gui_get_car_control_udp_client = rover_socket.UDP_client(50019, ip="192.168.5.2")
         self.gui_get_local_obstacle_udp_client = rover_socket.UDP_client(50020, 0, "192.168.5.2")
-        self.gui_get_global_obstacle_udp_client = rover_socket.UDP_client(50021, 0, "192.168.5.2")
+
+
+
 
         self.get_data_retry = 0
         self.get_data_timer = QtCore.QTimer()
         self.get_data_timer.timeout.connect(self.get_data_from_rover)
-        self.get_data_timer.start(40)
+        self.get_data_timer.start(50)
         self.get_rover_status_retry = 0
-        self.get_rover_status_timer = QtCore.QTimer()
-        self.get_rover_status_timer.timeout.connect(self.get_rover_status)
-        self.get_rover_status_timer.start(40)
+
         self.check_status_timer = QtCore.QTimer()
         self.check_status_timer.timeout.connect(self.check_status)
         self.check_status_timer.start(100)
@@ -170,14 +185,14 @@ class ROVER_gui():
 
 
     def check_status(self):
-        for i, j in zip([self.rover_run, self.vision_server_run, self.lidar_server_run], 
+        for i, j in zip([self.ROV.rover_run, self.VI.vision_run, self.LI.ldar_run], 
                     range(len(self.check_status_rover_run_list))):
             if i:
                  self.check_status_rover_Btn_list[j].setStyleSheet("background-color: rgb(0, 255, 0);")
             else:
                 self.check_status_rover_Btn_list[j].setStyleSheet("background-color: rgb(255, 0, 0);")
 
-        for i, j in zip([self.animation_run, self.vision_build_map_mode, self.vision_use_map_mode,
+        for i, j in zip([self.animation_run, self.VI.vision_build_map_mode, self.VI.vision_use_map_mode,
                     self.CAL.calibration_run, self.keyboard_control_run], 
                     range(len(self.check_status_func_run_list))):
             if i:
@@ -186,77 +201,84 @@ class ROVER_gui():
                 self.check_status_func_Btn_list[j].setStyleSheet("background-color: rgb(112, 155, 255);")
 
 
-    def get_rover_status(self):
-        '''Specialize for getting rover status'''
-        def show_vision_status():
-            '''Explain vision status meanning'''
-            if self.VI.vision_status in self.show_vision_status_dict:
-                self.gui.VisionStatus_text.setText("{} : {}".format(
-                    self.VI.vision_status, self.show_vision_status_dict[self.VI.vision_status]
-                    ))
-            else:
-                self.gui.VisionStatus_text.setText("{} : unknown".format(self.VI.vision_status))
 
 
-        self.gui_get_rover_status_client.send_list([1])
-        temp_rover_status_receive = self.gui_get_rover_status_client.recv_list()
-        if temp_rover_status_receive is not None:
-            self.gui.LidarUSB_text.setText("USB Port: " + str(temp_rover_status_receive[0]) \
-                + "\n Status: " + str(temp_rover_status_receive[1]))
-
-            self.lidar_server_run, self.VI.vision_status, self.vision_server_run, \
-            self.vision_idle, self.rover_run, self.current_speed, \
-            self.vision_build_map_mode, self.vision_use_map_mode = \
-                temp_rover_status_receive[2:10]
-
-            self.get_rover_status_retry = 0
-            show_vision_status()
-            self.gui.CurrentSpeed_text.setText(str(self.current_speed))
-        else:
-            self.get_rover_status_retry+=1
-            if self.get_rover_status_retry > 50:
-                self.lidar_server_run, self.rover_run, self.vision_server_run = \
-                    False, False, False
-                self.gui.CurrentSpeed_text.setText("No connection")
-                self.gui.LidarUSB_text.setText("No connection")
-                self.gui.VisionStatus_text.setText("No connection")
 
 
     def get_data_from_rover(self):
-        '''Get data from rover and turn into map'''
-        self.gui_get_lidar_vision_client.send_list([1]) # Send anything to make sure connection always open
-        temp_lidar_vision_receive = self.gui_get_lidar_vision_client.recv_list(16)
-        if temp_lidar_vision_receive is not None:
-            self.gui_get_vision_udp_client.recv_object(512)
-            self.gui_get_lidar_udp_client.recv_object(8192)
-            self.gui_get_map_udp_client.recv_object(512)
-            self.gui_get_calibration_udp_client.recv_object(512)
-            self.gui_get_car_control_udp_client.recv_object(512)
-            self.gui_get_local_obstacle_udp_client.recv_object(8192)
-            self.gui_get_global_obstacle_udp_client.recv_object(65536)
+        '''Get data from rover'''
 
-            self.SV.lidar_data = numpy.asarray(temp_lidar_vision_receive[0])
-            self.SV.lidar_angle = numpy.radians(self.SV.lidar_data[:, 1]* (-1)) + 0.0*math.pi
-            self.SV.lidar_radius = self.SV.lidar_data[:, 2]
-            self.SV.vision_data = temp_lidar_vision_receive[1]
+        client_list = [
+            self.gui_get_rover_udp_client,
+            self.gui_get_vision_udp_client,
+            self.gui_get_lidar_udp_client,
+            self.gui_get_map_udp_client,
+            self.gui_get_calibration_udp_client,
+            self.gui_get_car_control_udp_client,
+            self.gui_get_local_obstacle_udp_client
+        ]
 
-            if self.SV.vision_data[3] == 4:
-                self.CALCULATOR.calculate_vision_xy_angle()
-                self.CALCULATOR.calculate_local_obstacle()
-                self.CALCULATOR.calculate_arrow()
+        object_list = [
+            self.ROV, self.VI, self.LI, self.MAP,
+            self.CAL, self.CC, self.LOBS
+        ]
+
+        for i in client_list:
+            i.send_string("1")
+        # self.gui_get_rover_udp_client.send_string("1") # Send anything to make sure connection always open
+        # self.gui_get_vision_udp_client.send_string("1")
+        # self.gui_get_lidar_udp_client.send_string("1")
+        # self.gui_get_map_udp_client.send_string("1")
+        # self.gui_get_calibration_udp_client.send_string("1")
+        # self.gui_get_car_control_udp_client.send_string("1")
+        # self.gui_get_local_obstacle_udp_client.send_string("1")
+
+        # if temp_lidar_vision_receive is not None:
+        #     self.VI = self.gui_get_vision_udp_client.recv_object(1024)
+        #     self.LI = self.gui_get_lidar_udp_client.recv_object(8192)
+        #     self.MAP = self.gui_get_map_udp_client.recv_object(1024)
+        #     self.CAL = self.gui_get_calibration_udp_client.recv_object(1024)
+        #     self.CC = self.gui_get_car_control_udp_client.recv_object(1024)
+        #     self.LOBS = self.gui_get_local_obstacle_udp_client.recv_object(8192)
+
+        for i, j in zip(client_list, object_list):
+            temp = i.recv_object(8192)
+            if temp is not None:
+                j = temp
+                self.get_rover_status_retry = 0
+            else:
+                self.get_rover_status_retry+=1
+                if self.get_rover_status_retry > 200:
+                    self.LI.ldar_run, self.ROV.rover_run, self.VI.vision_run = \
+                        False, False, False
+                    self.gui.CurrentSpeed_text.setText("No connection")
+                    self.gui.LidarUSB_text.setText("No connection")
+                    self.gui.VisionStatus_text.setText("No connection")
+
+        self.gui.LidarUSB_text.setText("USB Port: " + str(self.LI.lidar_USB_port) \
+            + "\n Status: " + str(self.LI.lidar_state))
+        self.gui.CurrentSpeed_text.setText(str(self.CC.car_control_add_speed))
+
+        if self.VI.vision_status in self.show_vision_status_dict:
+            self.gui.VisionStatus_text.setText("{} : {}".format(
+                self.VI.vision_status, self.show_vision_status_dict[self.VI.vision_status]
+                ))
+        else:
+            self.gui.VisionStatus_text.setText("{} : unknown".format(self.VI.vision_status))
+
 
 
     def calibration(self):
         if not hasattr(self, "CAL_GUI"):
             self.CAL_GUI = CalibrationUI(self.SV, self.CALCULATOR)
 
-        if not self.vision_idle and self.vision_server_run and self.lidar_server_run:
-            if not self.SV.calibration_run and not self.CAL_GUI.calibration_MainWindow.isVisible():
+        if not self.VI.vision_idle and self.VI.vision_run and self.LI.ldar_run:
+            if not self.CAL.calibration_run and not self.CAL_GUI.calibration_MainWindow.isVisible():
                 self.CAL_GUI.show_window()
-                self.SV.calibration_run = True
+                self.CAL.calibration_run = True
             else:
                 self.CAL_GUI.close_window()
-                self.SV.calibration_run = False
+                self.CAL.calibration_run = False
         else:
             self.CALCULATOR.show_message("For calibration, lidar, vision should be 'On' and \
                 vision should be either build map mode or use map mode")
@@ -265,17 +287,17 @@ class ROVER_gui():
     def show_map(self):
 
         def plot_lidar_map(i):
-            self.lidar_plot.set_xdata(self.SV.lidar_angle)
-            self.lidar_plot.set_ydata(self.SV.lidar_radius)
+            self.lidar_plot.set_xdata(self.LI.lidar_angle)
+            self.lidar_plot.set_ydata(self.LI.lidar_radius)
             return self.lidar_plot,
 
         def plot_global_map(i):
             self.gui.GlobalMap.global_map_axes.set_xlim(self.CALCULATOR.get_x_axis_limit())
             self.gui.GlobalMap.global_map_axes.set_ylim(self.CALCULATOR.get_y_axis_limit())
-            self.global_map_plot_vision.set_data(self.SV.vision_x, self.SV.vision_y)
-            self.global_map_plot_local_obstacle.set_data(self.SV.local_obstacle_x, self.SV.local_obstacle_y)
-            self.global_map_plot_arrow.set_data(self.SV.arrow_x, self.SV.arrow_y)
-            self.global_map_plot_global_obstacle.set_data(self.SV.global_obstacle_x, self.SV.global_obstacle_y)
+            self.global_map_plot_vision.set_data(self.VI.vision_x, self.VI.vision_y)
+            self.global_map_plot_local_obstacle.set_data(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
+            self.global_map_plot_arrow.set_data(self.MAP.arrow_x, self.MAP.arrow_y)
+            self.global_map_plot_global_obstacle.set_data(self.GOBS.global_obstacle_x, self.GOBS.global_obstacle_y)
 
             return self.global_map_plot_local_obstacle, self.global_map_plot_vision, self.global_map_plot_arrow, self.global_map_plot_global_obstacle,
 
@@ -305,11 +327,11 @@ class ROVER_gui():
 
     def SaveMapBtn_click(self):
         try:
-            if self.SV.global_obstacle != numpy.array([]):
+            if self.GOBS.global_obstacle != numpy.array([]):
                 name = QtWidgets.QFileDialog.getSaveFileName(self.MainWindow, \
                     'Save File', "", "Numpy Files (*.npz);;All Files (*)")
                 if name != ("", ""):
-                    numpy.savez(name[0], self.gui.BuildMapID.value(), self.SV.global_obstacle)
+                    numpy.savez(name[0], self.gui.BuildMapID.value(), self.GOBS.global_obstacle)
             else:
                 self.CALCULATOR.show_message("Global Map is None")
 
@@ -324,9 +346,9 @@ class ROVER_gui():
             if name != ("", ""):
                 temp_info = numpy.load(name[0], allow_pickle=False)
                 self.gui.BuildMapID.setValue(temp_info['arr_0'])
-                self.SV.global_obstacle = temp_info['arr_1']
-                self.SV.local_obstacle_x = temp_info['arr_1'][:, 0]
-                self.SV.local_obstacle_y = temp_info['arr_1'][:, 1]
+                self.GOBS.global_obstacle = temp_info['arr_1']
+                self.LOBS.local_obstacle_x = temp_info['arr_1'][:, 0]
+                self.LOBS.local_obstacle_y = temp_info['arr_1'][:, 1]
         except:
             traceback.print_exc()
 
@@ -399,7 +421,7 @@ class ROVER_gui():
 
 
     def KeyboardControl_SetSpeedBtn_click(self):
-        if self.rover_run:
+        if self.ROV.rover_run:
             self.gui_rover_command_client.send_list(["gss", self.gui.KeyBoardControl_speed.value()])
             self.CALCULATOR.show_message("Set Car Speed " + str(self.gui.KeyBoardControl_speed.value()))
         else:
@@ -415,29 +437,29 @@ class ROVER_gui():
 
 
     def VisionUseMapBtn_click(self):
-        if self.vision_idle:
+        if self.VI.vision_idle:
             self.gui_rover_command_client.send_list(['gum', self.gui.UseMapID.value()])
             self.CALCULATOR.show_message('Vision start use map')
         else:
-            if self.vision_server_run:
+            if self.VI.vision_run:
                 self.CALCULATOR.show_message('Vision module is busy')
             else:
                 self.CALCULATOR.show_message('Vision is not working')
 
 
     def VisionBuildMapBtn_click(self):
-        if self.vision_idle:
+        if self.VI.vision_idle:
             self.gui_rover_command_client.send_list(['gbm', self.gui.BuildMapID.value()])
             self.CALCULATOR.show_message("Vision start building map")
         else:
-            if self.vision_server_run:
+            if self.VI.vision_run:
                 self.CALCULATOR.show_message('Vision module is busy')
             else:
                 self.CALCULATOR.show_message('Vision is not working')
 
 
     def VisionBuildMapStopBtn_click(self):
-        if not self.vision_idle and self.vision_build_map_mode:
+        if not self.VI.vision_idle and self.VI.vision_build_map_mode:
             self.gui_rover_command_client.send_list(['gbms'])
             self.CALCULATOR.show_message("Vision module is reseting please wait until ROVER reseting")
         else:
@@ -445,7 +467,7 @@ class ROVER_gui():
 
 
     def VisionUseMapStopBtn_click(self):
-        if not self.vision_idle and self.vision_use_map_mode:
+        if not self.VI.vision_idle and self.VI.vision_use_map_mode:
             self.gui_rover_command_client.send_list(['gums'])
             self.CALCULATOR.show_message("Vision module is reseting please wait until ROVER reseting")
         else:
