@@ -22,6 +22,10 @@ class LocalObstacle:
     def __init__(self):
         self.local_obstacle_x = numpy.array([0, 1, 2])
         self.local_obstacle_y = numpy.array([0, 1, 2])
+        self.local_obstacle_dict = {
+            'local_obstacle_x':self.local_obstacle_x,
+            'local_obstacle_y':self.local_obstacle_y
+            }
 
 class GlobalObstacle:
     def __init__(self):
@@ -33,17 +37,14 @@ class GlobalObstacle:
 class Vision:
     def __init__(self):
         self.vision_ip = "192.168.5.101"
-
         self.vision_run = False
         self.reset_flag = False
         self.vision_idle = False
         self.vision_x = 0
         self.vision_y = 0
         self.vision_theta = 0
-
         self.vision_use_map_mode = False
         self.vision_build_map_mode = False
-
         self.vision_angle_radian = 0
         self.vision_status = -1
         self.vision_data = [0, 0, 0, self.vision_status]

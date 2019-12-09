@@ -16,8 +16,8 @@ class CarControl:
             print("carControl not activated")
         self.car_control_server = rover_socket.UDP_server(50011, 0, "192.168.5.2")
         self.CC.car_control_server_run = True
-        Tunning(self.car_control_server, self.CC)
-        ForwardOrReverse(self.car_control_server, self.CC)
+        Tunning(self.car_control, self.car_control_server, self.CC)
+        ForwardOrReverse(self.car_control, self.car_control_server, self.CC)
 
     def end_car_control(self):
         self.CC.car_control_server_run = False
@@ -25,7 +25,8 @@ class CarControl:
         self.car_control_server.close()
 
 class Tunning(threading.Thread):
-    def __init__(self, car_control_server, shared_variable_car_control):
+    def __init__(self, car_control, car_control_server, shared_variable_car_control):
+        self.car_control = car_control
         self.car_control_server = car_control_server
         self.CC = shared_variable_car_control
         threading.Thread.__init__(self, daemon=True)
@@ -57,21 +58,22 @@ class Tunning(threading.Thread):
 
 
     def turn_left(self):
-        self.CC.car_control.set_pwm(1,0,495)
+        self.car_control.set_pwm(1,0,495)
         time.sleep(0.05)
 
     def turn_right(self):
-        self.CC.car_control.set_pwm(1,0,315)
+        self.car_control.set_pwm(1,0,315)
         time.sleep(0.05)
 
     def straight(self):
-        self.CC.car_control.set_pwm(1,0,405)
+        self.car_control.set_pwm(1,0,405)
         time.sleep(0.05)
 
 
 
 class ForwardOrReverse(threading.Thread):
-    def __init__(self, car_control_server, shared_variable_car_control):
+    def __init__(self, car_control, car_control_server, shared_variable_car_control):
+        self.car_control = car_control
         self.car_control_server = car_control_server
         self.CC =shared_variable_car_control
         threading.Thread.__init__(self, daemon=True)
