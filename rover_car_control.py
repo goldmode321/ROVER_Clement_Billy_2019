@@ -2,6 +2,7 @@ import time
 import threading
 import Adafruit_PCA9685
 import rover_socket
+import traceback
 
 class CarControl:
     def __init__(self, shared_variable_car_control):
@@ -12,12 +13,13 @@ class CarControl:
         try:
             self.car_control = Adafruit_PCA9685.PCA9685()
             self.car_control.set_pwm_freq(60)
+            self.car_control_server = rover_socket.UDP_server(50011, 0, "192.168.5.2")
+            self.CC.car_control_server_run = True
+            Tunning(self.car_control, self.car_control_server, self.CC)
+            ForwardOrReverse(self.car_control, self.car_control_server, self.CC)
         except:
             print("carControl not activated")
-        self.car_control_server = rover_socket.UDP_server(50011, 0, "192.168.5.2")
-        self.CC.car_control_server_run = True
-        Tunning(self.car_control, self.car_control_server, self.CC)
-        ForwardOrReverse(self.car_control, self.car_control_server, self.CC)
+
 
     def end_car_control(self):
         self.CC.car_control_server_run = False
