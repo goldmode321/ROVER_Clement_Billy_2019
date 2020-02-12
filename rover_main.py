@@ -268,8 +268,6 @@ class Main():
         self.main_show_vision_data_run = True
         while self.main_show_vision_data_run:
             try:
-
-
                 print('status : {} | x : {} | y : {} | theta : {} | Use Ctrl+C or enter any key to end current process : '\
                     .format(self.VI.vision_status, self.VI.vision_x, self.VI.vision_y, self.VI.vision_theta))
                 time.sleep(0.1)

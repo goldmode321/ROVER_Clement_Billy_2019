@@ -185,7 +185,6 @@ class ROVER_gui():
             self.gui.CalibrationBtn,
             self.gui.KeyboardControlBtn
         ]
-
         self.gui.StopAllBtn.clicked.connect(self.StopAllBtn_click)
         self.gui.KeyboardControlBtn.clicked.connect(self.KeyboardControlBtn_click)
         self.gui.VisionBuildMapBtn.clicked.connect(self.VisionBuildMapBtn_click)

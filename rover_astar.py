@@ -17,7 +17,8 @@ import pyqtgraph as pg
 from PyQt5 import QtCore
 
 show_animation = True
-
+weight_factor_G_cost = 1
+weight_factor_H_cost = 1
 
 class AStarPlanner:
 
@@ -75,7 +76,7 @@ class AStarPlanner:
                 break
 
             c_id = min(
-                open_set, key=lambda o: open_set[o].cost + self.calc_heuristic(ngoal, open_set[o]))
+                open_set, key=lambda o: open_set[o].cost + weight_factor_H_cost*self.calc_heuristic(ngoal, open_set[o]))
             current = open_set[c_id]
 
             # show graph
@@ -84,6 +85,8 @@ class AStarPlanner:
                 #          self.calc_grid_position(current.y, self.miny), "xc")
                 rx, ry = self.calc_final_path(current, closed_set)
                 route_plot.setData(rx,ry)
+                pg.QtGui.QApplication.processEvents()
+
 
                 if len(closed_set.keys()) % 10 == 0:
                     # print(closed_set.keys())
@@ -123,6 +126,7 @@ class AStarPlanner:
                     if open_set[n_id].cost > node.cost:
                         # This path is the best until now. record it
                         open_set[n_id] = node
+            
 
         rx, ry = self.calc_final_path(ngoal, closed_set)
 
@@ -143,7 +147,7 @@ class AStarPlanner:
 
     @staticmethod
     def calc_heuristic(n1, n2):
-        w = 1.0  # weight of heuristic
+        w = weight_factor_G_cost  # weight of heuristic
         d = w * math.sqrt((n1.x - n2.x) ** 2 + (n1.y - n2.y) ** 2)
         return d
 
