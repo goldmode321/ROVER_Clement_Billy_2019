@@ -7,6 +7,7 @@
 	"settings": {
 		"workbench.settings.editor": "json",
 		"terminal.explorerKind": "external",
+		"python.terminal.activateEnvironment": true,
 		"python.pythonPath": "D:\\WorkSoftware\\Anoconda\\envs\\TCN_3.5\\python.exe"
 		
 	}

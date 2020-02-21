@@ -1,290 +1,109 @@
-"""
+import numpy as np
 
-A* grid planning
 
-author: Atsushi Sakai(@Atsushi_twi)
-        Nikos Kanargias (nkana@tee.gr)
+class AstarPathPlanning:
+    def __init__(self, SharedVariable):
+        self.SV = SharedVariable
+        self.motion = [
+            [1, 0],
+            [1, 1],
+            [1, -1],
+            [0, 1],
+            [0, -1],
+            [-1, 0],
+            [-1, 1],
+            [-1, -1]
+        ]
+        self.node_calculated = dict() # Close set
+        self.node_use_for_calculation = dict() # Open set
 
-See Wikipedia article (https://en.wikipedia.org/wiki/A*_search_algorithm)
-
-"""
-
-import math
-import time
-
-import matplotlib.pyplot as plt
-import pyqtgraph as pg
-from PyQt5 import QtCore
-
-show_animation = True
-weight_factor_G_cost = 1
-weight_factor_H_cost = 1
-
-class AStarPlanner:
-
-    def __init__(self, ox, oy, reso, rr):
-        """
-        Initialize grid map for a star planning
-
-        ox: x position list of Obstacles [m]
-        oy: y position list of Obstacles [m]
-        reso: grid resolution [m]
-        rr: robot radius[m]
-        """
-
-        self.reso = reso
-        self.rr = rr
-        self.calc_obstacle_map(ox, oy)
-        self.motion = self.get_motion_model()
 
     class Node:
-        def __init__(self, x, y, cost, pind):
-            self.x = x  # index of grid
-            self.y = y  # index of grid
-            self.cost = cost
-            self.pind = pind
+        ''' Define parameters in a Node (point) : node_x, node_y, cost, node ID'''
+        def __init__(self, x, y, cost, last_node_id):
+            self.x, self.y, self.cost, self.last_node_id = x, y, cost, last_node_id 
 
-        def __str__(self):
-            return str(self.x) + "," + str(self.y) + "," + str(self.cost) + "," + str(self.pind)
+    def calculate_cost(self, node):
+        # distance from node to start point
+        g_cost = self.SV.G_cost_factor * round(np.hypot(node.x - self.SV.MAP.start_x, node.y - self.SV.MAP.start_y), 2)
+        # (Heuristic) Distance from node to end point
+        h_cost = self.SV.H_cost_factor * round(np.hypot(node.x - self.SV.MAP.end_x, node.y - self.SV.MAP.end_y), 2)
+        return g_cost + h_cost
 
-    def planning(self, sx, sy, gx, gy, route_plot):
-        """
-        A star path search
+    def node_invaild(self, node):
+        return True if np.min(np.hypot(self.SV.MAP.global_obstacle_x - node.x, self.SV.MAP.global_obstacle_y - node.y)) < \
+            self.SV.rover_size + self.SV.obstacle_size else False
 
-        input:
-            sx: start x position [m]
-            sy: start y position [m]
-            gx: goal x position [m]
-            gx: goal x position [m]
+    def repeated_node(self, node):
+        '''To check if node is calcualted (In close set)'''
+        return True if str(node.x) + ',' + str(node.y) in self.node_calculated else False
 
-        output:
-            rx: x position list of the final path
-            ry: y position list of the final path
-        """
+    def reset(self):
+        self.node_use_for_calculation = dict()
+        self.node_calculated = dict()
 
-        nstart = self.Node(self.calc_xyindex(sx, self.minx),
-                           self.calc_xyindex(sy, self.miny), 0.0, -1)
-        ngoal = self.Node(self.calc_xyindex(gx, self.minx),
-                          self.calc_xyindex(gy, self.miny), 0.0, -1)
+    def planning(self):
+        # start point
+        self.reset()
+        current_node = self.Node(
+            self.SV.MAP.start_x,
+            self.SV.MAP.start_y,
+            0,
+            str(self.SV.MAP.start_x) + ',' + str(self.SV.MAP.start_y)
+        )
 
-        open_set, closed_set = dict(), dict()
-        open_set[self.calc_grid_index(nstart)] = nstart
+        reach_target = False
+        self.node_use_for_calculation[str(current_node.x) + ',' + str(current_node.y)] = current_node
+        while not reach_target:
+            if len(self.node_use_for_calculation) == 0:
+                self.calculate_path(current_node, self.node_calculated)
+                print("No route to go to target")
+                break
+            # Open set, which is used for calculation, find lowest cost node for calculation
+            current_node_id = min(self.node_use_for_calculation, key=lambda i: self.node_use_for_calculation[i].cost)
+            current_node = self.node_use_for_calculation[current_node_id]
 
-        while 1:
-            if len(open_set) == 0:
-                print("Open set is empty..")
+            if np.hypot(current_node.x - self.SV.MAP.end_x, current_node.y - self.SV.MAP.end_y) <= self.SV.step_unit:
+                print("Target reached")
+                self.calculate_path(current_node, self.node_calculated)
+                reach_target = True
                 break
 
-            c_id = min(
-                open_set, key=lambda o: open_set[o].cost + weight_factor_H_cost*self.calc_heuristic(ngoal, open_set[o]))
-            current = open_set[c_id]
-
-            # show graph
-            if show_animation:  # pragma: no cover
-                # plt.plot(self.calc_grid_position(current.x, self.minx),
-                #          self.calc_grid_position(current.y, self.miny), "xc")
-                rx, ry = self.calc_final_path(current, closed_set)
-                route_plot.setData(rx,ry)
-                pg.QtGui.QApplication.processEvents()
-
-
-                if len(closed_set.keys()) % 10 == 0:
-                    # print(closed_set.keys())
-                    # plt.pause(0.001)
-                    pass
-
-            if current.x == ngoal.x and current.y == ngoal.y:
-                print("Find goal")
-                ngoal.pind = current.pind
-                ngoal.cost = current.cost
-                break
-
-            # Remove the item from the open set
-            del open_set[c_id]
-
-            # Add it to the closed set
-            closed_set[c_id] = current
-
-            # expand_grid search grid based on motion model
-            for i, _ in enumerate(self.motion):
-                node = self.Node(current.x + self.motion[i][0],
-                                 current.y + self.motion[i][1],
-                                 current.cost + self.motion[i][2], c_id)
-                n_id = self.calc_grid_index(node)
-
-
-                # If the node is not safe, do nothing
-                if not self.verify_node(node):
+            # Remove this node from open_set
+            del self.node_use_for_calculation[current_node_id]
+            # Then add it to close_set, which is the one that already calculated
+            self.node_calculated[current_node_id] = current_node
+            # Node calculation
+            for motion in self.motion:
+                new_node = self.Node(
+                    current_node.x + self.SV.step_unit * motion[0],
+                    current_node.y + self.SV.step_unit * motion[1],
+                    0,
+                    current_node_id
+                )
+                if self.node_invaild(new_node):
                     continue
-
-                if n_id in closed_set:
+                if self.repeated_node(new_node):
                     continue
-
-                if n_id not in open_set:
-                    open_set[n_id] = node  # discovered a new node
-                else:
-                    if open_set[n_id].cost > node.cost:
-                        # This path is the best until now. record it
-                        open_set[n_id] = node
-            
-
-        rx, ry = self.calc_final_path(ngoal, closed_set)
-
-        return rx, ry
-
-    def calc_final_path(self, ngoal, closedset):
-        # generate final course
-        rx, ry = [self.calc_grid_position(ngoal.x, self.minx)], [
-            self.calc_grid_position(ngoal.y, self.miny)]
-        pind = ngoal.pind
-        while pind != -1:
-            n = closedset[pind]
-            rx.append(self.calc_grid_position(n.x, self.minx))
-            ry.append(self.calc_grid_position(n.y, self.miny))
-            pind = n.pind
-
-        return rx, ry
-
-    @staticmethod
-    def calc_heuristic(n1, n2):
-        w = weight_factor_G_cost  # weight of heuristic
-        d = w * math.sqrt((n1.x - n2.x) ** 2 + (n1.y - n2.y) ** 2)
-        return d
-
-    def calc_grid_position(self, index, minp):
-        """
-        calc grid position
-
-        :param index:
-        :param minp:
-        :return:
-        """
-        pos = index * self.reso + minp
-        return pos
-
-    def calc_xyindex(self, position, min_pos):
-        return round((position - min_pos) / self.reso)
-
-    def calc_grid_index(self, node):
-        return (node.y - self.miny) * self.xwidth + (node.x - self.minx)
-
-    def verify_node(self, node):
-        px = self.calc_grid_position(node.x, self.minx)
-        py = self.calc_grid_position(node.y, self.miny)
-
-        if px < self.minx:
-            return False
-        elif py < self.miny:
-            return False
-        elif px >= self.maxx:
-            return False
-        elif py >= self.maxy:
-            return False
-
-        # collision check
-        if self.obmap[node.x][node.y]:
-            return False
-
-        return True
-
-    def calc_obstacle_map(self, ox, oy):
-
-        self.minx = round(min(ox))
-        self.miny = round(min(oy))
-        self.maxx = round(max(ox))
-        self.maxy = round(max(oy))
-        print("minx:", self.minx)
-        print("miny:", self.miny)
-        print("maxx:", self.maxx)
-        print("maxy:", self.maxy)
-
-        self.xwidth = round((self.maxx - self.minx) / self.reso)
-        self.ywidth = round((self.maxy - self.miny) / self.reso)
-        print("xwidth:", self.xwidth)
-        print("ywidth:", self.ywidth)
-
-        # obstacle map generation
-        self.obmap = [[False for i in range(self.ywidth)]
-                      for i in range(self.xwidth)]
-        for ix in range(self.xwidth):
-            x = self.calc_grid_position(ix, self.minx)
-            for iy in range(self.ywidth):
-                y = self.calc_grid_position(iy, self.miny)
-                for iox, ioy in zip(ox, oy):
-                    d = math.sqrt((iox - x) ** 2 + (ioy - y) ** 2)
-                    if d <= self.rr:
-                        self.obmap[ix][iy] = True
-                        break
-
-    @staticmethod
-    def get_motion_model():
-        # dx, dy, cost
-        motion = [[1, 0, 1],
-                  [0, 1, 1],
-                  [-1, 0, 1],
-                  [0, -1, 1],
-                  [-1, -1, math.sqrt(2)],
-                  [-1, 1, math.sqrt(2)],
-                  [1, -1, math.sqrt(2)],
-                  [1, 1, math.sqrt(2)]]
-
-        return motion
+                new_node.cost = self.calculate_cost(new_node)
+                if str(new_node.x) + ',' + str(new_node.y) not in self.node_use_for_calculation:
+                    # Save it if it is a completely new node
+                   self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node
+                else: 
+                    # If not new node, see if it is the best path for now (lower cost)
+                    if self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)].cost > new_node.cost:
+                        self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node
 
 
-def main():
-    print(__file__ + " start!!")
+    def calculate_path(self, current_node, node_calculated):
+        '''Start from current node to start point'''
+        route_x = [current_node.x]
+        route_y = [current_node.y]
+        last_node_id = current_node.last_node_id
+        while last_node_id != str(self.SV.MAP.start_x) + ',' + str(self.SV.MAP.start_y):
+            new_node = node_calculated[last_node_id]
+            route_x.append(new_node.x)
+            route_y.append(new_node.y)
+            last_node_id = new_node.last_node_id
+        self.SV.route_x, self.SV.route_y = route_x, route_y
 
-    # start and goal position
-    sx = 10.0  # [m]
-    sy = 10.0  # [m]
-    gx = 50.0  # [m]
-    gy = 50.0  # [m]
-    grid_size = 2.0  # [m]
-    robot_radius = 5.0  # [m]
-
-    # set obstable positions
-    ox, oy = [], []
-    for i in range(-10, 60):
-        ox.append(i)
-        oy.append(-10.0)
-    for i in range(-10, 60):
-        ox.append(60.0)
-        oy.append(i)
-    for i in range(-10, 61):
-        ox.append(i)
-        oy.append(60.0)
-    for i in range(-10, 61):
-        ox.append(-10.0)
-        oy.append(i)
-    for i in range(-10, 40):
-        ox.append(20.0)
-        oy.append(i)
-    for i in range(0, 40):
-        ox.append(40.0)
-        oy.append(60.0 - i)
-
-    if show_animation:  # pragma: no cover
-        win = pg.GraphicsWindow()
-        plot = win.addPlot()
-        obstacle_plot = plot.plot(ox, oy, pen=pg.mkPen(color=(0,0,0), width=2), symbol='o')
-        start_point = plot.plot([sx], [sy], pen=pg.mkPen(color=(0,255,0), width=2), symbol='o')
-        end_point = plot.plot([gx], [gy], pen=pg.mkPen(color=(0,0,255), width=2), symbol='o')
-        route_plot = plot.plot(pen=pg.mkPen(color=(255,0,0), width=2, style=QtCore.Qt.DotLine))
-        # window.addItem(obstacle_plot, start_point, end_point)
-        # plt.plot(ox, oy, ".k")
-        # plt.plot(sx, sy, "og")
-        # plt.plot(gx, gy, "xb")
-        # plt.grid(True)
-        # plt.axis("equal")
-
-    a_star = AStarPlanner(ox, oy, grid_size, robot_radius)
-    rx, ry = a_star.planning(sx, sy, gx, gy, route_plot)
-
-    if show_animation:  # pragma: no cover
-        route_plot.setData(rx, ry)
-        input("any key to exit")
-
-
-
-if __name__ == '__main__':
-    main()

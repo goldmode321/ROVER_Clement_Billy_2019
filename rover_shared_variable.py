@@ -12,10 +12,22 @@ class SharedVariables():
         self.LOBS = LocalObstacle()        # 50020
         self.GOBS = GlobalObstacle()       
         self.GUI = GuiObject()
+        self.AS = Astar()
 
 class Rover:
     def __init__(self):
         self.rover_run = False
+
+class Astar:
+    def __init__(self):
+        self.G_cost_factor = 1
+        self.H_cost_factor = 1
+        self.route_x = list()
+        self.route_y = list()
+        self.route_plot = None
+        self.step_unit = 20 # cm
+        self.rover_size = 20
+        self.obstacle_size = 20
 
 
 class LocalObstacle:
