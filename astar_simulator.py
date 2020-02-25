@@ -5,11 +5,13 @@ import  traceback
 import os, sys
 import multiprocessing
 from queue import Queue
-
+import scipy.spatial
 
 import gui.simulator as sim_ui
 import rover_car_model
-
+import rover_astar
+from rover_map import Map
+from rover_curve_fitting import CurveFitting
 
 class SharedVariable:
     def __init__(self):
@@ -41,6 +43,15 @@ class SharedVariable:
         self.route_y = list()
         self.route_plot = None
 
+        self.sample_number = 100
+        self.fitted_route_x = np.array([])
+        self.fitted_route_y = np.array([])
+        self.fitted_route_plot = None
+
+
+        self.KDTree_sample_x = []
+        self.KDTree_sample_y = []
+        self.voronoi_plot = None
 
 class SimulatedLidar:
     def __init__(self, SharedVariable):
@@ -86,222 +97,66 @@ class SimulatedLidar:
                 pass
 
 
-class Map:
-    def __init__(self, name='maze1'):
-        self.map_name = name
-        self.map_width = 2000
-        self.map_length = 2000
-        self.start_x = 0
-        self.start_y = 0
-        self.global_obstacle_x = np.array([])
-        self.global_obstacle_y = np.array([])
-        self.global_obstacle = np.array([])
-        self.obs_dict = {'maze1':self.maze1, 'maze2':self.maze2}
-        self.generate_map()
-
-
-    def generate_map(self):
-        self.obs_dict[self.map_name]()
-
-    def maze1(self):
-        self.map_width = int(self.map_width)
-        self.map_length = int(self.map_length)
-        wall_bottom_x = wall_top_x = np.linspace(0, self.map_length, self.map_length, dtype='int')
-        wall_top_y = np.zeros(self.map_length, dtype='int')
-        wall_bottom_y = wall_top_y + self.map_width
-
-        wall_right_x = np.zeros(self.map_width, dtype='int') + self.map_length
-        wall_right_y = np.linspace(0, self.map_width, self.map_width, dtype='int')
-
-        wall_left_x = np.zeros(self.map_width, dtype='int')
-        wall_left_y = np.linspace(0, self.map_width, self.map_width, dtype='int')
-
-        wall1_x = np.zeros(int(self.map_width*2/5), dtype='int') + int(self.map_length*4/5)
-        wall1_y = np.linspace(self.map_width*2/5, self.map_width*4/5, int(self.map_width*2/5), dtype='int')
-
-        wall2_x = np.linspace(self.map_length*2/5, self.map_length*4/5, int(self.map_length*2/5), dtype='int')
-        wall2_y = np.zeros(int(self.map_length*2/5), dtype='int') + int(self.map_width*3/5)
-
-        wall3_x = np.zeros(int(self.map_width*1/5), dtype='int') + int(self.map_length*2/5)
-        wall3_y = np.linspace(self.map_width*2/5, self.map_width*3/5, int(self.map_width*1/5), dtype='int')
-
-        wall4_x = np.linspace(self.map_length*1/5, self.map_length*3/5, int(self.map_length*2/5), dtype='int')
-        wall4_y = np.zeros(int(self.map_length*2/5), dtype='int') + int(self.map_width/5)
-
-        obs_x = [wall_bottom_x, wall_top_x, wall_left_x, wall_right_x, wall1_x, wall2_x, wall3_x, wall4_x]
-        obs_y = [wall_bottom_y, wall_top_y, wall_left_y, wall_right_y, wall1_y, wall2_y, wall3_y, wall4_y]
-
-        for i, j in zip(obs_x, obs_y):
-            self.global_obstacle_x = np.append(self.global_obstacle_x, i)
-            self.global_obstacle_y = np.append(self.global_obstacle_y, j)
-        self.start_x = self.map_length/10
-        self.start_y = self.map_width*9/10
-        self.end_x = self.map_length*9/10
-        self.end_y = self.map_width/10
-        self.global_obstacle = np.stack((self.global_obstacle_x, self.global_obstacle_y), axis=1)
-
-
-    def maze2(self):
-        self.map_width = 2000
-        self.map_length = 4000
-        self.map_width = int(self.map_width)
-        self.map_length = int(self.map_length)
-        wall_bottom_x = wall_top_x = np.linspace(0, self.map_length, self.map_length, dtype='int')
-        wall_top_y = np.zeros(self.map_length, dtype='int')
-        wall_bottom_y = wall_top_y + self.map_width
-
-        wall_right_x = np.zeros(self.map_width, dtype='int') + self.map_length
-        wall_right_y = np.linspace(0, self.map_width, self.map_width, dtype='int')
-
-        wall_left_x = np.zeros(self.map_width, dtype='int')
-        wall_left_y = np.linspace(0, self.map_width, self.map_width, dtype='int')
-
-        wall1_x = np.linspace(self.map_width*1/5, self.map_width*4/5, int(self.map_width*3/5), dtype='int')
-        wall1_y = np.zeros(int(self.map_length*3/5), dtype='int') + int(self.map_width/5)
-
-        wall2_x = np.linspace(self.map_width*1/5, self.map_width*4/5, int(self.map_width*3/5), dtype='int')
-        wall2_y = np.zeros(int(self.map_length*3/5), dtype='int') + int(self.map_width*4/5)
-
-        wall3_x = np.zeros(int(self.map_width*3/5), dtype='int') + int(self.map_length*3/5)
-        wall3_y = np.linspace(self.map_width*1/5, self.map_width*4/5, int(self.map_width*3/5), dtype='int')
-
-        obs_x = [wall_bottom_x, wall_top_x, wall_left_x, wall_right_x, wall1_x, wall2_x, wall3_x]
-        obs_y = [wall_bottom_y, wall_top_y, wall_left_y, wall_right_y, wall1_y, wall2_y, wall3_y]
-
-        for i, j in zip(obs_x, obs_y):
-            self.global_obstacle_x = np.append(self.global_obstacle_x, i)
-            self.global_obstacle_y = np.append(self.global_obstacle_y, j)
-        self.start_x = self.map_length/10
-        self.start_y = self.map_width*1/2
-        self.end_x = self.map_length*9/10
-        self.end_y = self.map_width/2
-        self.global_obstacle = np.stack((self.global_obstacle_x, self.global_obstacle_y), axis=1)
-
-class AstarPathPlanning:
-    def __init__(self, SharedVariable):
-        self.SV = SharedVariable
-        self.motion = [
-            [1, 0],
-            [1, 1],
-            [1, -1],
-            [0, 1],
-            [0, -1],
-            [-1, 0],
-            [-1, 1],
-            [-1, -1]
-        ]
-        self.node_calculated = dict() # Close set
-        # self.calculated_path_dictionary = dict() # Open set
-        self.node_use_for_calculation = dict() # Open set
-        # self.node_best_path = dict()
-
-
-    class Node:
-        ''' Define parameters in a Node (point) : node_x, node_y, cost, node ID'''
-        def __init__(self, x, y, cost, last_node_id):
-            self.x, self.y, self.cost, self.last_node_id = x, y, cost, last_node_id 
-
-    def calculate_cost(self, node):
-        # distance from node to start point
-        g_cost = self.SV.G_cost_factor * round(np.hypot(node.x - self.SV.MAP.start_x, node.y - self.SV.MAP.start_y), 2)
-        # (Heuristic) Distance from node to end point
-        h_cost = self.SV.H_cost_factor * round(np.hypot(node.x - self.SV.MAP.end_x, node.y - self.SV.MAP.end_y), 2)
-        return g_cost + h_cost
-
-    def node_invaild(self, node):
-        return True if np.min(np.hypot(self.SV.MAP.global_obstacle_x - node.x, self.SV.MAP.global_obstacle_y - node.y)) < \
-            self.SV.rover_size + self.SV.obstacle_size else False
-
-    def repeated_node(self, node):
-        '''To check if node is calcualted (In close set)'''
-        return True if str(node.x) + ',' + str(node.y) in self.node_calculated else False
-
-    def reset(self):
-        self.node_use_for_calculation = dict()
-        self.node_calculated = dict()
-
-    def planning(self):
-        # start point
-        self.reset()
-        current_node = self.Node(
-            self.SV.MAP.start_x,
-            self.SV.MAP.start_y,
-            0,
-            str(self.SV.MAP.start_x) + ',' + str(self.SV.MAP.start_y)
-        )
-
-        reach_target = False
-        self.node_use_for_calculation[str(current_node.x) + ',' + str(current_node.y)] = current_node
-        while not reach_target:
-            # print(len(self.node_use_for_calculation))
-            if len(self.node_use_for_calculation) == 0:
-                self.SV.route_x, self.SV.route_y = self.calculate_path(current_node, self.node_calculated)
-                print("No route to go to target")
-                break
-            # Open set, which is used for calculation, find lowest cost node for calculation
-            current_node_id = min(self.node_use_for_calculation, key=lambda i: self.node_use_for_calculation[i].cost)
-            current_node = self.node_use_for_calculation[current_node_id]
-            if self.SV.show_progress:
-                self.SV.route_x, self.SV.route_y = self.calculate_path(current_node, self.node_calculated)
-                self.SV.route_plot.setData(self.SV.route_x, self.SV.route_y)
-                pyqtgraph.QtGui.QApplication.processEvents()
-                pass
-            if np.hypot(current_node.x - self.SV.MAP.end_x, current_node.y - self.SV.MAP.end_y) <= self.SV.step_unit:
-                print("Target reached")
-                self.SV.route_x, self.SV.route_y = self.calculate_path(current_node, self.node_calculated)
-                reach_target = True
-                break
-            # print(current_node_id)
-
-            # Remove this node from open_set
-            del self.node_use_for_calculation[current_node_id]
-            # Then add it to close_set, which is the one that already calculated
-            self.node_calculated[current_node_id] = current_node
-            # Node calculation
-            for motion in self.motion:
-                new_node = self.Node(
-                    current_node.x + self.SV.step_unit * motion[0],
-                    current_node.y + self.SV.step_unit * motion[1],
-                    0,
-                    current_node_id
-                )
-                if self.node_invaild(new_node):
-                    continue
-                if self.repeated_node(new_node):
-                    continue
-                new_node.cost = self.calculate_cost(new_node)
-                if str(new_node.x) + ',' + str(new_node.y) not in self.node_use_for_calculation:
-                    # Save it if it is a completely new node
-                   self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node
-                else: # If not new node, see if it is the best path for now (lower cost)
-                    if self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)].cost > new_node.cost:
-                        self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node
-                        print(self.node_use_for_calculation)
-                    elif self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)].cost == new_node.cost:
-                        pass
-                        # print("unchanged ( {} , {} ) {}".format(new_node.x, new_node.y, new_node.cost))
-
-
-    def calculate_path(self, current_node, node_calculated):
-        '''Start from current node to start point'''
-        route_x = [current_node.x]
-        route_y = [current_node.y]
-        last_node_id = current_node.last_node_id
-        while last_node_id != str(self.SV.MAP.start_x) + ',' + str(self.SV.MAP.start_y):
-            new_node = node_calculated[last_node_id]
-            route_x.append(new_node.x)
-            route_y.append(new_node.y)
-            last_node_id = new_node.last_node_id
-        new_node = node_calculated[last_node_id]
-        route_x.append(new_node.x)
-        route_y.append(new_node.y)
-        return route_x, route_y
-
-
 class PathTracking:
     def __init__(self, SharedVariable):
         self.SV = SharedVariable
         
+
+class KDTree:
+    """
+    Nearest neighbor search class with KDTree
+    """
+
+    def __init__(self, SharedVariable):
+        ''' data = np.vstack((ox, oy)).T'''
+        # store kd-tree
+        self.SV = SharedVariable
+        data = np.vstack((self.SV.MAP.global_obstacle_x, self.SV.MAP.global_obstacle_y)).T
+        self.tree = scipy.spatial.cKDTree(data)
+        self.sample_points()
+
+    def search(self, inp, k=1):
+        """
+        Search NN
+
+        inp: input data, single frame or multi frame
+
+        """
+
+        if len(inp.shape) >= 2:  # multi input
+            index = []
+            dist = []
+
+            for i in inp.T:
+                idist, iindex = self.tree.query(i, k=k)
+                index.append(iindex)
+                dist.append(idist)
+
+            return index, dist
+
+        dist, index = self.tree.query(inp, k=k)
+        return index, dist
+
+    def search_in_distance(self, inp, r):
+        """
+        find points with in a distance r
+        """
+
+        index = self.tree.query_ball_point(inp, r)
+        return index
+
+    def sample_points(self):
+        oxy = np.vstack((self.SV.MAP.global_obstacle_x, self.SV.MAP.global_obstacle_y)).T
+
+        # generate voronoi point
+        vor = scipy.spatial.Voronoi(oxy)
+        self.SV.KDTree_sample_x = [ix for [ix, iy] in vor.vertices]
+        self.SV.KDTree_sample_y = [iy for [ix, iy] in vor.vertices]
+
+        self.SV.KDTree_sample_x.append(self.SV.MAP.start_x)
+        self.SV.KDTree_sample_y.append(self.SV.MAP.start_y)
+        self.SV.KDTree_sample_x.append(self.SV.MAP.end_x)
+        self.SV.KDTree_sample_y.append(self.SV.MAP.end_y)
 
 
 
@@ -314,6 +169,8 @@ class Pens:
         self.rover_pen = pyqtgraph.mkPen(color=(0, 255, 0, 100), width=10)
         self.transparent = pyqtgraph.mkPen(color=(255, 255, 255, 0))
         self.route_pen = pyqtgraph.mkPen(color=(255, 0, 0), width=2, style=QtCore.Qt.DotLine)
+        self.fitted_route_pen = pyqtgraph.mkPen(color=(0, 0, 255), width=3)
+
 
 class App:
     def __init__(self):
@@ -348,12 +205,20 @@ class App:
         self.gui.spin_end_y.setValue(self.SV.MAP.end_y)
 
         self.lidar = SimulatedLidar(self.SV)
-        self.astar = AstarPathPlanning(self.SV)
+        self.astar = rover_astar.AstarPathPlanning(self.SV)
+        self.CF = CurveFitting(self.SV)
 
 
 
         self.map_plot_widget = pyqtgraph.PlotWidget(background='w')
-        self.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen, symbol='s')
+        self.SV.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen, symbol='s')
+        self.SV.fitted_route_plot = self.map_plot_widget.plot(pen=self.Pen.fitted_route_pen)
+        self.SV.voronoi_plot = pyqtgraph.ScatterPlotItem(
+            symbol='o',
+            size=2,
+            brush=(0, 255, 0),
+            pen=self.Pen.transparent,
+        )
         self.global_obstacle_plot = pyqtgraph.ScatterPlotItem(
             symbol='o',
             size=self.SV.obstacle_size,
@@ -381,6 +246,7 @@ class App:
         self.map_plot_widget.addItem(self.local_obstacle_plot)
         self.map_plot_widget.addItem(self.end_point_plot)
         self.map_plot_widget.addItem(self.rover_plot)
+        self.map_plot_widget.addItem(self.SV.voronoi_plot)
         self.gui.horizontalLayout_3.addWidget(self.map_plot_widget)
 
 
@@ -402,7 +268,6 @@ class App:
 
         self.plot_map()
 
-        self.SV.route_plot = self.route_plot
 
         self.MainWindow.show()
         sys.exit(app.exec_())
@@ -479,7 +344,11 @@ class App:
 
     def button_start_clicked(self):
         self.astar.planning()
-        self.route_plot.setData(self.SV.route_x, self.SV.route_y)
+        self.SV.route_plot.setData(self.SV.route_x, self.SV.route_y)
+        self.CF.bspline_planning()
+        self.SV.fitted_route_plot.setData(self.SV.fitted_route_x, self.SV.fitted_route_y)
+        self.voronoi_map = KDTree(self.SV)
+        self.SV.voronoi_plot.setData(self.SV.KDTree_sample_x, self.SV.KDTree_sample_y)
 
     def button_pause_clicked(self):
         pass
