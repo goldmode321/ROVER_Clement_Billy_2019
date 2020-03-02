@@ -4,14 +4,16 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import  traceback
 import os, sys
 import multiprocessing
+import threading
 from queue import Queue
 import scipy.spatial
 
 import gui.simulator as sim_ui
+import rover_shared_variable
 import rover_car_model
-import rover_astar
-from rover_map import Map
-from rover_curve_fitting import CurveFitting
+import rover_pathplanning
+import rover_map
+import rover_curve_fitting
 
 class SharedVariable:
     def __init__(self):
@@ -25,33 +27,14 @@ class SharedVariable:
         self.rover_y = 0
 
         self.step_unit = 20 # cm
-        self.rover_size = 20
-        self.obstacle_size = 20
+        self.rover_size = 30
+        self.obstacle_size = 1
         self.lidar_scan_radius = 600
 
         self.shared_lidar_data = Queue()
         self.shared_map = Queue() # Map
         self.shared_config = Queue() # time delay, rover_x, rover_y, run_flag, lidar_scan_radius
 
-        self.MAP = Map()
-        self.gui = None
-
-        self.G_cost_factor = 1
-        self.H_cost_factor = 1
-        self.show_progress = False
-        self.route_x = list()
-        self.route_y = list()
-        self.route_plot = None
-
-        self.sample_number = 100
-        self.fitted_route_x = np.array([])
-        self.fitted_route_y = np.array([])
-        self.fitted_route_plot = None
-
-
-        self.KDTree_sample_x = []
-        self.KDTree_sample_y = []
-        self.voronoi_plot = None
 
 class SimulatedLidar:
     def __init__(self, SharedVariable):
@@ -102,61 +85,6 @@ class PathTracking:
         self.SV = SharedVariable
         
 
-class KDTree:
-    """
-    Nearest neighbor search class with KDTree
-    """
-
-    def __init__(self, SharedVariable):
-        ''' data = np.vstack((ox, oy)).T'''
-        # store kd-tree
-        self.SV = SharedVariable
-        data = np.vstack((self.SV.MAP.global_obstacle_x, self.SV.MAP.global_obstacle_y)).T
-        self.tree = scipy.spatial.cKDTree(data)
-        self.sample_points()
-
-    def search(self, inp, k=1):
-        """
-        Search NN
-
-        inp: input data, single frame or multi frame
-
-        """
-
-        if len(inp.shape) >= 2:  # multi input
-            index = []
-            dist = []
-
-            for i in inp.T:
-                idist, iindex = self.tree.query(i, k=k)
-                index.append(iindex)
-                dist.append(idist)
-
-            return index, dist
-
-        dist, index = self.tree.query(inp, k=k)
-        return index, dist
-
-    def search_in_distance(self, inp, r):
-        """
-        find points with in a distance r
-        """
-
-        index = self.tree.query_ball_point(inp, r)
-        return index
-
-    def sample_points(self):
-        oxy = np.vstack((self.SV.MAP.global_obstacle_x, self.SV.MAP.global_obstacle_y)).T
-
-        # generate voronoi point
-        vor = scipy.spatial.Voronoi(oxy)
-        self.SV.KDTree_sample_x = [ix for [ix, iy] in vor.vertices]
-        self.SV.KDTree_sample_y = [iy for [ix, iy] in vor.vertices]
-
-        self.SV.KDTree_sample_x.append(self.SV.MAP.start_x)
-        self.SV.KDTree_sample_y.append(self.SV.MAP.start_y)
-        self.SV.KDTree_sample_x.append(self.SV.MAP.end_x)
-        self.SV.KDTree_sample_y.append(self.SV.MAP.end_y)
 
 
 
@@ -182,8 +110,9 @@ class App:
         self.gui = sim_ui.Ui_MainWindow()
         self.gui.setupUi(self.MainWindow)
 
-        self.SV = SharedVariable()
-        self.SV.gui = self.gui
+        self.SV = rover_shared_variable.SharedVariables()
+        self.map = rover_map.Map_sim(self.SV)
+        self.SV.GUI.gui = self.gui
         self.Pen = Pens()
         map_name_list = [
             'maze1',
@@ -199,41 +128,37 @@ class App:
         print(self.gui.combo_map.currentText())
 
 
-        self.gui.spin_start_x.setValue(self.SV.MAP.start_x)
-        self.gui.spin_start_y.setValue(self.SV.MAP.start_y)
-        self.gui.spin_end_x.setValue(self.SV.MAP.end_x)
-        self.gui.spin_end_y.setValue(self.SV.MAP.end_y)
+        self.gui.spin_start_x.setValue(self.SV.AS.start_x)
+        self.gui.spin_start_y.setValue(self.SV.AS.start_y)
+        self.gui.spin_end_x.setValue(self.SV.AS.end_x)
+        self.gui.spin_end_y.setValue(self.SV.AS.end_y)
+        self.gui.spin_rover_radius.setValue(self.SV.AS.rover_size)
+        self.gui.spin_safe_radius.setValue(self.SV.AS.obstacle_size)
 
-        self.lidar = SimulatedLidar(self.SV)
-        self.astar = rover_astar.AstarPathPlanning(self.SV)
-        self.CF = CurveFitting(self.SV)
-
-
+        # self.lidar = SimulatedLidar(self.SV)
+        self.show_progress = False
+        self.astar = rover_pathplanning.AstarPathPlanning_sim(self.SV)
+        self.CF = rover_curve_fitting.Bspline(self.SV)
 
         self.map_plot_widget = pyqtgraph.PlotWidget(background='w')
-        self.SV.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen, symbol='s')
-        self.SV.fitted_route_plot = self.map_plot_widget.plot(pen=self.Pen.fitted_route_pen)
-        self.SV.voronoi_plot = pyqtgraph.ScatterPlotItem(
-            symbol='o',
-            size=2,
-            brush=(0, 255, 0),
-            pen=self.Pen.transparent,
-        )
+        self.SV.GUI.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen, symbol='s')
+        self.SV.GUI.fitted_route_plot = self.map_plot_widget.plot(pen=self.Pen.fitted_route_pen)
+
         self.global_obstacle_plot = pyqtgraph.ScatterPlotItem(
             symbol='o',
-            size=self.SV.obstacle_size,
+            size=self.SV.AS.obstacle_size,
             brush=(0, 0, 0),
             pen=self.Pen.transparent,
         )
         self.local_obstacle_plot = pyqtgraph.ScatterPlotItem(
             symbol='o',
-            size=self.SV.obstacle_size,
+            size=self.SV.AS.obstacle_size,
             brush=(0, 89, 255),
             pen=self.Pen.transparent,
         )
         self.end_point_plot = pyqtgraph.ScatterPlotItem(
             symbol='x',
-            size=self.SV.rover_size*2,
+            size=self.SV.AS.rover_size*2,
             brush=(255, 0, 0)
         )
         self.rover_plot = pyqtgraph.ScatterPlotItem(
@@ -246,7 +171,6 @@ class App:
         self.map_plot_widget.addItem(self.local_obstacle_plot)
         self.map_plot_widget.addItem(self.end_point_plot)
         self.map_plot_widget.addItem(self.rover_plot)
-        self.map_plot_widget.addItem(self.SV.voronoi_plot)
         self.gui.horizontalLayout_3.addWidget(self.map_plot_widget)
 
 
@@ -266,6 +190,7 @@ class App:
         self.gui.spin_unitstep.valueChanged.connect(self.change_step_unit)
         self.gui.combo_map.currentIndexChanged.connect(self.change_map)
 
+
         self.plot_map()
 
 
@@ -273,48 +198,60 @@ class App:
         sys.exit(app.exec_())
 
     def change_map(self):
-        self.SV.MAP.map_name = self.gui.combo_map.currentText()
-        self.SV.MAP.generate_map()
+        self.map.map_name = self.gui.combo_map.currentText()
+        self.map.generate_map()
         self.plot_map()
+        self.gui.spin_start_x.blockSignals(True)
+        self.gui.spin_start_y.blockSignals(True)
+        self.gui.spin_end_x.blockSignals(True)
+        self.gui.spin_end_y.blockSignals(True)
+        self.gui.spin_start_x.setValue(self.SV.AS.start_x)
+        self.gui.spin_start_y.setValue(self.SV.AS.start_y)
+        self.gui.spin_end_x.setValue(self.SV.AS.end_x)
+        self.gui.spin_end_y.setValue(self.SV.AS.end_y)
+        self.gui.spin_start_x.blockSignals(False)
+        self.gui.spin_start_y.blockSignals(False)
+        self.gui.spin_end_x.blockSignals(False)
+        self.gui.spin_end_y.blockSignals(False)
 
     def plot_map(self):
-        self.global_obstacle_plot.setData(self.SV.MAP.global_obstacle_x, self.SV.MAP.global_obstacle_y)
-        self.rover_plot.setData([self.SV.MAP.start_x], [self.SV.MAP.start_y])
-        self.end_point_plot.setData([self.SV.MAP.end_x], [self.SV.MAP.end_y])
+        self.global_obstacle_plot.setData(self.SV.GOBS.global_obstacle_x, self.SV.GOBS.global_obstacle_y)
+        self.rover_plot.setData([self.SV.AS.start_x], [self.SV.AS.start_y])
+        self.end_point_plot.setData([self.SV.AS.end_x], [self.SV.AS.end_y])
 
     def change_start_end_point(self):
-        if np.min(np.hypot(self.SV.MAP.global_obstacle_x - self.gui.spin_start_x.value(),\
-            self.SV.MAP.global_obstacle_y - self.gui.spin_start_y.value())) <= self.SV.obstacle_size + self.SV.rover_size or\
-                np.min(np.hypot(self.SV.MAP.global_obstacle_x - self.gui.spin_end_x.value(),\
-                    self.SV.MAP.global_obstacle_y - self.gui.spin_start_y.value())) <= self.SV.obstacle_size + self.SV.rover_size:
+        if np.min(np.hypot(self.SV.GOBS.global_obstacle_x - self.gui.spin_start_x.value(),\
+            self.SV.GOBS.global_obstacle_y - self.gui.spin_start_y.value())) <= self.SV.AS.obstacle_size + self.SV.AS.rover_size or\
+                np.min(np.hypot(self.SV.GOBS.global_obstacle_x - self.gui.spin_end_x.value(),\
+                    self.SV.GOBS.global_obstacle_y - self.gui.spin_start_y.value())) <= self.SV.AS.obstacle_size + self.SV.AS.rover_size:
             print('ROVER or End Point hit obstacle')
         else:
-            self.SV.MAP.start_x = self.SV.rover_x = self.gui.spin_start_x.value()
-            self.SV.MAP.start_y = self.SV.rover_y = self.gui.spin_start_y.value()
-            self.SV.MAP.end_x = self.gui.spin_end_x.value()
-            self.SV.MAP.end_y = self.gui.spin_end_y.value()
-            self.rover_plot.setData([self.SV.MAP.start_x], [self.SV.MAP.start_y])
-            self.end_point_plot.setData([self.SV.MAP.end_x], [self.SV.MAP.end_y])
+            self.SV.AS.start_x = self.SV.MAP.rover_x = self.gui.spin_start_x.value()
+            self.SV.AS.start_y = self.SV.MAP.rover_y = self.gui.spin_start_y.value()
+            self.SV.AS.end_x = self.gui.spin_end_x.value()
+            self.SV.AS.end_y = self.gui.spin_end_y.value()
+            self.rover_plot.setData([self.SV.AS.start_x], [self.SV.AS.start_y])
+            self.end_point_plot.setData([self.SV.AS.end_x], [self.SV.AS.end_y])
 
     def change_g_h_cost(self):
-        self.SV.G_cost_factor = self.gui.dspin_gcost.value()
-        self.SV.H_cost_factor = self.gui.dspin_hcost.value()
+        self.SV.AS.G_cost_factor = self.gui.dspin_gcost.value()
+        self.SV.AS.H_cost_factor = self.gui.dspin_hcost.value()
 
     def change_step_unit(self):
-        self.SV.step_unit = self.gui.spin_unitstep.value()
+        self.SV.AS.step_unit = self.gui.spin_unitstep.value()
 
     def change_show_progress(self):
-        self.SV.show_progress = False if self.SV.show_progress else True
-        print("Show progress {}".format(self.SV.show_progress))
+        self.show_progress = False if self.show_progress else True
+        print("Show progress {}".format(self.show_progress))
 
     def change_rover_size(self):
-        self.SV.rover_size = self.gui.spin_rover_radius.value()
-        self.rover_plot.setSize(self.SV.rover_size)
+        self.SV.AS.rover_size = self.gui.spin_rover_radius.value()
+        self.rover_plot.setSize(self.SV.AS.rover_size)
 
     def change_obstacle_size(self):
-        self.SV.obstacle_size = self.gui.spin_safe_radius.value()
-        self.global_obstacle_plot.setSize(self.SV.obstacle_size)
-        self.local_obstacle_plot.setSize(self.SV.obstacle_size)
+        self.SV.AS.obstacle_size = self.gui.spin_safe_radius.value()
+        self.global_obstacle_plot.setSize(self.SV.AS.obstacle_size)
+        self.local_obstacle_plot.setSize(self.SV.AS.obstacle_size)
 
     def change_pxmode(self):
         if self.px_mode:
@@ -332,36 +269,45 @@ class App:
         self.px_mode = not self.px_mode
         print('check {}'.format(self.px_mode))
 
-    def update_shared_config(self):
-        if not self.SV.shared_config.empty(): self.SV.shared_config.get()    
-        self.SV.shared_config.put([
-            self.gui.spin_time_delay.value(),
-            self.SV.rover_x,
-            self.SV.rover_y,
-            self.run_flag,
-            self.SV.lidar_scan_radius
-        ])
+    # def update_shared_config(self):
+    #     if not self.SV.shared_config.empty(): self.SV.shared_config.get()    
+    #     self.SV.shared_config.put([
+    #         self.gui.spin_time_delay.value(),
+    #         self.SV.rover_x,
+    #         self.SV.rover_y,
+    #         self.run_flag,
+    #         self.SV.lidar_scan_radius
+    #     ])
 
     def button_start_clicked(self):
-        self.astar.planning()
-        self.SV.route_plot.setData(self.SV.route_x, self.SV.route_y)
+        self.astar.planning(self.show_progress)
+        self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
+        self.gui.lcd_astar_planning_time.display(self.SV.AS.astar_planning_time)
         self.CF.bspline_planning()
-        self.SV.fitted_route_plot.setData(self.SV.fitted_route_x, self.SV.fitted_route_y)
-        self.voronoi_map = KDTree(self.SV)
-        self.SV.voronoi_plot.setData(self.SV.KDTree_sample_x, self.SV.KDTree_sample_y)
+        self.SV.GUI.fitted_route_plot.setData(self.SV.CF.fitted_route_x, self.SV.CF.fitted_route_y)
 
     def button_pause_clicked(self):
         pass
 
     def button_reset_clicked(self):
-        self.SV.MAP = Map(self.gui.combo_map.currentText())
-        self.gui.spin_start_x.setValue(self.SV.MAP.start_x)
-        self.gui.spin_start_y.setValue(self.SV.MAP.start_y)
-        self.gui.spin_end_x.setValue(self.SV.MAP.end_x)
-        self.gui.spin_end_y.setValue(self.SV.MAP.end_y)
+
+        self.gui.spin_start_x.setValue(self.SV.AS.start_x)
+        self.gui.spin_start_y.setValue(self.SV.AS.start_y)
+        self.gui.spin_end_x.setValue(self.SV.AS.end_x)
+        self.gui.spin_end_y.setValue(self.SV.AS.end_y)
         self.change_start_end_point()
 
 
+
+
+class Astar_thread(threading.Thread):
+    def __init__(self,astar, show_progress, daemon=True):
+        super().__init__(daemon)
+        self.astar = astar
+        self.show_progress = show_progress
+
+    def run(self):
+        self.astar.planning(self.show_progress)
 
 
 

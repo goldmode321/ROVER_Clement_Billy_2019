@@ -13,10 +13,12 @@ class SharedVariables():
         self.GOBS = GlobalObstacle()       
         self.GUI = GuiObject()
         self.AS = Astar()
+        self.CF = Curve_fitting()
 
 class Rover:
     def __init__(self):
         self.rover_run = False
+
 
 class Astar:
     def __init__(self):
@@ -26,8 +28,20 @@ class Astar:
         self.route_y = list()
         self.route_plot = None
         self.step_unit = 20 # cm
-        self.rover_size = 20
-        self.obstacle_size = 20
+        self.rover_size = 30
+        self.obstacle_size = 1
+        self.astar_planning_time = 0
+
+        self.start_x = 0
+        self.start_y = 0
+        self.end_x = 0
+        self.end_y = 0
+
+class Curve_fitting:
+    def __init__(self):
+        self.sample_number = 100
+        self.fitted_route_x = numpy.array([])
+        self.fitted_route_y = numpy.array([])
 
 
 class LocalObstacle:
@@ -81,6 +95,12 @@ class MapPlotting:
         self.arrow_y = [0]
         self.global_map = numpy.array([])
 
+        self.rover_x = 0
+        self.rover_y = 0
+
+
+
+
 class Calibration:
     def __init__(self):
         self.calibrate_x = 0
@@ -107,6 +127,13 @@ class CarControl:
 class GuiObject:
     def __init__(self):
         self.gui = None
+
+
+        self.route_plot = None
+        self.fitted_route_plot = None
+
+
+
 
 if __name__ == "__main__":
    SharedVariables() 

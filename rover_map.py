@@ -1,15 +1,16 @@
 import numpy as np
 
-class Map:
-    def __init__(self, name='maze1'):
+class Map_sim:
+    def __init__(self, SharedVariable, name='maze1'):
+        self.SV = SharedVariable
         self.map_name = name
         self.map_width = 2000
         self.map_length = 2000
-        self.start_x = 0
-        self.start_y = 0
-        self.global_obstacle_x = np.array([])
-        self.global_obstacle_y = np.array([])
-        self.global_obstacle = np.array([])
+        self.SV.AS.start_x = 0
+        self.SV.AS.start_y = 0
+        self.SV.GOBS.global_obstacle_x = np.array([])
+        self.SV.GOBS.global_obstacle_y = np.array([])
+        self.SV.GOBS.global_obstacle = np.array([])
         self.obs_dict = {'maze1':self.maze1, 'maze2':self.maze2}
         self.generate_map()
 
@@ -45,14 +46,16 @@ class Map:
         obs_x = [wall_bottom_x, wall_top_x, wall_left_x, wall_right_x, wall1_x, wall2_x, wall3_x, wall4_x]
         obs_y = [wall_bottom_y, wall_top_y, wall_left_y, wall_right_y, wall1_y, wall2_y, wall3_y, wall4_y]
 
+        self.SV.GOBS.global_obstacle_x = self.SV.GOBS.global_obstacle_y = np.array([])
+
         for i, j in zip(obs_x, obs_y):
-            self.global_obstacle_x = np.append(self.global_obstacle_x, i)
-            self.global_obstacle_y = np.append(self.global_obstacle_y, j)
-        self.start_x = self.map_length/10
-        self.start_y = self.map_width*9/10
-        self.end_x = self.map_length*9/10
-        self.end_y = self.map_width/10
-        self.global_obstacle = np.stack((self.global_obstacle_x, self.global_obstacle_y), axis=1)
+            self.SV.GOBS.global_obstacle_x = np.append(self.SV.GOBS.global_obstacle_x, i)
+            self.SV.GOBS.global_obstacle_y = np.append(self.SV.GOBS.global_obstacle_y, j)
+        self.SV.AS.start_x = self.map_length/10
+        self.SV.AS.start_y = self.map_width*9/10
+        self.SV.AS.end_x = self.map_length*9/10
+        self.SV.AS.end_y = self.map_width/10
+        self.SV.GOBS.global_obstacle = np.stack((self.SV.GOBS.global_obstacle_x, self.SV.GOBS.global_obstacle_y), axis=1)
 
 
     def maze2(self):
@@ -82,13 +85,13 @@ class Map:
         obs_x = [wall_bottom_x, wall_top_x, wall_left_x, wall_right_x, wall1_x, wall2_x, wall3_x]
         obs_y = [wall_bottom_y, wall_top_y, wall_left_y, wall_right_y, wall1_y, wall2_y, wall3_y]
 
-        self.global_obstacle_x = self.global_obstacle_y = np.array([])
+        self.SV.GOBS.global_obstacle_x = self.SV.GOBS.global_obstacle_y = np.array([])
 
         for i, j in zip(obs_x, obs_y):
-            self.global_obstacle_x = np.append(self.global_obstacle_x, i)
-            self.global_obstacle_y = np.append(self.global_obstacle_y, j)
-        self.start_x = self.map_length/10
-        self.start_y = self.map_width*1/2
-        self.end_x = self.map_length*9/10
-        self.end_y = self.map_width/2
-        self.global_obstacle = np.stack((self.global_obstacle_x, self.global_obstacle_y), axis=1)
+            self.SV.GOBS.global_obstacle_x = np.append(self.SV.GOBS.global_obstacle_x, i)
+            self.SV.GOBS.global_obstacle_y = np.append(self.SV.GOBS.global_obstacle_y, j)
+        self.SV.AS.start_x = self.map_length/10
+        self.SV.AS.start_y = self.map_width*1/2
+        self.SV.AS.end_x = self.map_length*9/10
+        self.SV.AS.end_y = self.map_width/2
+        self.SV.GOBS.global_obstacle = np.stack((self.SV.GOBS.global_obstacle_x, self.SV.GOBS.global_obstacle_y), axis=1)

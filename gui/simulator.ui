@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>786</width>
-    <height>903</height>
+    <width>1041</width>
+    <height>756</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -78,191 +78,300 @@
      </layout>
     </item>
     <item>
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>Start/End Position</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_9">
+     <layout class="QHBoxLayout" name="horizontalLayout_21">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
+       <layout class="QVBoxLayout" name="verticalLayout_7">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Start/End Position</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_9">
           <item>
-           <widget class="QLabel" name="label_10">
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_12">
+              <item>
+               <widget class="QLabel" name="label_10">
+                <property name="text">
+                 <string>Start X:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spin_start_x">
+                <property name="minimum">
+                 <number>-100000</number>
+                </property>
+                <property name="maximum">
+                 <number>100000</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_14">
+              <item>
+               <widget class="QLabel" name="label_9">
+                <property name="text">
+                 <string>Start Y:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spin_start_y">
+                <property name="minimum">
+                 <number>-100000</number>
+                </property>
+                <property name="maximum">
+                 <number>100000</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_10">
+              <item>
+               <widget class="QLabel" name="label_7">
+                <property name="text">
+                 <string>End X:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spin_end_x">
+                <property name="minimum">
+                 <number>-100000</number>
+                </property>
+                <property name="maximum">
+                 <number>100000</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_11">
+              <item>
+               <widget class="QLabel" name="label_8">
+                <property name="text">
+                 <string>End Y:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="spin_end_y">
+                <property name="minimum">
+                 <number>-100000</number>
+                </property>
+                <property name="maximum">
+                 <number>100000</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_17">
+          <item>
+           <widget class="QLabel" name="label_13">
             <property name="text">
-             <string>Start X:</string>
+             <string>ROVER Size Radius(cm)</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="spin_start_x">
+           <widget class="QSpinBox" name="spin_rover_radius">
             <property name="minimum">
-             <number>-100000</number>
+             <number>20</number>
             </property>
             <property name="maximum">
-             <number>100000</number>
+             <number>1000</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_14">
+            <property name="text">
+             <string>Obstacle Safe Radius(cm)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spin_safe_radius">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>500</number>
+            </property>
+            <property name="value">
+             <number>1</number>
             </property>
            </widget>
           </item>
          </layout>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_14">
-          <item>
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>Start Y:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spin_start_y">
-            <property name="minimum">
-             <number>-100000</number>
-            </property>
-            <property name="maximum">
-             <number>100000</number>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_10">
-          <item>
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>End X:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSpinBox" name="spin_end_x">
-            <property name="minimum">
-             <number>-100000</number>
-            </property>
-            <property name="maximum">
-             <number>100000</number>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="title">
+           <string>Algorithm : </string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_19">
+           <item>
+            <widget class="QRadioButton" name="radio_original_a">
+             <property name="text">
+              <string>Original A*</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radio_a_v1">
+             <property name="text">
+              <string>A* v1</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_11">
+         <layout class="QHBoxLayout" name="horizontalLayout_15">
           <item>
-           <widget class="QLabel" name="label_8">
+           <widget class="QLabel" name="label_11">
             <property name="text">
-             <string>End Y:</string>
+             <string>H Cost Factor</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="spin_end_y">
+           <widget class="QDoubleSpinBox" name="dspin_hcost">
             <property name="minimum">
-             <number>-100000</number>
+             <double>0.010000000000000</double>
             </property>
-            <property name="maximum">
-             <number>100000</number>
+            <property name="value">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>G Cost Factor</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="dspin_gcost">
+            <property name="minimum">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.500000000000000</double>
             </property>
            </widget>
           </item>
          </layout>
         </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_15">
-      <item>
-       <widget class="QLabel" name="label_11">
-        <property name="text">
-         <string>H Cost Factor</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QDoubleSpinBox" name="dspin_hcost">
-        <property name="minimum">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="value">
-         <double>1.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_12">
-        <property name="text">
-         <string>G Cost Factor</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QDoubleSpinBox" name="dspin_gcost">
-        <property name="minimum">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="value">
-         <double>1.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_17">
-      <item>
-       <widget class="QLabel" name="label_13">
-        <property name="text">
-         <string>ROVER Size Radius(cm)</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="spin_rover_radius">
-        <property name="minimum">
-         <number>20</number>
-        </property>
-        <property name="maximum">
-         <number>1000</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_14">
-        <property name="text">
-         <string>Obstacle Safe Radius(cm)</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="spin_safe_radius">
-        <property name="minimum">
-         <number>1</number>
-        </property>
-        <property name="maximum">
-         <number>500</number>
-        </property>
-        <property name="value">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_6">
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="QLabel" name="label_15">
+            <property name="text">
+             <string>Unit step</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spin_unitstep">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>400</number>
+            </property>
+            <property name="value">
+             <number>20</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_16">
+            <item>
+             <widget class="QCheckBox" name="check_pxmode">
+              <property name="text">
+               <string>PxMode On/Off</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <property name="autoRepeat">
+               <bool>false</bool>
+              </property>
+              <property name="autoExclusive">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_13">
+            <item>
+             <widget class="QCheckBox" name="check_progress">
+              <property name="text">
+               <string>Show Progress</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_18">
+          <item>
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>A* planning time : </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLCDNumber" name="lcd_astar_planning_time"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="check_show_lidar">
+          <property name="text">
+           <string>Show Lidar Obstacle</string>
+          </property>
+         </widget>
+        </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_7">
           <item>
@@ -290,67 +399,45 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
-           <widget class="QLabel" name="label_15">
+           <widget class="QPushButton" name="button_start">
             <property name="text">
-             <string>Unit step</string>
+             <string>Start</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="spin_unitstep">
-            <property name="minimum">
-             <number>1</number>
+           <widget class="QPushButton" name="button_pause">
+            <property name="text">
+             <string>Pause</string>
             </property>
-            <property name="maximum">
-             <number>400</number>
-            </property>
-            <property name="value">
-             <number>20</number>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="button_reset">
+            <property name="text">
+             <string>Reset</string>
             </property>
            </widget>
           </item>
          </layout>
         </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_5">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_16">
         <item>
-         <widget class="QCheckBox" name="check_pxmode">
-          <property name="text">
-           <string>PxMode On/Off</string>
+         <widget class="QWidget" name="plot_widget" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-          <property name="autoRepeat">
-           <bool>false</bool>
-          </property>
-          <property name="autoExclusive">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_13">
-        <item>
-         <widget class="QCheckBox" name="check_progress">
-          <property name="text">
-           <string>Show Progress</string>
-          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_8">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3"/>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
@@ -358,83 +445,9 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_18">
+     <layout class="QHBoxLayout" name="horizontalLayout_6">
       <item>
-       <widget class="QCheckBox" name="check_show_lidar">
-        <property name="text">
-         <string>Show Lidar Obstacle</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="groupBox">
-      <property name="title">
-       <string>Algorithm : </string>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_19">
-       <item>
-        <widget class="QRadioButton" name="radio_original_a">
-         <property name="text">
-          <string>Original A*</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="radio_a_v1">
-         <property name="text">
-          <string>A* v1</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <item>
-       <widget class="QPushButton" name="button_start">
-        <property name="text">
-         <string>Start</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="button_pause">
-        <property name="text">
-         <string>Pause</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="button_reset">
-        <property name="text">
-         <string>Reset</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QWidget" name="plot_widget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_8">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3"/>
-         </item>
-        </layout>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_3"/>
       </item>
      </layout>
     </item>
@@ -493,7 +506,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>786</width>
+     <width>1041</width>
      <height>25</height>
     </rect>
    </property>
