@@ -136,7 +136,7 @@ class App:
         self.gui.spin_safe_radius.setValue(self.SV.AS.obstacle_size)
 
         # self.lidar = SimulatedLidar(self.SV)
-        self.show_progress = False
+        self.SV.GUI.show_progress = False
         self.CF = rover_curve_fitting.Bspline(self.SV)
         self.astar = rover_pathplanning.AstarPathPlanning_sim(self.SV)
 
@@ -246,8 +246,8 @@ class App:
         self.SV.AS.step_unit = self.gui.spin_unitstep.value()
 
     def change_show_progress(self):
-        self.show_progress = False if self.show_progress else True
-        print("Show progress {}".format(self.show_progress))
+        self.SV.GUI.show_progress = False if self.SV.GUI.show_progress else True
+        print("Show progress {}".format(self.SV.GUI.show_progress))
 
     def change_rover_size(self):
         self.SV.AS.rover_size = self.gui.spin_rover_radius.value()
@@ -293,7 +293,7 @@ class App:
     #     ])
 
     def button_start_clicked(self):
-        astar_thread = Astar_thread(self.SV, self.astar, self.CF, self.show_progress)
+        astar_thread = Astar_thread(self.SV, self.astar, self.CF)
         astar_thread.start()
         # self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
         # self.gui.lcd_astar_planning_time.display(self.SV.AS.astar_planning_time)
@@ -315,15 +315,15 @@ class App:
 
 
 class Astar_thread(threading.Thread):
-    def __init__(self, SharedVariables, astar, CF, show_progress):
+    def __init__(self, SharedVariables, astar, CF):
         super().__init__(daemon=True)
         self.SV = SharedVariables
         self.CF = CF
         self.astar = astar
-        self.show_progress = show_progress
+
 
     def run(self):
-        self.astar.planning(self.show_progress)
+        self.astar.planning()
         self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
         self.SV.GUI.gui.lcd_astar_planning_time.display(self.SV.AS.astar_planning_time)
         self.CF.bspline_planning()

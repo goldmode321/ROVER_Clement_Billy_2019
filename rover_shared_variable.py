@@ -129,7 +129,7 @@ class GuiObject:
     def __init__(self):
         self.gui = None
 
-
+        self.show_progress = False
         self.route_plot = None
         self.fitted_route_plot = None
 
