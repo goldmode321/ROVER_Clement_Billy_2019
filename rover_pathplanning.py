@@ -241,7 +241,8 @@ class AstarPathPlanning_sim:
                     continue
                 if self.repeated_node(new_node):
                     continue
-                new_node.cost += np.hypot(motion[0], motion[1])
+                # new_node.cost += np.hypot(motion[0], motion[1])
+                new_node.cost = self.calculate_cost(new_node)
                 if str(new_node.x) + ',' + str(new_node.y) not in self.node_use_for_calculation:
                     # Save it if it is a completely new node
                    self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node
@@ -414,7 +415,8 @@ class AstarPathPlanning_sim_v2:
                     continue
                 if self.repeated_node(new_node):
                     continue
-                new_node.cost += np.hypot(movement[0], movement[1])
+                # new_node.cost += np.hypot(movement[0], movement[1])
+                new_node.cost = self.calculate_cost(new_node)
                 if str(new_node.x) + ',' + str(new_node.y) not in self.node_use_for_calculation:
                     # Save it if it is a completely new node
                    self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node

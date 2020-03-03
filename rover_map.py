@@ -4,8 +4,6 @@ class Map_sim:
     def __init__(self, SharedVariable, name='maze1'):
         self.SV = SharedVariable
         self.map_name = name
-        self.map_width = 2000
-        self.map_length = 2000
         self.SV.AS.start_x = 0
         self.SV.AS.start_y = 0
         self.SV.GOBS.global_obstacle_x = np.array([])
@@ -19,6 +17,8 @@ class Map_sim:
         self.obs_dict[self.map_name]()
 
     def maze1(self):
+        self.map_width = 2000
+        self.map_length = 2000
         self.map_width = int(self.map_width)
         self.map_length = int(self.map_length)
         wall_bottom_x = wall_top_x = np.linspace(0, self.map_length, self.map_length, dtype='int')
