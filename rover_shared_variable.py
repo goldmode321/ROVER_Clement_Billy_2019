@@ -32,6 +32,7 @@ class Astar:
         self.obstacle_size = 1
         self.astar_planning_time = 0
 
+        self.attitude = [0, 'forward']
         self.start_x = 0
         self.start_y = 0
         self.end_x = 0

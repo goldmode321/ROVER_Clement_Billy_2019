@@ -137,8 +137,8 @@ class App:
 
         # self.lidar = SimulatedLidar(self.SV)
         self.show_progress = False
-        self.astar = rover_pathplanning.AstarPathPlanning_sim(self.SV)
         self.CF = rover_curve_fitting.Bspline(self.SV)
+        self.astar = rover_pathplanning.AstarPathPlanning_sim(self.SV)
 
         self.map_plot_widget = pyqtgraph.PlotWidget(background='w')
         self.SV.GUI.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen, symbol='s')
@@ -146,13 +146,15 @@ class App:
 
         self.global_obstacle_plot = pyqtgraph.ScatterPlotItem(
             symbol='o',
-            size=self.SV.AS.obstacle_size,
+            # size=self.SV.AS.obstacle_size,
+            size = 20,
             brush=(0, 0, 0),
             pen=self.Pen.transparent,
         )
         self.local_obstacle_plot = pyqtgraph.ScatterPlotItem(
             symbol='o',
-            size=self.SV.AS.obstacle_size,
+            # size=self.SV.AS.obstacle_size,
+            size = 20,
             brush=(0, 89, 255),
             pen=self.Pen.transparent,
         )
@@ -163,7 +165,8 @@ class App:
         )
         self.rover_plot = pyqtgraph.ScatterPlotItem(
             symbol='o',
-            size=self.rover_size,
+            # size=self.rover_size,
+            size=20,
             brush=(0, 255 ,0)
         )
 
@@ -189,6 +192,8 @@ class App:
         self.gui.check_progress.toggled.connect(self.change_show_progress)
         self.gui.spin_unitstep.valueChanged.connect(self.change_step_unit)
         self.gui.combo_map.currentIndexChanged.connect(self.change_map)
+        self.gui.radio_original_a.toggled.connect(self.change_path_planning_mode)
+
 
 
         self.plot_map()
@@ -246,7 +251,7 @@ class App:
 
     def change_rover_size(self):
         self.SV.AS.rover_size = self.gui.spin_rover_radius.value()
-        self.rover_plot.setSize(self.SV.AS.rover_size)
+        # self.rover_plot.setSize(self.SV.AS.rover_size)
 
     def change_obstacle_size(self):
         self.SV.AS.obstacle_size = self.gui.spin_safe_radius.value()
@@ -269,6 +274,14 @@ class App:
         self.px_mode = not self.px_mode
         print('check {}'.format(self.px_mode))
 
+    def change_path_planning_mode(self):
+        if self.gui.radio_original_a.isChecked():
+            self.astar = rover_pathplanning.AstarPathPlanning_sim(self.SV)
+            print("Method change to Astar_Original")
+        elif self.gui.radio_a_v1.isChecked():
+            self.astar = rover_pathplanning.AstarPathPlanning_sim_v2(self.SV)
+            print("Method change to Astar_V1")
+
     # def update_shared_config(self):
     #     if not self.SV.shared_config.empty(): self.SV.shared_config.get()    
     #     self.SV.shared_config.put([
@@ -280,11 +293,12 @@ class App:
     #     ])
 
     def button_start_clicked(self):
-        self.astar.planning(self.show_progress)
-        self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
-        self.gui.lcd_astar_planning_time.display(self.SV.AS.astar_planning_time)
-        self.CF.bspline_planning()
-        self.SV.GUI.fitted_route_plot.setData(self.SV.CF.fitted_route_x, self.SV.CF.fitted_route_y)
+        astar_thread = Astar_thread(self.SV, self.astar, self.CF, self.show_progress)
+        astar_thread.start()
+        # self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
+        # self.gui.lcd_astar_planning_time.display(self.SV.AS.astar_planning_time)
+        # self.CF.bspline_planning()
+        # self.SV.GUI.fitted_route_plot.setData(self.SV.CF.fitted_route_x, self.SV.CF.fitted_route_y)
 
     def button_pause_clicked(self):
         pass
@@ -301,13 +315,19 @@ class App:
 
 
 class Astar_thread(threading.Thread):
-    def __init__(self,astar, show_progress, daemon=True):
-        super().__init__(daemon)
+    def __init__(self, SharedVariables, astar, CF, show_progress):
+        super().__init__(daemon=True)
+        self.SV = SharedVariables
+        self.CF = CF
         self.astar = astar
         self.show_progress = show_progress
 
     def run(self):
         self.astar.planning(self.show_progress)
+        self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
+        self.SV.GUI.gui.lcd_astar_planning_time.display(self.SV.AS.astar_planning_time)
+        self.CF.bspline_planning()
+        self.SV.GUI.fitted_route_plot.setData(self.SV.CF.fitted_route_x, self.SV.CF.fitted_route_y)
 
 
 

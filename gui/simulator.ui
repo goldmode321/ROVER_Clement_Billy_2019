@@ -230,6 +230,9 @@
           <property name="title">
            <string>Algorithm : </string>
           </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
           <layout class="QHBoxLayout" name="horizontalLayout_19">
            <item>
             <widget class="QRadioButton" name="radio_original_a">
@@ -244,7 +247,7 @@
            <item>
             <widget class="QRadioButton" name="radio_a_v1">
              <property name="text">
-              <string>A* v1</string>
+              <string>A* v2</string>
              </property>
             </widget>
            </item>
