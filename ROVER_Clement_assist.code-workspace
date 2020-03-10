@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "D:\\GraduateSchool\\Project\\PathPlanningAlgorithms\\PythonRobotics-master\\PathTracking\\stanley_controller"
+		},
+		{
+			"path": "D:\\GraduateSchool\\Project\\PathPlanningAlgorithms\\PythonRobotics-master\\PathPlanning\\CubicSpline"
+		}
+	],
+	"settings": {}
+}

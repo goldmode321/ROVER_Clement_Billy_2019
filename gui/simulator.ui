@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1041</width>
-    <height>756</height>
+    <height>799</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -185,6 +185,38 @@
          </layout>
         </item>
         <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_23">
+          <item>
+           <widget class="QLabel" name="label_18">
+            <property name="text">
+             <string>Start Yaw(deg)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spin_start_yaw">
+            <property name="maximum">
+             <number>360</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_17">
+            <property name="text">
+             <string>End Yaw(deg)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spin_end_yaw">
+            <property name="maximum">
+             <number>360</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
          <layout class="QHBoxLayout" name="horizontalLayout_17">
           <item>
            <widget class="QLabel" name="label_13">
@@ -196,7 +228,7 @@
           <item>
            <widget class="QSpinBox" name="spin_rover_radius">
             <property name="minimum">
-             <number>20</number>
+             <number>30</number>
             </property>
             <property name="maximum">
              <number>1000</number>
@@ -235,20 +267,42 @@
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_19">
            <item>
+            <widget class="QRadioButton" name="radio_a_v2">
+             <property name="text">
+              <string>A* v2</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">buttonGroup</string>
+             </attribute>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radio_a_v3">
+             <property name="text">
+              <string>A* v3</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">buttonGroup</string>
+             </attribute>
+            </widget>
+           </item>
+           <item>
             <widget class="QRadioButton" name="radio_original_a">
              <property name="text">
               <string>Original A*</string>
              </property>
              <property name="checked">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="radio_a_v1">
-             <property name="text">
-              <string>A* v2</string>
-             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">buttonGroup</string>
+             </attribute>
             </widget>
            </item>
           </layout>
@@ -310,7 +364,7 @@
              <number>400</number>
             </property>
             <property name="value">
-             <number>20</number>
+             <number>60</number>
             </property>
            </widget>
           </item>
@@ -369,11 +423,118 @@
          </layout>
         </item>
         <item>
-         <widget class="QCheckBox" name="check_show_lidar">
-          <property name="text">
-           <string>Show Lidar Obstacle</string>
+         <widget class="QGroupBox" name="groupBox_2">
+          <property name="title">
+           <string>Curve Fitting</string>
           </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_20">
+           <item>
+            <widget class="QRadioButton" name="radio_bspline">
+             <property name="text">
+              <string>Bspline</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">buttonGroup_2</string>
+             </attribute>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radio_cubic_spline">
+             <property name="text">
+              <string>Cubic Spline</string>
+             </property>
+             <attribute name="buttonGroup">
+              <string notr="true">buttonGroup_2</string>
+             </attribute>
+            </widget>
+           </item>
+          </layout>
          </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_test_tracking">
+          <property name="title">
+           <string>Test tracking</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_25">
+             <item>
+              <widget class="QLabel" name="label_21">
+               <property name="text">
+                <string>Control gain</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spin_control_gain"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_22">
+               <property name="text">
+                <string>Current Yaw</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spin_current_yaw"/>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_24">
+             <item>
+              <widget class="QLabel" name="label_19">
+               <property name="text">
+                <string>steering angle(deg)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLCDNumber" name="lcd_steering_agnle">
+               <property name="segmentStyle">
+                <enum>QLCDNumber::Flat</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_20">
+               <property name="text">
+                <string>Target index</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLCDNumber" name="lcd_target_index">
+               <property name="segmentStyle">
+                <enum>QLCDNumber::Flat</enum>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_22">
+          <item>
+           <widget class="QCheckBox" name="check_show_lidar">
+            <property name="text">
+             <string>Show Lidar Obstacle</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -465,11 +626,33 @@
       </item>
       <item>
        <widget class="QLCDNumber" name="lcd_mouse_x">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <family>3ds</family>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: rgb(8, 12, 89);
+background-color: rgb(255, 255, 255);</string>
+        </property>
         <property name="digitCount">
-         <number>1</number>
+         <number>5</number>
         </property>
         <property name="segmentStyle">
-         <enum>QLCDNumber::Filled</enum>
+         <enum>QLCDNumber::Flat</enum>
+        </property>
+        <property name="value" stdset="0">
+         <double>0.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -482,8 +665,26 @@
       </item>
       <item>
        <widget class="QLCDNumber" name="lcd_mouse_y">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="font">
+         <font>
+          <family>3ds</family>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(255, 255, 255);</string>
+        </property>
         <property name="digitCount">
-         <number>1</number>
+         <number>5</number>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
         </property>
        </widget>
       </item>
@@ -518,4 +719,8 @@
  </widget>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
+ </buttongroups>
 </ui>

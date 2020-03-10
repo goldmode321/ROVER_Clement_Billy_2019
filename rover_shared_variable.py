@@ -14,10 +14,41 @@ class SharedVariables():
         self.GUI = GuiObject()
         self.AS = Astar()
         self.CF = Curve_fitting()
+        self.PT = PathTracking()
 
 class Rover:
     def __init__(self):
         self.rover_run = False
+
+class PathTracking:
+    def __init__(self):
+        self.max_steering_angle = numpy.radians(30)
+        self.interval = 100 # ms
+        self.control_gain = 10
+        self.speed_propotional_gain = 1
+        self.distance_front_rear_wheel = 36
+
+        self.target_distance = 0
+        self.target_index = 0
+        self.target_position = [0, 0]
+        self.theta_e = 0
+
+
+        # Car state
+        self.acceleration = 1 # cm/s^2
+        self.max_velocity = 10 # cm/s
+        self.velocity = 50 # cm/s
+        self.current_x = 0
+        self.current_y = 0
+        self.current_yaw = 0
+        self.steering_angle = 0
+
+        # Used for debug
+        self.distance = numpy.array([])
+        self.distance_x = numpy.array([])
+        self.distance_y = numpy.array([])
+        self.distance_strange = numpy.array([])
+        self.head_position = []
 
 
 class Astar:
@@ -27,22 +58,26 @@ class Astar:
         self.route_x = list()
         self.route_y = list()
         self.route_plot = None
-        self.step_unit = 20 # cm
+        self.step_unit = 60 # cm
         self.rover_size = 30
         self.obstacle_size = 1
         self.astar_planning_time = 0
 
         self.attitude = [0, 'forward']
+        self.forward_backward_record = []
         self.start_x = 0
         self.start_y = 0
+        self.start_yaw = 0
         self.end_x = 0
         self.end_y = 0
+        self.end_yaw = 0
 
 class Curve_fitting:
     def __init__(self):
         self.sample_number = 100
         self.fitted_route_x = numpy.array([])
         self.fitted_route_y = numpy.array([])
+        self.fitted_route_yaw = numpy.array([])
 
 
 class LocalObstacle:
@@ -130,8 +165,15 @@ class GuiObject:
         self.gui = None
 
         self.show_progress = False
+        self.show_progress_delay = 0.05
         self.route_plot = None
         self.fitted_route_plot = None
+        self.forward_plot = None
+        self.backward_plot = None
+
+
+        self.mouse_x = 0
+        self.mouse_y = 0
 
 
 

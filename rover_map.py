@@ -1,5 +1,10 @@
 import numpy as np
 
+class Map:
+    def __init__(self, SharedVariable):
+        self.SV = SharedVariable
+
+
 class Map_sim:
     def __init__(self, SharedVariable, name='maze1'):
         self.SV = SharedVariable
