@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import pyqtgraph
 from PyQt5 import QtGui, QtCore, QtWidgets
 import  traceback
@@ -81,9 +82,6 @@ class SimulatedLidar:
                 pass
 
 
-class PathTracking:
-    def __init__(self, SharedVariable):
-        self.SV = SharedVariable
         
 
 
@@ -99,6 +97,85 @@ class Pens:
         self.transparent = pyqtgraph.mkPen(color=(255, 255, 255, 0))
         self.route_pen = pyqtgraph.mkPen(color=(255, 0, 0), width=2, style=QtCore.Qt.DotLine)
         self.fitted_route_pen = pyqtgraph.mkPen(color=(0, 0, 255), width=3)
+        self.test_tracking_pen_orange = pyqtgraph.mkPen(color=(250, 100, 0),width=5)
+        self.test_tracking_pen_darkblue = pyqtgraph.mkPen(color=(0, 0, 100),width=5)
+
+        self.test_tracking_pen_dic = {
+            "or": self.test_tracking_pen_orange,
+            "db": self.test_tracking_pen_darkblue,
+            "b": pyqtgraph.mkPen(color=(0, 0, 250),width=5),
+            "g": pyqtgraph.mkPen(color=(0, 255, 0), width=5),
+        }
+
+class Arrow:
+    def __init__(self, x=0, y=0, length=90, side_len=30, angle=0, color="or"):
+        '''
+        color = ['or', 'db]
+        angle = radians
+                  \  
+                   \  side length
+        length      \  
+        -------------+
+                    /
+                   /
+                  /
+        '''
+        self.Pens = Pens()
+        self.side_angle = 50
+        self.length = length
+        self.side_len = side_len
+        self.updatePos(x, y, angle)
+
+        self.arror_plot = pyqtgraph.PlotDataItem(
+            self.arror_pos_x, 
+            self.arror_pos_y, 
+            pen=self.Pens.test_tracking_pen_dic[color],
+        )
+
+    def updatePos(self, x, y, angle):
+        self.angle = angle
+        self.x = x
+        self.y = y
+        self.tail_x = self.x + self.length*np.cos(self.angle + np.pi)
+        self.tail_y = self.y + self.length*np.sin(self.angle + np.pi)
+        self.side_up_x = self.x + self.side_len*np.cos(np.pi - np.radians(self.side_angle) + self.angle)
+        self.side_up_y = self.y + self.side_len*np.sin(np.pi - np.radians(self.side_angle) + self.angle)
+        self.side_down_x = self.x + self.side_len*np.cos(np.pi + np.radians(self.side_angle) + self.angle)
+        self.side_down_y = self.y + self.side_len*np.sin(np.pi + np.radians(self.side_angle) + self.angle)
+
+        self.arror_pos_x = [self.side_up_x, self.x, self.tail_x, self.x, self.side_down_x]
+        self.arror_pos_y = [self.side_up_y, self.y, self.tail_y, self.y, self.side_down_y]
+
+    def updatePos2(self, x, y, angle):
+        self.angle = angle
+        self.tail_x = x
+        self.tail_y = y
+        self.x = self.tail_x + self.length*np.cos(self.angle)
+        self.y = self.tail_y + self.length*np.sin(self.angle)
+        self.side_up_x = self.x + self.side_len*np.cos(np.pi - np.radians(self.side_angle) + self.angle)
+        self.side_up_y = self.y + self.side_len*np.sin(np.pi - np.radians(self.side_angle) + self.angle)
+        self.side_down_x = self.x + self.side_len*np.cos(np.pi + np.radians(self.side_angle) + self.angle)
+        self.side_down_y = self.y + self.side_len*np.sin(np.pi + np.radians(self.side_angle) + self.angle)
+
+        self.arror_pos_x = [self.side_up_x, self.x, self.tail_x, self.x, self.side_down_x]
+        self.arror_pos_y = [self.side_up_y, self.y, self.tail_y, self.y, self.side_down_y]
+
+
+    def setPos(self, x, y, angle):
+        '''Point at head'''
+        self.updatePos(x, y, angle)
+        self.arror_plot.setData(self.arror_pos_x, self.arror_pos_y)
+
+    def setPos2(self, x, y, angle):
+        '''Point at tail'''
+        self.updatePos2(x, y, angle)
+        self.arror_plot.setData(self.arror_pos_x, self.arror_pos_y)
+    
+    def setStyle(self, length=90, side_length=30):
+        self.length = length
+        self.side_length = side_length
+
+
 
 
 class App:
@@ -126,6 +203,7 @@ class App:
         self.px_mode = True
         self.run_flag = False
         self.test_tracking_flag = False
+        self.path_tracking_flag = False
 
 
         for name in map_name_list: self.gui.combo_map.addItem(name)
@@ -140,15 +218,16 @@ class App:
         self.gui.spin_safe_radius.setValue(self.SV.AS.obstacle_size)
         self.gui.spin_unitstep.setValue(self.SV.AS.step_unit)
         self.gui.spin_time_delay.setValue(self.SV.GUI.show_progress_delay*1000)
+        self.gui.spin_velocity.setValue(self.SV.PT.velocity)
 
         # self.lidar = SimulatedLidar(self.SV)
         self.SV.GUI.show_progress = False
-        self.CF = rover_curve_fitting.Bspline(self.SV)
+        self.CF = rover_curve_fitting.CubicSpline(self.SV)
         self.astar = rover_pathplanning.AstarPathPlanning_sim_v2(self.SV)
-        self.path_tracking = rover_pathtracking.StanleyController(self.SV)
+        self.path_tracking = rover_pathtracking.StanleyController_sim(self.SV)
 
         self.map_plot_widget = pyqtgraph.PlotWidget(background='w')
-        self.SV.GUI.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen, symbol='s')
+        self.SV.GUI.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen)
         self.SV.GUI.fitted_route_plot = self.map_plot_widget.plot(pen=self.Pen.fitted_route_pen)
 
         self.global_obstacle_plot = pyqtgraph.ScatterPlotItem(
@@ -167,7 +246,7 @@ class App:
         )
         self.end_point_plot = pyqtgraph.ScatterPlotItem(
             symbol='x',
-            size=self.SV.AS.rover_size*2,
+            size=20,
             brush=(255, 0, 0)
         )
         self.rover_plot = pyqtgraph.ScatterPlotItem(
@@ -212,14 +291,18 @@ class App:
         self.gui.spin_rover_radius.valueChanged.connect(self.change_rover_size)
         self.gui.spin_safe_radius.valueChanged.connect(self.change_obstacle_size)
         self.gui.spin_time_delay.valueChanged.connect(self.change_show_progress_time_delay)
+        self.gui.spin_velocity.valueChanged.connect(self.change_velocity)
+        self.gui.spin_unitstep.valueChanged.connect(self.change_step_unit)
         self.gui.check_pxmode.clicked.connect(lambda: self.change_pxmode())
         self.gui.button_start.clicked.connect(self.button_start_clicked)
         self.gui.button_pause.clicked.connect(self.button_pause_clicked)
+        self.gui.button_pt_start.clicked.connect(self.button_pt_start_clicked)
+        self.gui.button_pt_stop.clicked.connect(self.button_pt_stop_clicked)
         self.gui.button_reset.clicked.connect(self.button_reset_clicked)
+
         self.gui.dspin_gcost.valueChanged.connect(self.change_g_h_cost)
         self.gui.dspin_hcost.valueChanged.connect(self.change_g_h_cost)
         self.gui.check_progress.toggled.connect(self.change_show_progress)
-        self.gui.spin_unitstep.valueChanged.connect(self.change_step_unit)
         self.gui.combo_map.currentIndexChanged.connect(self.change_map)
         self.gui.radio_bspline.toggled.connect(self.change_curve_fitting)
         self.gui.buttonGroup.buttonClicked.connect(self.change_path_planning_mode)
@@ -261,39 +344,96 @@ class App:
     def plot_route(self):
         self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
 
-    def plot_test_tracking(self):
-        last_steering_angle = self.SV.PT.steering_angle
-        self.SV.PT.current_x, self.SV.PT.current_y = self.SV.GUI.mouse_x, self.SV.GUI.mouse_y
-        self.arrow_steering_angle.setPos(self.SV.PT.current_x, self.SV.PT.current_y)
-        self.path_tracking.calculate_command()
-        self.gui.lcd_steering_agnle.display(self.SV.PT.steering_angle)
-        # self.arrow_steering_angle.setStyle(angle=self.SV.PT.steering_angle)
-        self.arrow_steering_angle.rotate(self.SV.PT.steering_angle - last_steering_angle)
-        self.gui.lcd_target_index.display(self.SV.PT.target_index)
+    def plot_path_tracking(self):
+        self.path_tracking_route_plot.setData(self.SV.PT.tracking_route_x, self.SV.PT.tracking_route_y)
         self.path_tracking_target_pos_plot.setData([self.SV.PT.target_position[0]], [self.SV.PT.target_position[1]])
-        self.test_tracking_distance_plot.setData(self.SV.PT.distance)
-        self.test_tracking_distance_x_plot.setData(self.SV.PT.distance_x)
-        self.test_tracking_distance_y_plot.setData(self.SV.PT.distance_y)
-        self.test_tracking_distance_strange_plot.setData(self.SV.PT.distance_strange)
-        # print(self.arrow_steering_angle.opts['angle'])
+        # self.path_tracking_route_x_plot.setData(self.SV.PT.tracking_route_x)
+        # self.path_tracking_route_y_plot.setData(self.SV.PT.tracking_route_y)
+        self.path_tracking_target_steer_plot.setData(self.SV.PT.tracking_target_steering_deg)
+        self.path_tracking_real_steer_plot.setData(self.SV.PT.tracking_real_steer)
+        self.path_tracking_yaw_plot.setData(self.SV.PT.tracking_yaw)
+        self.path_tracking_steer_plot.setData(self.SV.PT.tracking_steering_deg)
+
+        self.test_tracking_distance_plot.setData(self.path_tracking.difference)
+        self.test_tracking_distance_x_plot.setData(self.path_tracking.difference_x)
+        self.test_tracking_distance_y_plot.setData(self.path_tracking.difference_y)
+        self.path_tracking_target_pos_plot.setData([self.SV.PT.target_position[0]], [self.SV.PT.target_position[1]])
+        self.arrow_path_yaw.setPos(
+            self.SV.PT.target_position[0], 
+            self.SV.PT.target_position[1], 
+            self.SV.CF.fitted_route_yaw_rad[self.SV.PT.target_index],
+        )
+        self.arrow_steering_angle.setPos2(
+            self.SV.PT.current_x, 
+            self.SV.PT.current_y, 
+            self.SV.PT.steering_angle_rad,
+        )
+        self.arrow_steering_target_angle.setPos2(
+            self.SV.PT.current_x, 
+            self.SV.PT.current_y, 
+            self.SV.PT.steering_target_angle_rad,
+        )
+
+
+
+
+    def plot_test_tracking(self):
+
+        # last_path_yaw = self.SV.CF.fitted_route_yaw_rad[self.SV.PT.target_index]
+        self.SV.PT.current_x, self.SV.PT.current_y = self.SV.GUI.mouse_x, self.SV.GUI.mouse_y
+        # self.SV.PT.current_yaw = self.SV.CF.fitted_route_yaw_deg[self.SV.PT.target_index]
+        self.path_tracking.calculateCommand()
+        self.gui.lcd_steering_agnle.display(np.degrees(self.SV.PT.steering_angle_rad))
+        self.gui.lcd_target_index.display(self.SV.PT.target_index)
+
+        self.test_tracking_distance_plot.setData(self.path_tracking.difference)
+        self.test_tracking_distance_x_plot.setData(self.path_tracking.difference_x)
+        self.test_tracking_distance_y_plot.setData(self.path_tracking.difference_y)
+
+
+        self.path_tracking_target_pos_plot.setData([self.SV.PT.target_position[0]], [self.SV.PT.target_position[1]])
+        self.arrow_path_yaw.setPos(
+            self.SV.PT.target_position[0], 
+            self.SV.PT.target_position[1], 
+            self.SV.CF.fitted_route_yaw_rad[self.SV.PT.target_index],
+        )
+        self.arrow_steering_angle.setPos2(
+            self.SV.PT.current_x, 
+            self.SV.PT.current_y, 
+            self.SV.PT.steering_angle_rad,
+            # self.SV.PT.current_yaw + self.SV.PT.steering_angle_rad
+            # np.radians(self.SV.AS.start_x) + self.SV.PT.steering_angle_rad
+        )
+        self.arrow_steering_target_angle.setPos2(
+            self.SV.PT.current_x, 
+            self.SV.PT.current_y, 
+            self.SV.PT.steering_target_angle_rad,
+        )
+
 
     def change_test_tracking(self):
         if not self.test_tracking_flag:
             if len(self.SV.CF.fitted_route_x) > 1:
-                self.arrow_steering_angle = pyqtgraph.ArrowItem(angle=self.SV.PT.steering_angle, tipAngle=30, headLen=20, tailLen=40, tailWidth=5)
+
+                self.arrow_path_yaw = Arrow()
+                self.arrow_steering_angle = Arrow(color="b")
+                self.arrow_steering_target_angle = Arrow(length=120, color='db')
+
                 self.path_tracking_target_pos_plot = pyqtgraph.ScatterPlotItem(
                     symbol='x',
                     # size=self.rover_size,
                     size=30,
                     brush=(0, 255 ,225)
                 )
-                self.map_plot_widget.addItem(self.arrow_steering_angle)
+                self.map_plot_widget.addItem(self.arrow_steering_angle.arror_plot)
+                self.map_plot_widget.addItem(self.arrow_steering_target_angle.arror_plot)
                 self.map_plot_widget.addItem(self.path_tracking_target_pos_plot)
+                self.map_plot_widget.addItem(self.arrow_path_yaw.arror_plot)
 
                 self.test_tracking_win = pyqtgraph.GraphicsWindow()
                 self.test_tracking_widget = self.test_tracking_win.addPlot()
                 self.test_tracking_widget.addLegend()
-                # self.test_tracking_win.addItem(self.test_tracking_widget)
+                self.test_tracking_widget.showGrid(True, True)
                 self.test_tracking_distance_plot = self.test_tracking_widget.plot(
                     pen=pyqtgraph.mkPen(color=(255, 0, 0), width=5),
                     name='distance',
@@ -312,6 +452,7 @@ class App:
                 )
 
 
+
                 self.test_tracking_timer = QtCore.QTimer()
                 self.test_tracking_timer.timeout.connect(self.plot_test_tracking)
                 self.test_tracking_timer.start(50)
@@ -322,8 +463,10 @@ class App:
                 print("No route to plan")
         else:
             self.test_tracking_timer.stop()
-            self.map_plot_widget.removeItem(self.arrow_steering_angle)
+            self.map_plot_widget.removeItem(self.arrow_steering_angle.arror_plot)
+            self.map_plot_widget.removeItem(self.arrow_steering_target_angle.arror_plot)
             self.map_plot_widget.removeItem(self.path_tracking_target_pos_plot)
+            self.map_plot_widget.removeItem(self.arrow_path_yaw.arror_plot)
             self.test_tracking_flag = False
 
     def change_start_end_yaw_point(self):
@@ -343,6 +486,9 @@ class App:
 
     def change_show_progress_time_delay(self):
         self.SV.GUI.show_progress_delay = self.gui.spin_time_delay.value()/1000
+
+    def change_velocity(self):
+        self.SV.PT.velocity = self.gui.spin_velocity.value()
 
     def change_g_h_cost(self):
         self.SV.AS.G_cost_factor = self.gui.dspin_gcost.value()
@@ -369,7 +515,7 @@ class App:
             self.CF = rover_curve_fitting.Bspline(self.SV)
             print("Change curve fitting method to Bspline")
         elif self.gui.radio_cubic_spline.isChecked():
-            self.CF = rover_curve_fitting.Cubic_Spline(self.SV)
+            self.CF = rover_curve_fitting.CubicSpline(self.SV)
             print("Change curve fitting method to cubic spline")
 
     def change_obstacle_size(self):
@@ -431,6 +577,96 @@ class App:
         self.gui.spin_end_y.setValue(self.SV.AS.end_y)
         self.change_start_end_yaw_point()
 
+    def button_pt_start_clicked(self):
+        if not self.path_tracking_flag:
+            if self.gui.groupBox_test_tracking.isChecked():
+                self.gui.groupBox_test_tracking.setChecked(False)
+
+            self.arrow_path_yaw = Arrow()
+            self.arrow_steering_angle = Arrow(color="b")
+            self.arrow_steering_target_angle = Arrow(length=120, color='db')
+
+            self.path_tracking = rover_pathtracking.StanleyController(self.SV)
+            self.path_tracking_target_pos_plot = pyqtgraph.ScatterPlotItem(
+                symbol='x',
+                # size=self.rover_size,
+                size=30,
+                brush=(0, 255 ,225)
+            )
+            self.path_tracking_route_plot = pyqtgraph.PlotDataItem(pen=self.Pen.test_tracking_pen_dic["g"])
+
+            self.map_plot_widget.addItem(self.path_tracking_target_pos_plot)
+            self.map_plot_widget.addItem(self.path_tracking_route_plot)
+            self.map_plot_widget.addItem(self.arrow_steering_angle.arror_plot)
+            self.map_plot_widget.addItem(self.arrow_steering_target_angle.arror_plot)
+            self.map_plot_widget.addItem(self.path_tracking_target_pos_plot)
+            self.map_plot_widget.addItem(self.arrow_path_yaw.arror_plot)
+
+            self.test_tracking_win = pyqtgraph.GraphicsWindow()
+            self.test_tracking_widget = self.test_tracking_win.addPlot()
+            self.test_tracking_widget.addLegend()
+            self.test_tracking_widget.showGrid(True, True)
+            self.test_tracking_distance_plot = self.test_tracking_widget.plot(
+                pen=pyqtgraph.mkPen(color=(255, 0, 0), width=5),
+                name='distance',
+            )
+            self.test_tracking_distance_x_plot = self.test_tracking_widget.plot(
+                pen=pyqtgraph.mkPen(color=(0, 255, 0), width=2),
+                name='distance X',
+            )
+            self.test_tracking_distance_y_plot = self.test_tracking_widget.plot(
+                pen=pyqtgraph.mkPen(color=(0, 220, 255), width=2),
+                name='distance Y'
+            )
+
+
+            self.path_tracking_widget = self.test_tracking_win.addPlot()
+            self.path_tracking_widget.addLegend()
+            self.path_tracking_widget.showGrid(True, True)
+            # self.path_tracking_route_x_plot = self.path_tracking_widget.plot(
+            #     pen=pyqtgraph.mkPen(color=(255, 0, 0), width=2),
+            #     name='x'
+            # )
+            # self.path_tracking_route_y_plot = self.path_tracking_widget.plot(
+            #     pen=pyqtgraph.mkPen(color=(200, 0, 0), width=2),
+            #     name='y'
+            # )
+            self.path_tracking_yaw_plot = self.path_tracking_widget.plot(
+                pen=pyqtgraph.mkPen(color=(255, 255, 0), width=2),
+                name='yaw'
+            )
+            self.path_tracking_target_steer_plot = self.path_tracking_widget.plot(
+                pen=pyqtgraph.mkPen(color=(0, 170, 0), width=2),
+                name='target steer'
+            )
+            self.path_tracking_real_steer_plot = self.path_tracking_widget.plot(
+                pen=pyqtgraph.mkPen(color=(0, 255, 0), width=2),
+                name='real steer'
+            )
+            self.path_tracking_steer_plot = self.path_tracking_widget.plot(
+                pen=pyqtgraph.mkPen(color=(0, 200, 200), width=2),
+                name='steer'
+            )
+
+
+            self.path_tracking_thread = PathTrackingThead(self.gui, self.SV, self.path_tracking)
+            self.path_tracking_thread.start()
+            self.plot_path_tracking_timer = QtCore.QTimer()
+            self.plot_path_tracking_timer.timeout.connect(self.plot_path_tracking)
+            self.plot_path_tracking_timer.start(self.gui.spin_time_delay.value())
+            self.path_tracking_flag = True
+        
+    def button_pt_stop_clicked(self):
+        if self.path_tracking_flag:
+            self.path_tracking_thread.stop()
+            self.plot_path_tracking_timer.stop()
+            self.path_tracking_flag = False
+            self.path_tracking = rover_pathtracking.StanleyController_sim(self.SV)
+            self.map_plot_widget.removeItem(self.path_tracking_target_pos_plot)
+            self.map_plot_widget.removeItem(self.path_tracking_route_plot)
+            self.map_plot_widget.removeItem(self.arrow_steering_angle.arror_plot)
+            self.map_plot_widget.removeItem(self.arrow_steering_target_angle.arror_plot)
+            self.map_plot_widget.removeItem(self.arrow_path_yaw.arror_plot)
 
     def mouse_move(self, event):
         pos = event[0] # using signal proxy turns original arguments into a tuple
@@ -446,6 +682,49 @@ class App:
 
     # def mouseReleseEvent(self, event):
     #     pass
+
+class PathTrackingThead(threading.Thread):
+    def __init__(self, gui, SharedVariables, path_tracking):
+        super().__init__(daemon=True)
+        self.gui = gui
+        self.SV = SharedVariables
+        self.path_tracking = path_tracking
+        self.run_flag = True
+
+    def stop(self):
+        self.run_flag = False
+
+    def initPos(self):
+        self.SV.PT.target_index = 0
+        self.SV.PT.current_x = self.gui.spin_start_x.value()
+        self.SV.PT.current_y = self.gui.spin_start_y.value()
+        self.SV.PT.current_yaw = self.gui.spin_start_yaw.value()
+        self.SV.PT.tracking_route_x = []
+        self.SV.PT.tracking_route_y = []
+        self.SV.PT.tracking_steering_rad = []
+        self.SV.PT.tracking_steering_deg = []
+        self.SV.PT.tracking_target_steering_deg = []
+        self.SV.PT.tracking_real_steer = []
+        self.SV.PT.tracking_steering_deg = []
+        self.SV.PT.tracking_yaw = []
+
+    def run(self):
+        self.initPos()
+        while self.run_flag:
+            self.path_tracking.calculateCommand()
+            self.path_tracking.update_state()
+            self.SV.PT.tracking_route_x.append(self.SV.PT.current_x)
+            self.SV.PT.tracking_route_y.append(self.SV.PT.current_y)
+            self.SV.PT.tracking_target_steering_deg.append(self.SV.PT.steering_target_angle_deg)
+            self.SV.PT.tracking_yaw.append(self.SV.PT.current_yaw)
+            self.SV.PT.tracking_real_steer.append(self.SV.PT.real_steer_deg)
+            self.SV.PT.tracking_steering_deg.append(self.SV.PT.steering_angle_deg)
+            time.sleep(0.1)
+            if self.SV.PT.target_position[0] == self.SV.CF.fitted_route_x[-1]:
+                time.sleep(5)
+                self.initPos()
+
+
 
 class Astar_thread(threading.Thread):
     def __init__(self, SharedVariables, astar, CF):

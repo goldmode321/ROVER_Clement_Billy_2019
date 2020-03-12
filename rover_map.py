@@ -60,6 +60,8 @@ class Map_sim:
         self.SV.AS.start_y = self.map_width*9/10
         self.SV.AS.end_x = self.map_length*9/10
         self.SV.AS.end_y = self.map_width/10
+        # self.SV.AS.end_x = 1200
+        # self.SV.AS.end_y = 1800
         self.SV.GOBS.global_obstacle = np.stack((self.SV.GOBS.global_obstacle_x, self.SV.GOBS.global_obstacle_y), axis=1)
 
 

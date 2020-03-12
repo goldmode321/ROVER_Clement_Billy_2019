@@ -22,9 +22,10 @@ class Rover:
 
 class PathTracking:
     def __init__(self):
-        self.max_steering_angle = numpy.radians(30)
+        # self.max_steering_angle = numpy.radians(30)
+        self.max_steering_angle = 30
         self.interval = 100 # ms
-        self.control_gain = 10
+        self.control_gain = 0.5
         self.speed_propotional_gain = 1
         self.distance_front_rear_wheel = 36
 
@@ -36,20 +37,26 @@ class PathTracking:
 
         # Car state
         self.acceleration = 1 # cm/s^2
-        self.max_velocity = 10 # cm/s
+        self.max_velocity = 50 # cm/s
         self.velocity = 50 # cm/s
         self.current_x = 0
         self.current_y = 0
         self.current_yaw = 0
-        self.steering_angle = 0
+        self.steering_target_angle_rad = 0
+        self.steering_target_angle_deg = 0
+        self.steering_angle_rad = 0
+        self.steering_angle_deg = 0
+        self.real_steer_rad = 0
+        self.real_steer_deg = 0
 
-        # Used for debug
-        self.distance = numpy.array([])
-        self.distance_x = numpy.array([])
-        self.distance_y = numpy.array([])
-        self.distance_strange = numpy.array([])
-        self.head_position = []
-
+        # Tracking
+        self.tracking_route_x = []
+        self.tracking_route_y = []
+        self.tracking_target_steering_rad = []
+        self.tracking_target_steering_deg = []
+        self.tracking_steering_deg = []
+        self.tracking_yaw = []
+        self.tracking_real_steer = []
 
 class Astar:
     def __init__(self):
@@ -58,8 +65,8 @@ class Astar:
         self.route_x = list()
         self.route_y = list()
         self.route_plot = None
-        self.step_unit = 60 # cm
-        self.rover_size = 30
+        self.step_unit = 200 # cm
+        self.rover_size = 100
         self.obstacle_size = 1
         self.astar_planning_time = 0
 
@@ -77,7 +84,8 @@ class Curve_fitting:
         self.sample_number = 100
         self.fitted_route_x = numpy.array([])
         self.fitted_route_y = numpy.array([])
-        self.fitted_route_yaw = numpy.array([])
+        self.fitted_route_yaw_rad = numpy.array([])
+        self.fitted_route_yaw_deg = numpy.array([])
 
 
 class LocalObstacle:

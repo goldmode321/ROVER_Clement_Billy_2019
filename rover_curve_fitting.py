@@ -15,7 +15,8 @@ class General:
         temp_fitted_route_y = np.roll(self.SV.CF.fitted_route_y, -1)
         dy = temp_fitted_route_y - self.SV.CF.fitted_route_y
         dy[-1] = dy[-2]
-        self.SV.CF.fitted_route_yaw = np.arctan2(dy, dx)
+        self.SV.CF.fitted_route_yaw_rad = np.arctan2(dy, dx)%(2*np.pi)
+        self.SV.CF.fitted_route_yaw_deg = np.degrees(self.SV.CF.fitted_route_yaw_rad)%360
 
 
 
@@ -50,7 +51,7 @@ class Bspline(General):
 
 
 
-class Cubic_Spline(General):
+class CubicSpline(General):
     def __init__(self, SharedVariable):
         self.SV = SharedVariable
         super().__init__(self.SV)
