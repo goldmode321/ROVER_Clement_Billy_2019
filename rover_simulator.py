@@ -16,6 +16,7 @@ import rover_pathplanning
 import rover_map
 import rover_curve_fitting
 import rover_pathtracking
+import rover_car_control
 
 class SharedVariable:
     def __init__(self):
@@ -345,6 +346,10 @@ class App:
         self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
 
     def plot_path_tracking(self):
+        try:
+            self.car_control.turn()
+        except:
+            print("CarControl problem")
         self.path_tracking_route_plot.setData(self.SV.PT.tracking_route_x, self.SV.PT.tracking_route_y)
         self.path_tracking_target_pos_plot.setData([self.SV.PT.target_position[0]], [self.SV.PT.target_position[1]])
         # self.path_tracking_route_x_plot.setData(self.SV.PT.tracking_route_x)
@@ -380,6 +385,10 @@ class App:
 
     def plot_test_tracking(self):
 
+        try:
+            self.car_control.turn()
+        except:
+            print("CarControl problem")
         # last_path_yaw = self.SV.CF.fitted_route_yaw_rad[self.SV.PT.target_index]
         self.SV.PT.current_x, self.SV.PT.current_y = self.SV.GUI.mouse_x, self.SV.GUI.mouse_y
         # self.SV.PT.current_yaw = self.SV.CF.fitted_route_yaw_deg[self.SV.PT.target_index]
@@ -451,7 +460,10 @@ class App:
                     pen=pyqtgraph.mkPen(color=(255, 255, 0), width=5),
                     name='distance Strange'
                 )
-
+                try:
+                    self.car_control = rover_car_control.CarControl_sim(self.SV)
+                except:
+                    pass
 
 
                 self.test_tracking_timer = QtCore.QTimer()
@@ -653,6 +665,10 @@ class App:
                 name='theta e'
             )
 
+            try:
+                self.car_control = rover_car_control.CarControl_sim(self.SV)
+            except:
+                pass
 
             self.path_tracking_thread = PathTrackingThead(self.gui, self.SV, self.path_tracking)
             self.path_tracking_thread.start()

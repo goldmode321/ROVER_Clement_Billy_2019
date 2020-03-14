@@ -19,13 +19,15 @@ class SharedVariables():
 class Rover:
     def __init__(self):
         self.rover_run = False
+        self.path_planning_ready = False
+        self.path_tracking_ready = False
 
 class PathTracking:
     def __init__(self):
         # self.max_steering_angle = numpy.radians(30)
         self.max_steering_angle = 30
         self.interval = 100 # ms
-        self.control_gain = 0.5
+        self.control_gain = 1
         self.speed_propotional_gain = 1
         self.distance_front_rear_wheel = 36
 
@@ -33,12 +35,15 @@ class PathTracking:
         self.target_index = 0
         self.target_position = [0, 0]
         self.theta_e = 0
+        self.theta_e_deg = 0
+        self.theta_d = 0
+        self.theta_d_deg = 0
 
 
         # Car state
         self.acceleration = 1 # cm/s^2
         self.max_velocity = 50 # cm/s
-        self.velocity = 50 # cm/s
+        self.velocity = -100 # cm/s
         self.current_x = 0
         self.current_y = 0
         self.current_yaw = 0
@@ -48,6 +53,7 @@ class PathTracking:
         self.steering_angle_deg = 0
         self.real_steer_rad = 0
         self.real_steer_deg = 0
+        self.real_steer_command = 405 # 320 - 405 - 490 
 
         # Tracking
         self.tracking_route_x = []
@@ -57,6 +63,7 @@ class PathTracking:
         self.tracking_steering_deg = []
         self.tracking_yaw = []
         self.tracking_real_steer = []
+        self.tracking_theta_e_deg = []
 
 class Astar:
     def __init__(self):
@@ -65,10 +72,11 @@ class Astar:
         self.route_x = list()
         self.route_y = list()
         self.route_plot = None
-        self.step_unit = 200 # cm
-        self.rover_size = 100
+        self.step_unit = 60 # cm
+        self.rover_size = 30
         self.obstacle_size = 1
         self.astar_planning_time = 0
+        self.reach_target = False
 
         self.attitude = [0, 'forward']
         self.forward_backward_record = []
@@ -167,6 +175,7 @@ class CarControl:
         self.car_control_backward_pwm = 370  # 381
         self.car_control_stop_pwm = 400
         self.car_control_add_speed = 1 # Speed adjust from gui
+        self.car_control_steer = 405 # 320 - 405 - 490
 
 class GuiObject:
     def __init__(self):

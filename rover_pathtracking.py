@@ -4,6 +4,7 @@ import numpy as np
 class StanleyController:
     def __init__(self, SharedVariables):
         self.SV = SharedVariables
+        self.PT = self.SV.PT
         self.last_target_index = 0
         self.difference = None
         self.difference_x = None
@@ -11,81 +12,97 @@ class StanleyController:
 
 
     def update_state(self):
-        self.SV.PT.current_x += self.SV.PT.velocity * np.cos(np.radians(self.SV.PT.current_yaw)) * self.SV.PT.interval/1000
-        self.SV.PT.current_y += self.SV.PT.velocity * np.sin(np.radians(self.SV.PT.current_yaw)) * self.SV.PT.interval/1000
-        self.SV.PT.current_yaw += np.degrees(self.SV.PT.velocity / self.SV.PT.distance_front_rear_wheel *\
-            np.tan(self.SV.PT.real_steer_rad) * self.SV.PT.interval/1000)
-        # self.SV.PT.current_yaw = self.SV.PT.current_yaw % 2*np.pi # normalize yaw to 0~2 pi
-        self.SV.PT.velocity += self.SV.PT.acceleration * self.SV.PT.interval/1000
+        self.PT.current_x += self.PT.velocity * np.cos(np.radians(self.PT.current_yaw)) * self.PT.interval/1000
+        self.PT.current_y += self.PT.velocity * np.sin(np.radians(self.PT.current_yaw)) * self.PT.interval/1000
+        self.PT.current_yaw += np.degrees(self.PT.velocity / self.PT.distance_front_rear_wheel *\
+            np.tan(self.PT.real_steer_rad) * self.PT.interval/1000)
+        # self.PT.current_yaw = self.PT.current_yaw % 2*np.pi # normalize yaw to 0~2 pi
+        self.PT.velocity += self.PT.acceleration * self.PT.interval/1000
 
     def next_target(self):
-        self.last_target_index = self.SV.PT.target_index
+        self.last_target_index = self.PT.target_index
         # Calculate car head position
-        head_x = self.SV.PT.current_x + self.SV.PT.distance_front_rear_wheel*np.cos(np.radians(self.SV.PT.current_yaw))
-        head_y = self.SV.PT.current_y + self.SV.PT.distance_front_rear_wheel*np.sin(np.radians(self.SV.PT.current_yaw))
+        head_x = self.PT.current_x + self.PT.distance_front_rear_wheel*np.cos(np.radians(self.PT.current_yaw))
+        head_y = self.PT.current_y + self.PT.distance_front_rear_wheel*np.sin(np.radians(self.PT.current_yaw))
         self.difference_x = self.SV.CF.fitted_route_x - head_x
         self.difference_y = self.SV.CF.fitted_route_y - head_y
         self.difference = np.hypot(self.difference_x, self.difference_y)
-        self.SV.PT.target_distance = np.min(self.difference)
-        self.SV.PT.target_index = np.where(self.difference == self.SV.PT.target_distance)
-        # if len(self.SV.PT.target_index) > 1:
-            # self.SV.PT.target_index = self.SV.PT.target_index[0]
+        self.PT.target_distance = np.min(self.difference)
+        self.PT.target_index = np.where(self.difference == self.PT.target_distance)
+        # if len(self.PT.target_index) > 1:
+            # self.PT.target_index = self.PT.target_index[0]
 
 
         # Target index in the format of (([], ""), ([], ""), ...)
-        self.SV.PT.target_index = self.SV.PT.target_index[0][0]
-        if self.last_target_index >= self.SV.PT.target_index:
-            self.SV.PT.target_index = self.last_target_index
-        self.SV.PT.target_position = [self.SV.CF.fitted_route_x[self.SV.PT.target_index], self.SV.CF.fitted_route_y[self.SV.PT.target_index]]
+        self.PT.target_index = self.PT.target_index[0][0]
+        if self.last_target_index >= self.PT.target_index:
+            self.PT.target_index = self.last_target_index
+        self.PT.target_position = [self.SV.CF.fitted_route_x[self.PT.target_index], self.SV.CF.fitted_route_y[self.PT.target_index]]
 
 
 
-        front_axle_vec = [-np.cos(np.radians(self.SV.PT.current_yaw) + np.pi / 2),
-                        - np.sin(np.radians(self.SV.PT.current_yaw) + np.pi / 2)]
+        front_axle_vec = [np.cos(np.radians(self.PT.current_yaw) + np.pi / 2),
+                        np.sin(np.radians(self.PT.current_yaw) + np.pi / 2)]
         self.error_front_axle = np.dot(
-            [self.difference_x[self.SV.PT.target_index], self.difference_y[self.SV.PT.target_index]], front_axle_vec)
+            [self.difference_x[self.PT.target_index], self.difference_y[self.PT.target_index]], front_axle_vec)
+
 
 
     def calculateCommand(self):
         self.next_target()
-        # self.SV.PT.theta_e = np.radians(self.SV.PT.current_yaw) - self.SV.CF.fitted_route_yaw_rad[self.SV.PT.target_index]
-        self.SV.PT.theta_e = self.normalizeAngleRadian(np.radians(self.SV.PT.current_yaw) - self.SV.CF.fitted_route_yaw_rad[self.SV.PT.target_index])
+        if self.PT.velocity >= 0:
+            self.PT.theta_e = self.normalizeAngleRadian(self.normalizeAngleDegree(np.radians(self.PT.current_yaw)) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
+            self.PT.theta_e_deg = np.degrees(self.PT.theta_e)
 
-        direction = self.findDirection()
-
-        # self.SV.PT.steering_target_angle_rad = ((self.SV.PT.theta_e + \
-        #     np.arctan((self.SV.PT.control_gain*self.SV.PT.target_distance)\
-        #         /self.SV.PT.velocity)) * direction + np.radians(self.SV.PT.current_yaw))%(2*np.pi)
-
-        self.SV.PT.steering_target_angle_rad = ((self.SV.PT.theta_e + \
-            np.arctan2((self.SV.PT.control_gain*self.error_front_axle),\
-                self.SV.PT.velocity)) * direction + np.radians(self.SV.PT.current_yaw))%(2*np.pi)
-
-        self.SV.PT.steering_target_angle_deg = np.degrees(self.SV.PT.steering_target_angle_rad)
+            self.PT.theta_d = np.arctan2(self.PT.control_gain*self.error_front_axle, self.PT.velocity)
+            self.PT.theta_d_deg = np.degrees(self.PT.theta_d)
+            self.PT.steering_target_angle_rad = - self.PT.theta_e + self.PT.theta_d
 
 
+            self.PT.steering_target_angle_deg = np.degrees(self.PT.steering_target_angle_rad)
 
-        normalized_target_angle = self.normalizeAngleDegree(self.SV.PT.steering_target_angle_deg)
-        normalized_yaw = self.normalizeAngleDegree(self.SV.PT.current_yaw)
-        self.SV.PT.steering_angle_deg = np.clip(
-            normalized_target_angle,
-            normalized_yaw - self.SV.PT.max_steering_angle,
-            normalized_yaw + self.SV.PT.max_steering_angle
-        )
-        self.SV.PT.steering_angle_rad = np.radians(self.SV.PT.steering_angle_deg)
-        self.SV.PT.real_steer_deg = self.SV.PT.steering_angle_deg - self.SV.PT.current_yaw
-        self.SV.PT.real_steer_rad = np.radians(self.SV.PT.real_steer_deg)
+            self.PT.real_steer_deg = np.clip(
+                self.PT.steering_target_angle_deg,
+                - self.PT.max_steering_angle,
+                self.PT.max_steering_angle
+            )
+            self.PT.real_steer_rad = np.radians(self.PT.real_steer_deg)
 
-            # self.SV.PT.steering_angle_rad = np.clip(
-            #     self.SV.PT.steering_target_angle_rad,
-            #     - self.SV.PT.max_steering_angle + np.radians(self.SV.PT.current_yaw)%(2*np.pi),
-            #     self.SV.PT.max_steering_angle + np.radians(self.SV.PT.current_yaw)%(2*np.pi)
-            # )
-            # self.SV.PT.steering_angle_rad += np.radians(self.SV.PT.current_yaw)
+            self.PT.real_steer_command = int(405 + self.PT.real_steer_deg/3*8)
 
+            self.PT.steering_angle_deg = self.PT.real_steer_deg + self.PT.current_yaw
+            self.PT.steering_angle_rad = np.radians(self.PT.steering_angle_deg)
 
+        elif self.PT.velocity < 0:
+            self.PT.theta_e = self.normalizeAngleRadian(np.radians(self.PT.current_yaw) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
+            self.PT.theta_e_deg = np.degrees(self.PT.theta_e)
 
-        # print(np.degrees(self.SV.PT.steering_target_angle_rad))
+            self.PT.theta_d = np.arctan2(self.PT.control_gain*self.error_front_axle, self.PT.velocity)
+            self.PT.theta_d_deg = np.degrees(self.PT.theta_d)
+            self.PT.steering_target_angle_rad = self.PT.theta_e - self.PT.theta_d
+
+            self.PT.steering_target_angle_rad = self.normalizeAngleRadian(self.PT.steering_target_angle_rad)
+
+            self.PT.steering_target_angle_deg = np.degrees(self.PT.steering_target_angle_rad)
+
+            self.PT.real_steer_deg = - np.clip(
+                 - self.PT.steering_target_angle_deg,
+                - self.PT.max_steering_angle,
+                self.PT.max_steering_angle
+            )
+
+            self.PT.real_steer_rad = np.radians(self.PT.real_steer_deg)
+
+            self.PT.real_steer_command = int(405 + self.PT.real_steer_deg/3*8)
+
+            self.PT.steering_angle_deg = self.PT.real_steer_deg + self.PT.current_yaw
+            self.PT.steering_angle_rad = np.radians(self.PT.steering_angle_deg)
+
+        # print("e : {} d : {} steer_target : {} steer : {} real : {}".format(
+        #     self.PT.theta_e_deg, self.PT.theta_d_deg, self.PT.steering_target_angle_deg,
+        #     self.PT.steering_angle_deg, self.PT.real_steer_deg
+        # ))
+
 
     def normalizeAngleRadian(self, angle):
         '''normalize angle to [-180, 180]'''
@@ -118,13 +135,13 @@ class StanleyController:
 
     def findDirection(self):
         # global_angle_difference = np.degrees(np.arctan2(
-        #     self.difference_y[self.SV.PT.target_index], self.difference_x[self.SV.PT.target_index]
+        #     self.difference_y[self.PT.target_index], self.difference_x[self.PT.target_index]
         # ))%360
         global_angle_difference = np.degrees(np.arctan2(
-            -self.difference_y[self.SV.PT.target_index], -self.difference_x[self.SV.PT.target_index]
+            -self.difference_y[self.PT.target_index], -self.difference_x[self.PT.target_index]
         ))%360
 
-        local_angle_difference = (180 - self.SV.PT.current_yaw + global_angle_difference)%360
+        local_angle_difference = (180 - self.PT.current_yaw + global_angle_difference)%360
         direction = 1 if local_angle_difference - 180 < 0 else -1
         # print(global_angle_difference ,local_angle_difference, direction)
 
@@ -137,23 +154,27 @@ class StanleyController_sim(StanleyController):
         super().__init__(self.SV)
 
     def next_target(self):
-        self.last_target_index = self.SV.PT.target_index
+        self.last_target_index = self.PT.target_index
         # Calculate car head position
-        head_x = self.SV.PT.current_x + self.SV.PT.distance_front_rear_wheel*np.cos(np.radians(self.SV.PT.current_yaw))
-        head_y = self.SV.PT.current_y + self.SV.PT.distance_front_rear_wheel*np.sin(np.radians(self.SV.PT.current_yaw))
+        head_x = self.PT.current_x + self.PT.distance_front_rear_wheel*np.cos(np.radians(self.PT.current_yaw))
+        head_y = self.PT.current_y + self.PT.distance_front_rear_wheel*np.sin(np.radians(self.PT.current_yaw))
         self.difference_x = self.SV.CF.fitted_route_x - head_x
         self.difference_y = self.SV.CF.fitted_route_y - head_y
         self.difference = np.hypot(self.difference_x, self.difference_y)
-        self.SV.PT.target_distance = np.min(self.difference)
-        self.SV.PT.target_index = np.where(self.difference == self.SV.PT.target_distance)
-        # if len(self.SV.PT.target_index) > 1:
-            # self.SV.PT.target_index = self.SV.PT.target_index[0]
+        self.PT.target_distance = np.min(self.difference)
+        self.PT.target_index = np.where(self.difference == self.PT.target_distance)
+        # if len(self.PT.target_index) > 1:
+            # self.PT.target_index = self.PT.target_index[0]
 
 
         # Target index in the format of (([], ""), ([], ""), ...)
-        self.SV.PT.target_index = self.SV.PT.target_index[0][0]
-        self.SV.PT.target_position = [self.SV.CF.fitted_route_x[self.SV.PT.target_index], self.SV.CF.fitted_route_y[self.SV.PT.target_index]]
+        self.PT.target_index = self.PT.target_index[0][0]
+        self.PT.target_position = [self.SV.CF.fitted_route_x[self.PT.target_index], self.SV.CF.fitted_route_y[self.PT.target_index]]
 
+        front_axle_vec = [np.cos(np.radians(self.PT.current_yaw) + np.pi / 2),
+                        np.sin(np.radians(self.PT.current_yaw) + np.pi / 2)]
+        self.error_front_axle = np.dot(
+            [self.difference_x[self.PT.target_index], self.difference_y[self.PT.target_index]], front_axle_vec)
 
 
 class CarModel:
@@ -203,3 +224,6 @@ class CarModel:
             self.wheel_length/(-2)*np.cos(steer) + self.distance_front_rear_wheel/(-2)*np.cos(angle) + x,
             self.wheel_length/(2)*np.cos(steer) + self.distance_front_rear_wheel/(-2)*np.cos(angle) + x,
         ])
+
+
+

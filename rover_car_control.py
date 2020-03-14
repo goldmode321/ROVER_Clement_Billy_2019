@@ -6,6 +6,44 @@ import traceback
 
 class CarControl:
     def __init__(self, shared_variable_car_control):
+
+        self.CC = shared_variable_car_control
+        self.init()
+
+    def init(self):
+        try:
+            self.car_control = Adafruit_PCA9685.PCA9685()
+            self.car_control.set_pwm_freq(60)
+            self.CC.car_control_server_run = True
+        except:
+            print("carControl not activated")
+
+    def turn(self):
+        self.car_control.set_pwm(1 , 0, self.CC.car_control_steer)
+
+    def move(self):
+        self.car_control.set_pwm(3, 0, self.CC.car_control_forward_pwm)
+
+    def end_car_control(self):
+        self.CC.car_control_server_run = False
+        time.sleep(0.1)
+
+
+
+
+
+class CarControl_sim:
+    def __init__(self, SharedVariables):
+        self.SV = SharedVariables
+        self.car_control = Adafruit_PCA9685.PCA9685()
+        self.car_control.set_pwm_freq(60)
+
+    def turn(self):
+        self.car_control.set_pwm(1 , 0, self.SV.PT.real_steer_command)
+
+
+class CarControl_romote:
+    def __init__(self, shared_variable_car_control):
         self.CC = shared_variable_car_control
         self.init()
 
@@ -143,6 +181,3 @@ class ForwardOrReverse(threading.Thread):
     def reverse(self):
         self.CC.car_control.set_pwm(3, 0, self.CC.car_control_backward_pwm - self.CC.car_control_add_speed)
         time.sleep(0.05)
-
-
-
