@@ -224,7 +224,7 @@ class App:
         self.SV.GUI.show_progress = False
         self.CF = rover_curve_fitting.CubicSpline(self.SV)
         self.astar = rover_pathplanning.AstarPathPlanning_sim_v2(self.SV)
-        self.path_tracking = rover_pathtracking.StanleyController_sim(self.SV)
+        self.path_tracking = rover_pathtracking.PathTracking(self.SV)
 
         self.map_plot_widget = pyqtgraph.PlotWidget(background='w')
         self.SV.GUI.route_plot = self.map_plot_widget.plot(pen=self.Pen.route_pen)
@@ -355,9 +355,9 @@ class App:
         self.path_tracking_steer_plot.setData(self.SV.PT.tracking_steering_deg)
         self.path_tracking_e_plot.setData(self.SV.PT.tracking_theta_e_deg)
 
-        self.test_tracking_distance_plot.setData(self.path_tracking.difference)
-        self.test_tracking_distance_x_plot.setData(self.path_tracking.difference_x)
-        self.test_tracking_distance_y_plot.setData(self.path_tracking.difference_y)
+        self.test_tracking_distance_plot.setData(self.path_tracking.p_t_thread_sim.path_tracking.difference)
+        self.test_tracking_distance_x_plot.setData(self.path_tracking.p_t_thread_sim.path_tracking.difference_x)
+        self.test_tracking_distance_y_plot.setData(self.path_tracking.p_t_thread_sim.path_tracking.difference_y)
         self.path_tracking_target_pos_plot.setData([self.SV.PT.target_position[0]], [self.SV.PT.target_position[1]])
         self.arrow_path_yaw.setPos(
             self.SV.PT.target_position[0], 
@@ -383,13 +383,13 @@ class App:
         # last_path_yaw = self.SV.CF.fitted_route_yaw_rad[self.SV.PT.target_index]
         self.SV.PT.current_x, self.SV.PT.current_y = self.SV.GUI.mouse_x, self.SV.GUI.mouse_y
         # self.SV.PT.current_yaw = self.SV.CF.fitted_route_yaw_deg[self.SV.PT.target_index]
-        self.path_tracking.calculateCommand()
+        self.path_tracking.p_t.calculateCommand()
         self.gui.lcd_steering_agnle.display(np.degrees(self.SV.PT.steering_angle_rad))
         self.gui.lcd_target_index.display(self.SV.PT.target_index)
 
-        self.test_tracking_distance_plot.setData(self.path_tracking.difference)
-        self.test_tracking_distance_x_plot.setData(self.path_tracking.difference_x)
-        self.test_tracking_distance_y_plot.setData(self.path_tracking.difference_y)
+        self.test_tracking_distance_plot.setData(self.path_tracking.p_t.difference)
+        self.test_tracking_distance_x_plot.setData(self.path_tracking.p_t.difference_x)
+        self.test_tracking_distance_y_plot.setData(self.path_tracking.p_t.difference_y)
 
 
         self.path_tracking_target_pos_plot.setData([self.SV.PT.target_position[0]], [self.SV.PT.target_position[1]])
@@ -419,7 +419,7 @@ class App:
                 self.arrow_path_yaw = Arrow()
                 self.arrow_steering_angle = Arrow(color="b")
                 self.arrow_steering_target_angle = Arrow(length=120, color='db')
-
+                self.path_tracking.switchMethod("stanley_sim")
                 self.path_tracking_target_pos_plot = pyqtgraph.ScatterPlotItem(
                     symbol='x',
                     # size=self.rover_size,
@@ -587,7 +587,8 @@ class App:
             self.arrow_steering_angle = Arrow(color="b")
             self.arrow_steering_target_angle = Arrow(length=120, color='db')
 
-            self.path_tracking = rover_pathtracking.StanleyController(self.SV)
+            self.path_tracking.switchMethod("stanley")
+            self.path_tracking.simulate()
             self.path_tracking_target_pos_plot = pyqtgraph.ScatterPlotItem(
                 symbol='x',
                 # size=self.rover_size,
@@ -654,8 +655,6 @@ class App:
             )
 
 
-            self.path_tracking_thread = PathTrackingThead(self.gui, self.SV, self.path_tracking)
-            self.path_tracking_thread.start()
             self.plot_path_tracking_timer = QtCore.QTimer()
             self.plot_path_tracking_timer.timeout.connect(self.plot_path_tracking)
             self.plot_path_tracking_timer.start(self.gui.spin_time_delay.value())
@@ -663,15 +662,13 @@ class App:
         
     def button_pt_stop_clicked(self):
         if self.path_tracking_flag:
-            self.path_tracking_thread.stop()
-            self.path_tracking_thread.join()
+            self.path_tracking.stop()
             self.plot_path_tracking_timer.stop()
             self.map_plot_widget.removeItem(self.path_tracking_target_pos_plot)
             self.map_plot_widget.removeItem(self.path_tracking_route_plot)
             self.map_plot_widget.removeItem(self.arrow_steering_angle.arror_plot)
             self.map_plot_widget.removeItem(self.arrow_steering_target_angle.arror_plot)
             self.map_plot_widget.removeItem(self.arrow_path_yaw.arror_plot)
-            self.path_tracking = rover_pathtracking.StanleyController_sim(self.SV)
             self.path_tracking_flag = False
 
     def mouse_move(self, event):
@@ -689,49 +686,6 @@ class App:
     # def mouseReleseEvent(self, event):
     #     pass
 
-class PathTrackingThead(threading.Thread):
-    def __init__(self, gui, SharedVariables, path_tracking):
-        super().__init__(daemon=True)
-        self.gui = gui
-        self.SV = SharedVariables
-        self.path_tracking = path_tracking
-        self.run_flag = True
-
-    def stop(self):
-        self.run_flag = False
-
-    def initPos(self):
-        self.SV.PT.target_index = 0
-        self.SV.PT.current_x = self.gui.spin_start_x.value()
-        self.SV.PT.current_y = self.gui.spin_start_y.value()
-        self.SV.PT.current_yaw = self.gui.spin_start_yaw.value()
-        self.SV.PT.tracking_route_x = []
-        self.SV.PT.tracking_route_y = []
-        self.SV.PT.tracking_steering_rad = []
-        self.SV.PT.tracking_steering_deg = []
-        self.SV.PT.tracking_target_steering_deg = []
-        self.SV.PT.tracking_real_steer = []
-        self.SV.PT.tracking_steering_deg = []
-        self.SV.PT.tracking_yaw = []
-        self.SV.PT.tracking_theta_e_deg = []
-
-    def run(self):
-        self.initPos()
-        while self.run_flag:
-            self.path_tracking.calculateCommand()
-            self.path_tracking.update_state()
-            self.SV.PT.tracking_route_x.append(self.SV.PT.current_x)
-            self.SV.PT.tracking_route_y.append(self.SV.PT.current_y)
-            self.SV.PT.tracking_target_steering_deg.append(self.SV.PT.steering_target_angle_deg)
-            self.SV.PT.tracking_yaw.append(self.SV.PT.current_yaw)
-            self.SV.PT.tracking_real_steer.append(self.SV.PT.real_steer_deg)
-            self.SV.PT.tracking_steering_deg.append(self.SV.PT.steering_angle_deg)
-            self.SV.PT.tracking_theta_e_deg.append(self.SV.PT.theta_e_deg)
-
-            time.sleep(self.gui.spin_time_delay.value()/1000)
-            if self.SV.PT.target_position == [self.SV.CF.fitted_route_x[-1], self.SV.CF.fitted_route_y[-1]]:
-                time.sleep(5)
-                self.initPos()
 
 
 

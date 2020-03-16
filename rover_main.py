@@ -38,7 +38,6 @@ class Main():
 
 
         self.path_planning = rover_pathplanning.AstarPathPlanning(self.SV)
-        self.path_tracking = rover_pathtracking.StanleyController(self.SV)
         self.curve_fitting = rover_curve_fitting.CubicSpline(self.SV)
 
 
@@ -65,10 +64,15 @@ class Main():
         self.command_lidar_dictionary = {'exit l':self._exit_l, 'li':self._li, 'gld':self._gld, 'next':self._next}
 
         self.command_vision_dictionary = {'exit v':self._exit_v, 'vi':self._vi, 'vs':self._vs,\
-                  'gs':self._gs, 'al':self._al, 'cc':self._cc, 'sv':self._sv, 'vrs':self._vrs, 'gp c':self._gp_c, \
+                  'gs':self._gs, 'al':self._al, 'cc':self._vcc, 'sv':self._sv, 'vrs':self._vrs, 'gp c':self._gp_c, \
                         'gp exit':self._gp_exit, 'gp':self._gp, 'bm':self._bm, 'um':self._um, 'next':self._next}
 
-        self.command_car_control_dictionary = {'exit cc':self.end_car_control, 'cci':self.car_control_init}
+        self.command_car_control_dictionary = {'ccs':self._cc_s, 'cci':self._cc_i, 'cct':self._cc_t}
+
+        self.command_path_tracking_dictionary = {
+            'pti':self._pt_i, 'ptm':self._pt_m, 'pta':self._pt_a, 'ptstop':self._pt_stop,
+            'ptswi':self._pt_swi,
+        }
 
 
         if self.auto_start:
@@ -78,6 +82,7 @@ class Main():
             self.lidar_init()
             self.car_control_init()
             self.gui_connection_init()
+            self.path_tracking_init()
 
         self.main_main()
 
@@ -221,18 +226,18 @@ class Main():
 
 ########## CarControl #############
     def car_control_init(self):
-        if not self.CC.car_control_server_run:
-            self.car_control = rover_car_control.CarControl(self.CC)
+        if not self.ROV.car_control_ready:
+            self.car_control = rover_car_control.CarControl(self.SV)
         else:
             print('CarControl had started')
 
-    def end_car_control(self):
-        if self.CC.car_control_server_run:
-            self.car_control.end_car_control()
+
+######## Path Tracking ############
+    def path_tracking_init(self):
+        if not self.ROV.path_tracking_ready:
+            self.path_tracking = rover_pathtracking.PathTracking(self.SV)
         else:
-            print("CarControl had stopped")
-
-
+            print("Path Tracking already standby")
 
 
 
@@ -272,7 +277,7 @@ class Main():
         self.end_lidar()
         self.end_vision()
         self.end_gui_server()
-        self.end_car_control()
+
 
 
 
@@ -322,8 +327,7 @@ class Main():
         self.end_lidar()
     def _exit_v(self):
         self.end_vision()
-    def _exit_cc(self):
-        self.end_car_control()
+
 
 
 
@@ -350,7 +354,7 @@ class Main():
         self.vision.save()
     def _al(self):
         self.vision.alive()
-    def _cc(self):
+    def _vcc(self):
         self.vision.check_cpu_speed()
     def _vrs(self):
         self.vision.reset()
@@ -393,6 +397,15 @@ class Main():
     def _next(self):
         pass
 
+######### Car Control #########
+    def _cc_i(self):
+        self.car_control_init()
+    
+    def _cc_t(self):
+        self.CC.car_control_steer = int(input("Input range 320-405-490 : "))
+
+    def _cc_s(self):
+        self.car_control.start()
 
 ############# Path Planning ##############
     def _pp(self):
@@ -415,9 +428,24 @@ class Main():
         self.AS.attitude[0] = int(self.VI.vision_theta)
 
 ################## Path Tracking #############
+    def _pt_i(self):
+        self.path_tracking_init()
+
     def _pt_m(self):
         '''Path tracking by manual forward and back'''
-        self.path_tracking
+        self.path_tracking.manualControl()
+
+    def _pt_a(self):
+        '''Path tracking by auto forward'''
+        self.path_tracking.autoControl()
+
+    def _pt_stop(self):
+        self.path_tracking.stop()
+
+    def _pt_swi(self):
+        print("stanley, stanley_sim : ")
+        method = input("Choose : ")
+        self.path_tracking.switchMethod(method)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import numpy as np
 import rover_stanley_controller
 import threading
 import time
+import traceback
 
 
 
@@ -19,9 +20,12 @@ class PathTracking:
             self.p_t = self.p_t_method[method](self.SV)
             self.p_t_thread_manual = self.PathTrackingThreadManual(self.SV, self.p_t)
             self.p_t_thread_auto = self.PathTrackingThreadAuto(self.SV, self.p_t)
+            self.p_t_thread_sim = self.PathTrackingThreadSim(self.SV, self.p_t)
             self.SV.ROV.path_tracking_ready = True
             print("Path Tracking is ready !!")
         except:
+            traceback.print_exc()
+            self.SV.ROV.path_tracking_ready = False
             print("Path Tracking fail initiating")
     
     def manualControl(self):
@@ -42,20 +46,34 @@ class PathTracking:
         else:
             self.p_t_thread_auto.start()
 
+
     def switchMethod(self, method):
-        try:
-            self.p_t = self.p_t_method[method](self.SV)
-        except:
-            print("name error")
+        if self.p_t_thread_manual.run_flag or self.p_t_thread_auto.run_flag:
+            print("Please stop path tracking first before switch method")
+        else:
+            try:
+                self.p_t = self.p_t_method[method](self.SV)
+            except:
+                print("name error")
+
+    def stop(self):
+        if self.p_t_thread_auto.run_flag:
+            self.p_t_thread_auto.stop()
+        elif self.p_t_thread_manual.run_flag:
+            self.p_t_thread_manual.stop()
+        elif self.p_t_thread_sim.run_flag:
+            self.p_t_thread_sim.stop()
+
+    def simulate(self):
+        self.p_t_thread_sim.start()
 
     class PathTrackingThreadManual(threading.Thread):
-        def __init__(self, SharedVariables, path_tracking, daemon=True):
+        def __init__(self, SharedVariables, path_tracking):
+            super().__init__(daemon=True)
             self.SV = SharedVariables
             self.PT = self.SV.PT
             self.path_tracking = path_tracking
-            super().__init__(self, daemon=False)
-            self.path_tracking = path_tracking
-            self.run_flag = True
+            self.run_flag = False
 
         def stop(self):
             self.run_flag = False
@@ -97,30 +115,55 @@ class PathTracking:
                 self.PT.tracking_theta_e_deg.append(self.PT.theta_e_deg)
 
         def run(self):
+            self.run_flag = True
+            self.path_tracking.updateState_real()
             self.resetRecord()
             while self.run_flag:
                 self.path_tracking.next_target(manual_mode=True)
                 self.path_tracking.calculateCommand()
+                self.path_tracking.updateState_real()
                 self.record()
                 time.sleep(0.1)
 
 
 
     class PathTrackingThreadAuto(PathTrackingThreadManual):
-        def __init__(self, SharedVariables, path_tracking, daemon=True):
+        def __init__(self, SharedVariables, path_tracking):
             self.SV = SharedVariables
             self.PT = self.SV.PT
             self.path_tracking = path_tracking
-            super().__init__(self, self.SV, self.path_tracking ,daemon)
+            super().__init__(self.SV, self.path_tracking)
 
         def run(self):
+            self.run_flag = True
+            self.path_tracking.updateState_real()
             self.resetRecord()
             while self.run_flag:
                 self.path_tracking.next_target()
                 self.path_tracking.calculateCommand()
+                self.path_tracking.updateState_real()
                 self.record()
 
                 time.sleep(0.1)
                 if self.PT.target_position == [self.SV.CF.fitted_route_x[-1], self.SV.CF.fitted_route_y[-1]]:
-                    time.sleep(5)
-                    self.resetRecord()
+                    self.run_flag = False
+
+    class PathTrackingThreadSim(PathTrackingThreadManual):
+        def __init__(self, SharedVariables, path_tracking):
+            self.SV = SharedVariables
+            self.PT = self.SV.PT
+            self.path_tracking = path_tracking
+            super().__init__(self.SV, self.path_tracking)
+
+        def run(self):
+            self.run_flag = True
+            self.resetRecord()
+            while self.run_flag:
+                self.path_tracking.next_target()
+                self.path_tracking.calculateCommand()
+                self.path_tracking.update_state()
+                self.record()
+
+                time.sleep(0.1)
+                if self.PT.target_position == [self.SV.CF.fitted_route_x[-1], self.SV.CF.fitted_route_y[-1]]:
+                    self.run_flag = False

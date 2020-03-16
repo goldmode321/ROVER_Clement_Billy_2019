@@ -21,6 +21,7 @@ class Rover:
         self.rover_run = False
         self.path_planning_ready = False
         self.path_tracking_ready = False
+        self.car_control_ready = False
 
 class PathTracking:
     def __init__(self):
@@ -176,6 +177,7 @@ class CarControl:
         self.car_control_stop_pwm = 400
         self.car_control_add_speed = 1 # Speed adjust from gui
         self.car_control_steer = 405 # 320 - 405 - 490
+        self.car_control_delay = 0.1 # Second
 
 class GuiObject:
     def __init__(self):

@@ -5,17 +5,20 @@ import rover_socket
 import traceback
 
 class CarControl:
-    def __init__(self, shared_variable_car_control):
-
-        self.CC = shared_variable_car_control
+    def __init__(self, SharedVariables):
+        self.SV = SharedVariables
+        self.CC = self.SV.CC
         self.init()
 
     def init(self):
         try:
             self.car_control = Adafruit_PCA9685.PCA9685()
             self.car_control.set_pwm_freq(60)
-            self.CC.car_control_server_run = True
+            self.car_control_thread = self.CarControlThread(self.SV, self.car_control)
+            self.SV.ROV.car_control_ready = True
+            print("CarControl is On")
         except:
+            self.SV.ROV.car_control_ready = False
             print("carControl not activated")
 
     def turn(self):
@@ -24,12 +27,39 @@ class CarControl:
     def move(self):
         self.car_control.set_pwm(3, 0, self.CC.car_control_forward_pwm)
 
-    def end_car_control(self):
-        self.CC.car_control_server_run = False
-        time.sleep(0.1)
+    def start(self):
+        if self.car_control_thread.run_flag:
+            print("Car control is running already")
+        else:
+            self.car_control_thread.start()
 
+    def stop(self):
+        self.car_control_thread.stop()
 
+    class CarControlThread(threading.Thread):
+        def __init__(self, SharedVariables, car_control):
+            super().__init__(daemon=True)
+            self.SV = SharedVariables
+            self.CC = self.SV.CC
+            self.car_control = car_control
+            self.run_flag = False
 
+        def turn(self):
+            self.car_control.set_pwm(1 , 0, self.CC.car_control_steer)
+
+        def move(self):
+            self.car_control.set_pwm(3, 0, self.CC.car_control_forward_pwm)
+
+        def stop(self):
+            self.run_flag = False
+            self.join()
+
+        def run(self):
+            self.run_flag = True
+            while self.run_flag:
+                self.turn()
+                self.move()
+                time.sleep(self.CC.car_control_delay)
 
 
 class CarControl_sim:
