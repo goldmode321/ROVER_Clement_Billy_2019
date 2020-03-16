@@ -414,5 +414,11 @@ class Main():
         self.AS.start_y = int(self.VI.vision_y)
         self.AS.attitude[0] = int(self.VI.vision_theta)
 
+################## Path Tracking #############
+    def _pt_m(self):
+        '''Path tracking by manual forward and back'''
+        self.path_tracking
+
+
 if __name__ == "__main__":
     Main()
