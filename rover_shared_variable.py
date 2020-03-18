@@ -3,18 +3,18 @@ import numpy
 
 class SharedVariables():
     def __init__(self):
-        self.ROV = Rover()                 # 50012
-        self.VI = Vision()                 # 50015
-        self.LI = Lidar()                  # 50016
-        self.MAP = MapPlotting()           # 50017
-        self.CAL = Calibration()           # 50018
-        self.CC = CarControl()             # 50019
-        self.LOBS = LocalObstacle()        # 50020
-        self.GOBS = GlobalObstacle()       
+        self.ROV = Rover()                 # 50013
+        self.VI = Vision()                 # 50014
+        self.LI = Lidar()                  # 50015
+        self.MAP = MapPlotting()           
+        self.CAL = Calibration()           # 50016
+        self.CC = CarControl()             # 50017
+        self.LOBS = LocalObstacle()        # 50018
+        self.GOBS = GlobalObstacle()       # 50019
         self.GUI = GuiObject()
-        self.AS = Astar()
-        self.CF = Curve_fitting()
-        self.PT = PathTracking()
+        self.AS = Astar()                  # 50020
+        self.CF = Curve_fitting()          # 50021
+        self.PT = PathTracking()           # 50022
 
 class Rover:
     def __init__(self):
@@ -22,6 +22,7 @@ class Rover:
         self.path_planning_ready = False
         self.path_tracking_ready = False
         self.car_control_ready = False
+        self.rover_ip = "192.168.5.2"
 
 class PathTracking:
     def __init__(self):
@@ -44,7 +45,7 @@ class PathTracking:
         # Car state
         self.acceleration = 1 # cm/s^2
         self.max_velocity = 50 # cm/s
-        self.velocity = -100 # cm/s
+        self.velocity = 100 # cm/s
         self.current_x = 0
         self.current_y = 0
         self.current_yaw = 0
@@ -121,7 +122,7 @@ class Vision:
         self.vision_idle = False
         self.vision_x = 0
         self.vision_y = 0
-        self.vision_theta = 0
+        self.vision_angle = 0
         self.vision_use_map_mode = False
         self.vision_build_map_mode = False
         self.vision_angle_radian = 0
@@ -137,10 +138,10 @@ class Lidar:
         self.lidar_run = False
         self.lidar_connect = False
         self.lidar_state = list()
-        self.lidar_minimum_radius = 450
-        self.lidar_data = [[0,0,0],[1,1,1]]
-        self.lidar_angle = [0]
-        self.lidar_radius = [0]
+        self.lidar_minimum_radius = 350
+        self.lidar_data = numpy.array([[0,0,0],[1,1,1]])
+        self.lidar_angle = numpy.array([0])
+        self.lidar_radius = numpy.array([0])
 
 class MapPlotting:
     def __init__(self):
@@ -151,6 +152,7 @@ class MapPlotting:
         self.rover_x = 0
         self.rover_y = 0
 
+        self.local_obs_update_delay = 0.1 # no use below 0.08
 
 
 

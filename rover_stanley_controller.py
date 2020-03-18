@@ -23,7 +23,7 @@ class StanleyController:
     def updateState_real(self):
         self.PT.current_x = self.VI.vision_x
         self.PT.current_y = self.VI.vision_y
-        self.PT.current_yaw = self.VI.vision_theta
+        self.PT.current_yaw = self.VI.vision_angle
 
 
     def next_target(self, manual_mode=False):

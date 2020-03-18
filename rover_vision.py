@@ -21,7 +21,7 @@ class Vision:
     def autorun(self):
         ''' Auto start step'''
         self.init()
-        self.start_background_thread()
+
 
 
     def init(self):
@@ -32,11 +32,11 @@ class Vision:
             # self.vision = self.VI.vision = xmlrpclib.ServerProxy("http://{}:8080".format(self.VI.vision_ip))
             self.vision = xmlrpclib.ServerProxy("http://{}:8080".format(self.VI.vision_ip))
             if self.vision.alive() == [0, 'Alive']:
-                logging.info('Connection to Vision module establiished , Vision module status : {}\n'.format(self.vision.alive()))
+                logging.info('Connection to Vision module establiished , Vision module status : {}'.format(self.vision.alive()))
                 self.VI.vision_run = True
                 self.start_background_thread()
             else:
-                logging.info('Vision module is not Alive\n')
+                logging.info('Vision module is not Alive')
                 raise KeyboardInterrupt
         except:
             self.VI.vision_run = False
@@ -47,7 +47,7 @@ class Vision:
 
     def start_background_thread(self):
         self.vision_thread = VisionGetDataThread(self.VI, vision=self.vision)
-        logging.info('Thread running')
+        logging.info('Vision Thread Start')
 
 
     def end(self):
@@ -120,6 +120,7 @@ class VisionGetDataThread(threading.Thread):
 
     def run(self):
         '''Send vision data to bridge'''
+        time.sleep(0.1)
         while self.VI.vision_run:
             try:
                 # print('v')
@@ -134,7 +135,7 @@ class VisionGetDataThread(threading.Thread):
                     self.VI.vision_status = status[0]
                     self.VI.vision_x = pose[3]
                     self.VI.vision_y = pose[4]
-                    self.VI.vision_theta = pose[5]
+                    self.VI.vision_angle = pose[5]
                     self.VI.vision_angle_radian = math.radians(pose[5])
                     if self.VI.vision_status == 1:
                         self.VI.vision_idle = True
@@ -144,4 +145,5 @@ class VisionGetDataThread(threading.Thread):
                 time.sleep(0.15)
             except:
                 logging.exception('Vision thread got error : ')
+                self.VI.vision_run = False
 

@@ -580,6 +580,9 @@ class App:
 
     def button_pt_start_clicked(self):
         if not self.path_tracking_flag:
+            self.SV.PT.current_x = self.gui.spin_start_x.value()
+            self.SV.PT.current_y = self.gui.spin_start_y.value()
+            self.SV.PT.current_yaw = self.gui.spin_start_yaw.value()
             if self.gui.groupBox_test_tracking.isChecked():
                 self.gui.groupBox_test_tracking.setChecked(False)
 
@@ -662,7 +665,8 @@ class App:
         
     def button_pt_stop_clicked(self):
         if self.path_tracking_flag:
-            self.path_tracking.stop()
+            if self.path_tracking.p_t_thread_sim.isAlive():
+                self.path_tracking.stop()
             self.plot_path_tracking_timer.stop()
             self.map_plot_widget.removeItem(self.path_tracking_target_pos_plot)
             self.map_plot_widget.removeItem(self.path_tracking_route_plot)

@@ -19,6 +19,7 @@ import pyqtgraph
 import gui.rover_ui_file as GUI
 import gui.rover_calibration as C_GUI
 import rover_socket
+import rover_shared_variable
 
 class SharedVariables():
     def __init__(self):

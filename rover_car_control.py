@@ -28,10 +28,10 @@ class CarControl:
         self.car_control.set_pwm(3, 0, self.CC.car_control_forward_pwm)
 
     def start(self):
-        if self.car_control_thread.run_flag:
+        if self.car_control_thread.isAlive():
             print("Car control is running already")
         else:
-            self.car_control_thread.start()
+            self.car_control_thread = self.CarControlThread(self.SV, self.car_control)
 
     def stop(self):
         self.car_control_thread.stop()
@@ -43,6 +43,7 @@ class CarControl:
             self.CC = self.SV.CC
             self.car_control = car_control
             self.run_flag = False
+            self.start()
 
         def turn(self):
             self.car_control.set_pwm(1 , 0, self.CC.car_control_steer)
@@ -52,7 +53,7 @@ class CarControl:
 
         def stop(self):
             self.run_flag = False
-            self.join()
+            # self.join()
 
         def run(self):
             self.run_flag = True

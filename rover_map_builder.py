@@ -1,24 +1,33 @@
 import numpy
 import math
+import threading
+import time
+import logging
 
 
 
-class MapBuilder():
-    def __init__(self, rover_shared_variable):
-        self.MAP = rover_shared_variable.MAP
-        self.LOBS = rover_shared_variable.LOBS
-        self.GOBS = rover_shared_variable.GOBS
-        self.LI = rover_shared_variable.LI
-        self.VI = rover_shared_variable.VI
-        self.CAL = rover_shared_variable.CAL
+class MapBuilder:
+    def __init__(self, SharedVariables):
+        self.SV = SharedVariables
+        self.MAP = self.SV.MAP
+        self.LOBS = self.SV.LOBS
+        self.GOBS = self.SV.GOBS
+        self.LI = self.SV.LI
+        self.VI = self.SV.VI
+        self.CAL = self.SV.CAL
 
     def calculate_local_obstacle(self):
-        self.LOBS.local_obstacle_x = numpy.round(numpy.cos(self.LI.lidar_angle - \
-            self.VI.vision_angle_radian + 0.5*math.pi)*\
-            self.LI.lidar_radius + self.VI.vision_x, 0)
-        self.LOBS.local_obstacle_y = numpy.round(numpy.sin(self.LI.lidar_angle - \
-            self.VI.vision_angle_radian + 0.5*math.pi)*\
-            self.LI.lidar_radius + self.VI.vision_y, 0)
+
+        if len(self.LI.lidar_angle) == len(self.LI.lidar_radius):
+            self.LOBS.local_obstacle_x = numpy.round(numpy.cos(self.LI.lidar_angle - \
+                self.VI.vision_angle_radian + 0.5*math.pi)*\
+                self.LI.lidar_radius + self.VI.vision_x, 0)
+            self.LOBS.local_obstacle_y = numpy.round(numpy.sin(self.LI.lidar_angle - \
+                self.VI.vision_angle_radian + 0.5*math.pi)*\
+                self.LI.lidar_radius + self.VI.vision_y, 0)
+        else:
+            # print("Race condition happen in map builder")
+            pass
 
     def calculate_arrow(self):
         self.MAP.arrow_x = [self.VI.vision_x, self.VI.vision_x + 200*math.cos(-self.VI.vision_angle_radian+0.5*math.pi)]
@@ -51,3 +60,24 @@ class MapBuilder():
         ''' return value set for set_ylim() '''
         return numpy.concatenate((self.LOBS.local_obstacle_y, self.GOBS.global_obstacle_y)).min(), \
                 numpy.concatenate((self.LOBS.local_obstacle_y, self.GOBS.global_obstacle_y)).max()
+
+
+class LocalObsBuilderThread(threading.Thread):
+    def __init__(self, SharedVariables):
+        self.SV = SharedVariables
+        self.MAP = self.SV.MAP
+        super().__init__(daemon=True)
+        self.map_builder = MapBuilder(self.SV)
+        self.run_flag = False
+        self.start()
+
+    def stop(self):
+        self.run_flag = False
+
+    def run(self):
+        self.run_flag = True
+        while self.run_flag:
+            self.map_builder.calculate_local_obstacle()
+            time.sleep(self.MAP.local_obs_update_delay)
+
+

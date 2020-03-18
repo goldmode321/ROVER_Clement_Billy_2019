@@ -11,7 +11,6 @@ class AstarPathPlanning:
     def __init__(self, SharedVariable):
         self.SV = SharedVariable
         self.AS = self.SV.AS
-        super().__init__(self.SV)
 
         self.motion = [
             [0, 'forward'],
