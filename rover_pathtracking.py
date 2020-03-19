@@ -142,7 +142,7 @@ class PathTracking:
                 self.path_tracking.next_target()
                 self.path_tracking.calculateCommand()
                 self.path_tracking.updateState_real()
-                self.record()
+                # self.record()
 
                 time.sleep(0.1)
                 if self.PT.target_position == [self.SV.CF.fitted_route_x[-1], self.SV.CF.fitted_route_y[-1]]:
@@ -162,7 +162,7 @@ class PathTracking:
                 self.path_tracking.next_target()
                 self.path_tracking.calculateCommand()
                 self.path_tracking.update_state()
-                self.record()
+                # self.record()
 
                 time.sleep(0.1)
                 if self.PT.target_position == [self.SV.CF.fitted_route_x[-1], self.SV.CF.fitted_route_y[-1]]:

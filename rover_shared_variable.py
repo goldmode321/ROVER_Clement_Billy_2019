@@ -15,6 +15,7 @@ class SharedVariables():
         self.AS = Astar()                  # 50020
         self.CF = Curve_fitting()          # 50021
         self.PT = PathTracking()           # 50022
+        self.COM = Communication()
 
 class Rover:
     def __init__(self):
@@ -180,6 +181,7 @@ class CarControl:
         self.car_control_add_speed = 1 # Speed adjust from gui
         self.car_control_steer = 405 # 320 - 405 - 490
         self.car_control_delay = 0.1 # Second
+        self.car_control_move = 400
 
 class GuiObject:
     def __init__(self):
@@ -196,7 +198,18 @@ class GuiObject:
         self.mouse_x = 0
         self.mouse_y = 0
 
+class Communication:
+    def __init__(self):
+        self.command_rover = None
+        self.command_lidar = None
+        self.command_vision = None
+        self.command_car_control = None
+        self.command_path_tracking = None
+        self.command_path_planning = None
+        self.command_map_builder = None
 
+        self.vision = None
+        self.lidar = None
 
 
 if __name__ == "__main__":

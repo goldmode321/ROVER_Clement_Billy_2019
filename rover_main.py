@@ -15,6 +15,7 @@ import rover_curve_fitting
 import rover_pathplanning
 import rover_pathtracking
 import rover_map_builder
+import rover_communication
 
 
 class Main():
@@ -35,12 +36,14 @@ class Main():
         self.LOBS = self.SV.LOBS
         self.GOBS = self.SV.GOBS
         self.CF = self.SV.CF
+        self.COM = self.SV.COM
 
 
 
         self.path_planning = rover_pathplanning.AstarPathPlanning(self.SV)
         self.curve_fitting = rover_curve_fitting.CubicSpline(self.SV)
         self.map_builder = rover_map_builder.MapBuilder(self.SV)
+        self.communication = rover_communication.Communication(self.SV)
 
 
         # Main initial variables
@@ -61,33 +64,33 @@ class Main():
         self.gui_receive = []
 
 
-        self.command_dictionary = {'exit all':self._exit_all, 'next':self._next}
+        self.COM.command_rover = {'exit all':self._exit_all, 'next':self._next}
 
-        self.command_lidar_dictionary = {
+        self.COM.command_lidar = {
             'exit l':self._exit_l, 'li':self._li, 'gld':self._gld, 'next':self._next, \
                 'lr':self._lr, 'ls':self._ls,
         }
 
-        self.command_vision_dictionary = {
+        self.COM.command_vision = {
             'exit v':self._exit_v, 'vi':self._vi, 'vs':self._vs, 'gs':self._gs, 'al':self._al, \
                 'cc':self._vcc, 'sv':self._sv, 'vrs':self._vrs, 'gp c':self._gp_c, \
                     'gp exit':self._gp_exit, 'gp':self._gp, 'bm':self._bm, 'um':self._um, \
                         'next':self._next
         }
 
-        self.command_car_control_dictionary = {
+        self.COM.command_car_control = {
             'ccs':self._cc_s, 'cci':self._cc_i, 'cct':self._cc_t, 'ccstop':self._cc_stop,
         }
 
-        self.command_path_tracking_dictionary = {
+        self.COM.command_path_tracking = {
             'pti':self._pt_i, 'ptm':self._pt_m, 'pta':self._pt_a, 'ptstop':self._pt_stop,
             'ptswi':self._pt_swi,
         }
-        self.command_path_planning_dictionary = {
+        self.COM.command_path_planning = {
             'pp':self._pp, 'pps':self._pp_s, 'ppe':self._pp_e, 'ppv':self._pp_v,
         }
 
-        self.command_map_builder_dictionary = {
+        self.COM.command_map_builder = {
             'mb start':self._mb_start, 'mb stop':self._mb_stop, 'mbg':self._mb_g
         }
 
@@ -97,120 +100,12 @@ class Main():
             self.vision_init()
             self.lidar_init()
             self.car_control_init()
-            self.gui_connection_init()
             self.path_tracking_init()
             self.localObsBuilderInit()
 
         self.main_main()
 
-########### Move relative ############
 
-########### Send to GUI ##############
-    def gui_connection_init(self):
-        self.gui_udp_client = rover_socket.UDP_server(50010, ip=self.ROV.rover_ip)
-        self.gui_send_status_udp_server = rover_socket.UDP_server(50012, ip=self.ROV.rover_ip)
-
-        self.gui_rov_server = rover_socket.UDP_server(50013, ip=self.ROV.rover_ip)
-        self.gui_vi_server = rover_socket.UDP_server(50014, ip=self.ROV.rover_ip)
-        self.gui_li_server = rover_socket.UDP_server(50015, ip=self.ROV.rover_ip)
-        self.gui_cal_server = rover_socket.UDP_server(50016, ip=self.ROV.rover_ip)
-        self.gui_cc_server = rover_socket.UDP_server(50017, ip=self.ROV.rover_ip)
-        self.gui_lobs_server = rover_socket.UDP_server(50018, ip=self.ROV.rover_ip)
-        self.gui_gobs_server = rover_socket.UDP_server(50019, ip=self.ROV.rover_ip)
-        self.gui_as_server = rover_socket.UDP_server(50020, ip=self.ROV.rover_ip)
-        self.gui_cf_server = rover_socket.UDP_server(50021, ip=self.ROV.rover_ip)
-        self.gui_pt_server = rover_socket.UDP_server(50022, ip=self.ROV.rover_ip)
-        
-
-        self.gui_server_run = True
-        self.gui_command = {"gss": self._gui_set_speed, "gbm": self._gui_bm, "gum":self._gui_um, \
-            "gbms": self._gui_bm_stop, "gums":self._gui_um_stop}
-
-        self.thread_gui = threading.Thread(target=self.gui_send_and_read, daemon=True)
-        self.thread_gui.start()
-        self.thread_gui_get_command = threading.Thread(target=self.gui_get_command, daemon=True)
-        self.thread_gui_get_command.start()
-
-    def gui_get_command(self):
-        while self.gui_server_run:
-            self.gui_get_command_udp_server = rover_socket.UDP_server(50013, 0, '192.168.5.2')
-            time.sleep(0.1)
-            self.gui_get_command_receive = self.gui_get_command_udp_server.recv_list()
-            if self.gui_get_command_receive is not None:
-                if self.gui_get_command_receive[0] in self.gui_command:
-                    self.gui_command[self.gui_get_command_receive[0]]()
-                elif self.gui_get_command_receive[0] in self.command_dictionary:
-                    self.command_dictionary[self.gui_get_command_receive[0]]() # Referenced from CommanderDictionary
-                elif self.gui_get_command_receive[0] in self.command_vision_dictionary:
-                    self.command_vision_dictionary[self.gui_get_command_receive[0]]()
-                elif self.gui_get_command_receive[0] in self.command_lidar_dictionary:
-                    self.command_lidar_dictionary[self.gui_get_command_receive[0]]()
-                elif self.gui_get_command_receive[0] in self.command_car_control_dictionary:
-                    self.command_car_control_dictionary[self.gui_get_command_receive[0]]()
-                elif self.gui_get_command_receive[0] in self.command_path_planning_dictionary:
-                    self.command_path_planning_dictionary[self.gui_get_command_receive[0]]()
-                elif self.gui_get_command_receive[0] in self.command_path_tracking_dictionary:
-                    self.command_path_tracking_dictionary[self.gui_get_command_receive[0]]()
-                elif self.gui_get_command_receive[0] in self.command_map_builder_dictionary:
-                    self.command_map_builder_dictionary[self.gui_get_command_receive[0]]()
-                else:
-                    print('Unknown Command')
-            self.gui_get_command_udp_server.close()
-
-
-    def gui_send_and_read(self):
-        while self.gui_server_run:
-            self.gui_receive = self.gui_udp_client.recv_list()
-            self.gui_send_status_receive = self.gui_send_status_udp_server.recv_list()
-            if self.gui_receive is not None:
-                self.gui_udp_client.send_list_back([self.LI.lidar_data, self.VI.vision_data[0:4]])
-            if self.gui_send_status_receive is not None:
-                self.gui_send_status_udp_server.send_list_back([self.LI.lidar_USB_port, self.LI.lidar_state, self.LI.lidar_run, \
-                    self.VI.vision_status, self.VI.vision_run, self.VI.vision_idle, self.main_run, self.CC.car_control_add_speed, \
-                        self.vision_build_map_mode, self.vision_use_map_mode])
-            time.sleep(0.05)
-
-
-
-    def end_gui_server(self):
-        self.gui_server_run = False
-        self.thread_gui.join()
-        self.thread_gui_get_command.join()
-        self.gui_udp_client.close()
-        self.gui_get_command_udp_server.close()
-        self.gui_send_status_udp_server.close()
-
-    def _gui_set_speed(self):
-        self.CC.car_control_add_speed = self.gui_get_command_receive[1]
-    def _gui_bm(self):
-        # self.vision_server.send_list(['V', 'bm', self.gui_get_command_receive[1]])
-        self.vision.build_map(self.gui_get_command_receive[1])
-        # self.vision_idle = False
-        self.vision_build_map_mode = True
-    def _gui_bm_stop(self):
-        print("Vision save, please wait")
-        # self.vision_server.send_list(['V', 'sv'])
-        self.vision.save()
-        # self.main_receive = self.vision_server.recv_list()
-        print("Vision reset, please wait")
-        # self.vision_server.send_list(['V', 'rs'])
-        self.vision.reset()
-        # self.main_receive = self.vision_server.recv_list()
-        print("Vision is now idling")
-        # self.vision_idle = True
-        self.vision_build_map_mode = False
-    def _gui_um(self):
-        # self.vision_server.send_list(['V', 'um', self.gui_get_command_receive[1]])
-        self.vision.use_map(self.gui_get_command_receive[1])
-        # self.vision_idle = False
-        self.vision_use_map_mode = True
-    def _gui_um_stop(self):
-        print("Vision reset, please wait")
-        # self.vision_server.send_list(['V', 'rs'])
-        self.vision.reset()
-        # self.main_receive = self.vision_server.recv_list()
-        # self.vision_idle = True
-        self.vision_use_map_mode = False
 
 
 ################## Vision ##############
@@ -288,20 +183,20 @@ class Main():
             try:
                 command = input("\nPlease enter command , enter 'h' for _help : ")
                 logging.info('Command : %s', command)
-                if command in self.command_dictionary:
-                    self.command_dictionary[command]() # Referenced from CommanderDictionary
-                elif command in self.command_vision_dictionary:
-                    self.command_vision_dictionary[command]()
-                elif command in self.command_lidar_dictionary:
-                    self.command_lidar_dictionary[command]()
-                elif command in self.command_car_control_dictionary:
-                    self.command_car_control_dictionary[command]()
-                elif command in self.command_path_planning_dictionary:
-                    self.command_path_planning_dictionary[command]()
-                elif command in self.command_path_tracking_dictionary:
-                    self.command_path_tracking_dictionary[command]()
-                elif command in self.command_map_builder_dictionary:
-                    self.command_map_builder_dictionary[command]()
+                if command in self.COM.command_rover:
+                    self.COM.command_rover[command]() # Referenced from CommanderDictionary
+                elif command in self.COM.command_vision:
+                    self.COM.command_vision[command]()
+                elif command in self.COM.command_lidar:
+                    self.COM.command_lidar[command]()
+                elif command in self.COM.command_car_control:
+                    self.COM.command_car_control[command]()
+                elif command in self.COM.command_path_planning:
+                    self.COM.command_path_planning[command]()
+                elif command in self.COM.command_path_tracking:
+                    self.COM.command_path_tracking[command]()
+                elif command in self.COM.command_map_builder:
+                    self.COM.command_map_builder[command]()
                 else:
                     print('Unknown Command')
                 time.sleep(0.1)
@@ -321,7 +216,7 @@ class Main():
 
         self.end_lidar()
         self.end_vision()
-        self.end_gui_server()
+        self.communication.end_gui_server()
         self._pt_stop()
         self._cc_stop()
 

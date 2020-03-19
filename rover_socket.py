@@ -47,20 +47,13 @@ class UDP_server(object):
 
     def recv_list(self, length = 4096):
         try:
-            receive_list_flag = True
-            receive_list = []
-            while receive_list_flag:
-                try:
-                    temp_receive_list, self.addr = self.sock.recvfrom(length)
-                    receive_list.append(temp_receive_list)
-                    if sys.getsizeof(temp_receive_list) < length:
-                        receive_list_flag = False
-                except:
-                    receive_list_flag = False
-            # print(receive_list)
-            if receive_list != [b''] and receive_list != []:
-                receive_list = pickle.loads(b"".join(receive_list)) 
+
+            try:
+                temp_receive_list, self.addr = self.sock.recvfrom(length)
+                receive_list = pickle.loads(temp_receive_list) 
                 return receive_list
+            except:
+                pass
         
         except socket.timeout: # if server didn't get any data in a period of time 
             pass               # Do nothing and pass  , the return data is 'None' 
@@ -71,20 +64,10 @@ class UDP_server(object):
 
     def recv_object(self, length = 4096):
         try:
-            receive_object_flag = True
-            receive_object = None
-            while receive_object_flag:
-                try:
-                    temp_receive_object, self.addr = self.sock.recvfrom(length)
-                    receive_object += temp_receive_object
-                    if sys.getsizeof(temp_receive_object) < length:
-                        receive_object_flag = False
-                except:
-                    receive_object_flag = False
-            # print(receive_object)
-            if receive_object != [b''] and receive_object != None:
-                receive_object = pickle.loads(b"".join(receive_object)) 
-                return receive_object
+            temp_receive_object, self.addr = self.sock.recvfrom(length)
+
+            receive_object = dill.loads(temp_receive_object)
+            return receive_object
         
         except socket.timeout: # if server didn't get any data in a period of time 
             pass               # Do nothing and pass  , the return data is 'None' 
@@ -93,6 +76,17 @@ class UDP_server(object):
         except:
             traceback.print_exc()
 
+    def send_object(self, objects=None):
+        if objects is not None:
+            try:
+                if self.addr is None:
+                    print('UDP server needs receive from UDP client first')
+                else:
+                    self.sock.sendto(dill.dumps(objects), self.addr)
+            except TypeError as err:
+                print(err)
+        else:
+            pass
 
     def send_object_back(self, objects=None):
         if objects is not None:
@@ -130,7 +124,6 @@ class UDP_server(object):
         except TypeError as err:
             print(err)
         except:
-            self.close()
             traceback.print_exc()
             raise KeyboardInterrupt
 
@@ -139,7 +132,7 @@ class UDP_server(object):
             if self.addr is None:
                 print('UDP server needs receive from UDP client first')
             else:
-                self.sock.sendto(dill.dumps(list), self.addr)
+                self.sock.sendto(pickle.dumps(list), self.addr)
         except TypeError as err:
             print(err)
 
@@ -187,19 +180,14 @@ class UDP_client(object):
 
     def recv_list(self, length = 4096):
         try:
-            receive_list_flag = True
-            receive_list = []
-            while receive_list_flag:
-                try:
-                    temp_receive_list = self.sock.recv(length)
-                    receive_list.append(temp_receive_list)
-                    if sys.getsizeof(temp_receive_list) < length:
-                        receive_list_flag = False
-                except:
-                    receive_list_flag = False
-            if receive_list != [b''] and receive_list != []:
-                receive_list = pickle.loads(b"".join(receive_list)) 
+
+            try:
+                temp_receive_list = self.sock.recv(length)
+                receive_list = pickle.loads(temp_receive_list) 
                 return receive_list
+            except:
+                print("Not enough receive space")
+                return None
         
         except socket.timeout: # if server didn't get any data in a period of time 
             pass               # Do nothing and pass  , the return data is 'None' 
@@ -211,39 +199,30 @@ class UDP_client(object):
 
     def recv_object(self, length = 4096):
         try:
-            receive_object_flag = True
-            receive_object = bytes()
-            while receive_object_flag:
-                try:
-                    temp_receive_object = self.sock.recv(length)
-                    receive_object += temp_receive_object
-                    if sys.getsizeof(temp_receive_object) < length:
-                        receive_object_flag = False
-                except:
-                    receive_object_flag = False
-                    traceback.print_exc()
-            # print(receive_object)
-            if receive_object != [b''] and receive_object != None:
-                # receive_object = pickle.loads(b"".join(receive_object))
-                receive_object = dill.loads(receive_object)
+
+            try:
+                temp_receive_object = self.sock.recv(length)
+                receive_object = dill.loads(temp_receive_object)
                 return receive_object
-        
+            except:
+                print("Not enough receive space")
+                return None
+
+
         except socket.timeout: # if server didn't get any data in a period of time 
             pass               # Do nothing and pass  , the return data is 'None' 
         except KeyboardInterrupt: 
             self.close() # Unbind socket from the adress
         except:
             traceback.print_exc()
-            self.close()
 
 
 
-    def send_object_back(self, objects=None):
+    def send_object(self, objects=None):
         if objects is not None:
             try:
-                self.sock.sendto(pickle.dumps(objects) , (self.ip, self.port) )
+                self.sock.sendto(dill.dumps(objects) , (self.ip, self.port) )
             except :
-                self.close()
                 traceback.print_exc()
                 raise KeyboardInterrupt
         else:

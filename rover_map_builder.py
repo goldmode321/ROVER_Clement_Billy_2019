@@ -77,7 +77,8 @@ class LocalObsBuilderThread(threading.Thread):
     def run(self):
         self.run_flag = True
         while self.run_flag:
-            self.map_builder.calculate_local_obstacle()
+            if self.SV.VI.vision_status != 4:
+                self.map_builder.calculate_local_obstacle()
             time.sleep(self.MAP.local_obs_update_delay)
 
 

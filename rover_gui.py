@@ -21,117 +21,6 @@ import gui.rover_calibration as C_GUI
 import rover_socket
 import rover_shared_variable
 
-class SharedVariables():
-    def __init__(self):
-        self.calibration()
-        self.obstacle()
-        self.sensor_data()
-        self.map_plotting()
-        self.gui_object()
-
-    def obstacle(self):
-        self.local_obstacle_x = numpy.array([0, 1, 2])
-        self.local_obstacle_y = numpy.array([0, 1, 2])
-        self.global_obstacle_x = numpy.array([])
-        self.global_obstacle_y = numpy.array([])
-        self.global_obstacle = numpy.array([])
-        self.global_obstacle_buffer = list()
-
-    def sensor_data(self):
-        self.lidar_data = [[0,0,0],[1,1,1]]
-        self.lidar_angle = [0]
-        self.lidar_radius = [0]
-        self.vision_angle_radian = 0
-        self.vision_status = -1
-        self.vision_data = [0, 0, 0, self.vision_status]
-        self.vision_x = list()
-        self.vision_y = list()
-
-
-    def map_plotting(self):
-        self.arrow_x = [0]
-        self.arrow_y = [0]
-
-    def calibration(self):
-        self.calibrate_x = 0
-        self.calibrate_y = 0
-        self.calibrate_angle = 0
-        self.calibrate_x_multi = 1
-        self.calibrate_y_multi = 1
-        self.calibrate_angle_multi = 1
-        self.calibrate_difference_between_lidar_and_vision = 130
-        self.temp_calibrate_difference_between_lidar_and_vision = 130
-        self.calibration_run = False
-
-    def gui_object(self):
-        self.gui = None
-
-
-
-class Calculator:
-    def __init__(self, SharedVariables_class):
-        self.SV = SharedVariables_class
-
-    def calculate_local_obstacle(self):
-        self.SV.local_obstacle_x = numpy.round(numpy.cos(self.SV.lidar_angle - \
-            self.SV.vision_angle_radian + 0.5*math.pi)*\
-            self.SV.lidar_radius + self.SV.vision_x, 0)
-        self.SV.local_obstacle_y = numpy.round(numpy.sin(self.SV.lidar_angle - \
-            self.SV.vision_angle_radian + 0.5*math.pi)*\
-            self.SV.lidar_radius + self.SV.vision_y, 0)
-
-    def calculate_arrow(self):
-        self.SV.arrow_x = [self.SV.vision_x, self.SV.vision_x + 200*math.cos(-self.SV.vision_angle_radian+0.5*math.pi)]
-        self.SV.arrow_y = [self.SV.vision_y, self.SV.vision_y + 200*math.sin(-self.SV.vision_angle_radian+0.5*math.pi)]
-
-    def calculate_vision_xy_angle(self):
-        self.SV.vision_x = self.SV.vision_data[0] * self.SV.calibrate_x_multi + self.SV.calibrate_x
-        self.SV.vision_y = self.SV.vision_data[1] * self.SV.calibrate_y_multi + self.SV.calibrate_y
-        self.SV.vision_angle_radian = math.radians(
-            self.SV.vision_data[2] * self.SV.calibrate_angle_multi + self.SV.calibrate_angle
-            )
-
-    def get_global_obstacle(self):
-        # combine it into form of (x1,y1), (x2, y2),...
-        temp_global_obstacle = numpy.vstack((self.SV.local_obstacle_x, self.SV.local_obstacle_y)).T
-        # Filt old obstacle data
-        new_global_obstacle = numpy.asarray([i for i in temp_global_obstacle if not i in self.SV.global_obstacle])
-        self.SV.global_obstacle = numpy.append(self.SV.global_obstacle, new_global_obstacle)
-        self.SV.global_obstacle_x = self.SV.global_obstacle[:, 0]
-        self.SV.global_obstacle_y = self.SV.global_obstacle[:, 1]
-        self.SV.global_obstacle_buffer = [self.SV.global_obstacle_buffer, new_global_obstacle]
-        print(len(self.SV.global_obstacle_buffer))
-        
-
-    def get_x_axis_limit(self):
-        ''' return value set for set_xlim()'''
-        return numpy.concatenate((self.SV.local_obstacle_x, self.SV.global_obstacle_x)).min(), \
-            numpy.concatenate((self.SV.local_obstacle_x, self.SV.global_obstacle_x)).max()
-    def get_y_axis_limit(self):
-        ''' return value set for set_ylim() '''
-        return numpy.concatenate((self.SV.local_obstacle_y, self.SV.global_obstacle_y)).min(), \
-                numpy.concatenate((self.SV.local_obstacle_y, self.SV.global_obstacle_y)).max()
-
-    def show_message(self, message):
-        self.SV.gui.MessageBox_Edit.setText(message)
-        self.SV.gui.console_1.append(message)
-
-
-    def get_calibrate_temp_local_obstacle(
-                        self, vision_x, vision_y, vision_angle_radian, 
-                        lidar_radius, lidar_angle
-                        ):
-        return numpy.cos(numpy.array(lidar_angle) - vision_angle_radian + 0.5*math.pi)*\
-                    numpy.array(lidar_radius) + vision_x, \
-                numpy.sin(numpy.array(lidar_angle) - vision_angle_radian + 0.5*math.pi)*\
-                    numpy.array(lidar_radius) + vision_y
-
-    def get_calibrate_temp_vision_xy_angle(self, temp_calibrate_x, temp_calibrate_y,
-                        temp_calibrate_x_multi, temp_calibrate_y_multi, 
-                        temp_calibrate_angle, temp_calibrate_angle_multi):
-        return self.SV.vision_data[0] * temp_calibrate_x_multi + temp_calibrate_x, \
-            self.SV.vision_data[1] * temp_calibrate_y_multi + temp_calibrate_y, \
-                math.radians(self.SV.vision_data[2] * temp_calibrate_angle_multi + temp_calibrate_angle),\
 
 
 
@@ -146,9 +35,21 @@ class ROVER_gui():
         self.gui = GUI.Ui_MainWindow()
         self.gui.setupUi(self.MainWindow)
 
-        self.SV = SharedVariables()
-        self.SV.gui = self.gui
-        self.CALCULATOR = Calculator(self.SV)
+        self.SV = rover_shared_variable.SharedVariables()
+        self.ROV = self.SV.ROV
+        self.VI = self.SV.VI
+        self.LI = self.SV.LI
+        self.MAP = self.SV.MAP
+        self.CAL = self.SV.CAL
+        self.CC = self.SV.CC
+        self.LOBS = self.SV.LOBS
+        self.GOBS = self.SV.GOBS
+        self.AS = self.SV.AS
+        self.CF = self.SV.CF
+        self.PT = self.SV.PT
+        self.GUI = self.SV.GUI
+
+        self.GUI.gui = self.gui
 
 
         self.current_speed = 0
@@ -199,14 +100,40 @@ class ROVER_gui():
         self.gui.CalibrationBtn.clicked.connect(self.calibration)
         self.gui.SaveMapBtn.clicked.connect(self.SaveMapBtn_click)
 
-        self.gui_get_lidar_vision_client = rover_socket.UDP_client(50010, 0, '192.168.5.2')
-        self.gui_get_rover_status_client = rover_socket.UDP_client(50012, 0, '192.168.5.2')
-        self.gui_rover_command_client = rover_socket.UDP_client(50013, 0, '192.168.5.2')
+
+
+        self.gui_test_connection_client = rover_socket.UDP_client(50011, ip=self.ROV.rover_ip)
+        self.gui_command_client = rover_socket.UDP_client(50012, ip=self.ROV.rover_ip)
+        self.gui_rov_client = rover_socket.UDP_client(50013, ip=self.ROV.rover_ip)
+        self.gui_vi_client = rover_socket.UDP_client(50014, ip=self.ROV.rover_ip)
+        self.gui_li_client = rover_socket.UDP_client(50015, ip=self.ROV.rover_ip)
+        self.gui_cal_client = rover_socket.UDP_client(50016, ip=self.ROV.rover_ip)
+        self.gui_cc_client = rover_socket.UDP_client(50017, ip=self.ROV.rover_ip)
+        self.gui_lobs_client = rover_socket.UDP_client(50018, ip=self.ROV.rover_ip)
+        self.gui_gobs_client = rover_socket.UDP_client(50019, ip=self.ROV.rover_ip)
+        self.gui_as_client = rover_socket.UDP_client(50020, ip=self.ROV.rover_ip)
+        self.gui_cf_client = rover_socket.UDP_client(50021, ip=self.ROV.rover_ip)
+        self.gui_pt_client = rover_socket.UDP_client(50022, ip=self.ROV.rover_ip)
+
+        # self.gui_test_connection_client
+        # self.gui_command_client
+        # self.gui_rov_client
+        # self.gui_vi_client
+        # self.gui_li_client
+        # self.gui_cal_client
+        # self.gui_cc_client
+        # self.gui_lobs_client
+        # self.gui_gobs_client
+        # self.gui_as_client
+        # self.gui_cf_client
+        # self.gui_pt_client
+
+
 
         self.get_data_retry = 0
         self.get_data_timer = QtCore.QTimer()
         self.get_data_timer.timeout.connect(self.get_data_from_rover)
-        self.get_data_timer.start(40)
+        self.get_data_timer.start(100)
         self.get_rover_status_retry = 0
         self.get_rover_status_timer = QtCore.QTimer()
         self.get_rover_status_timer.timeout.connect(self.get_rover_status)
@@ -223,6 +150,11 @@ class ROVER_gui():
 
         self.MainWindow.show()
         sys.exit(app.exec_())
+
+
+    def showMessage(self, message):
+        self.gui.console_1.append(str(message))
+        self.gui.MessageBox_Edit.setText(str(message))
 
 
     def check_status(self):
@@ -282,18 +214,35 @@ class ROVER_gui():
 
     def get_data_from_rover(self):
         '''Get data from rover and turn into map'''
-        self.gui_get_lidar_vision_client.send_list([1]) # Send anything to make sure connection always open
-        temp_lidar_vision_receive = self.gui_get_lidar_vision_client.recv_list(65536)
-        if temp_lidar_vision_receive is not None:
-            self.SV.lidar_data = numpy.asarray(temp_lidar_vision_receive[0])
-            self.SV.lidar_angle = numpy.radians(self.SV.lidar_data[:, 1]* (-1)) + 0.0*math.pi
-            self.SV.lidar_radius = self.SV.lidar_data[:, 2]
-            self.SV.vision_data = temp_lidar_vision_receive[1]
+        self.gui_test_connection_client.send_object(1) # Send anything to make sure connection always open
+        self.gui_command_client.send_object(1)
+        self.gui_rov_client.send_object(1)
+        self.gui_vi_client.send_object(1)
+        self.gui_li_client.send_object(1)
+        self.gui_cal_client.send_object(1)
+        self.gui_cc_client.send_object(1)
+        self.gui_lobs_client.send_object(1)
+        self.gui_gobs_client.send_object(1)
+        self.gui_as_client.send_object(1)
+        self.gui_cf_client.send_object(1)
+        self.gui_pt_client.send_object(1)
 
-            if self.SV.vision_data[3] == 4:
-                self.CALCULATOR.calculate_vision_xy_angle()
-                self.CALCULATOR.calculate_local_obstacle()
-                self.CALCULATOR.calculate_arrow()
+
+        self.gui_rov_client.recv_object(256)
+        self.gui_vi_client.recv_object(512)
+        self.gui_li_client.recv_object(65536)
+        self.gui_cal_client.recv_object(512)
+        self.gui_cc_client.recv_object(512)
+        self.gui_lobs_client.recv_object(65536)
+        self.gui_gobs_client.recv_object(65536)
+        self.gui_as_client.recv_object(65536)
+        self.gui_cf_client.recv_object(65536)
+        self.gui_pt_client.recv_object(2048)
+        test_communication = self.gui_test_connection_client.recv_object(16)
+        if test_communication is not None:
+            self.get_rover_status_retry = 0
+        else:
+            self.get_rover_status_retry += 1
 
 
 
@@ -314,7 +263,7 @@ class ROVER_gui():
                 self.CAL_GUI.close_window()
                 self.SV.calibration_run = False
         else:
-            self.CALCULATOR.show_message("For calibration, lidar, vision should be 'On' and \
+            self.showMessage("For calibration, lidar, vision should be 'On' and \
                 vision should be either build map mode or use map mode")
 
 
@@ -347,12 +296,12 @@ class ROVER_gui():
 
             self.lidar_animation = FuncAnimation(self.gui.LidarMap.figure, plot_lidar_map, blit=True, interval=50)
             self.global_animation = FuncAnimation(self.gui.GlobalMap.fig, plot_global_map, blit=True, interval=50)
-            self.CALCULATOR.show_message("Show Map Start")
+            self.showMessage("Show Map Start")
             self.animation_run = True
         else:
             self.lidar_animation._stop()
             self.global_animation._stop()
-            self.CALCULATOR.show_message("Show Map Stop")
+            self.showMessage("Show Map Stop")
             self.animation_run = False
 
 
@@ -371,7 +320,7 @@ class ROVER_gui():
             traceback.print_exc()
 
     def StopAllBtn_click(self):
-        self.CALCULATOR.show_message("Stop ALL")
+        self.showMessage("Stop ALL")
 
         if self.animation_run:
             self.lidar_animation._stop()
@@ -430,63 +379,63 @@ class ROVER_gui():
         self.KeyboardControlTimer.timeout.connect(controller)
 
         if not self.keyboard_control_run:
-            self.CALCULATOR.show_message('Keyboard Control Start')
+            self.showMessage('Keyboard Control Start')
             self.KeyboardControlTimer.start(50)
             self.keyboard_control_run = True
         else:
             self.KeyboardControlTimer.stop()
             self.gui_keyboard_control_client.close()
-            self.CALCULATOR.show_message('Keyboard Control Stop')
+            self.showMessage('Keyboard Control Stop')
             self.keyboard_control_run = False
                     
 
     def KeyboardControl_SetSpeedBtn_click(self):
         if self.rover_run:
             self.gui_rover_command_client.send_list(["gss", self.gui.KeyBoardControl_speed.value()])
-            self.CALCULATOR.show_message("Set Car Speed " + str(self.gui.KeyBoardControl_speed.value()))
+            self.showMessage("Set Car Speed " + str(self.gui.KeyBoardControl_speed.value()))
         else:
-            self.CALCULATOR.show_message("Warring : ROVER is not running")
+            self.showMessage("Warring : ROVER is not running")
 
     def KeyBoardControl_speed_value_change(self):
         self.gui.SetSpeed_label.setText(str(self.gui.KeyBoardControl_speed.value()))
 
     def WayPointBtn_click(self):
-        self.CALCULATOR.show_message("Way Point mode start !")
+        self.showMessage("Way Point mode start !")
 
 
     def VisionUseMapBtn_click(self):
         if self.vision_idle:
             self.gui_rover_command_client.send_list(['gum', self.gui.UseMapID.value()])
-            self.CALCULATOR.show_message('Vision start use map')
+            self.showMessage('Vision start use map')
         else:
             if self.vision_server_run:
-                self.CALCULATOR.show_message('Vision module is busy')
+                self.showMessage('Vision module is busy')
             else:
-                self.CALCULATOR.show_message('Vision is not working')
+                self.showMessage('Vision is not working')
 
     def VisionBuildMapBtn_click(self):
         if self.vision_idle:
             self.gui_rover_command_client.send_list(['gbm', self.gui.BuildMapID.value()])
-            self.CALCULATOR.show_message("Vision start building map")
+            self.showMessage("Vision start building map")
         else:
             if self.vision_server_run:
-                self.CALCULATOR.show_message('Vision module is busy')
+                self.showMessage('Vision module is busy')
             else:
-                self.CALCULATOR.show_message('Vision is not working')
+                self.showMessage('Vision is not working')
 
     def VisionBuildMapStopBtn_click(self):
         if not self.vision_idle and self.vision_build_map_mode:
             self.gui_rover_command_client.send_list(['gbms'])
-            self.CALCULATOR.show_message("Vision module is reseting please wait until ROVER reseting")
+            self.showMessage("Vision module is reseting please wait until ROVER reseting")
         else:
-            self.CALCULATOR.show_message("Vision is either idling or in use map mode")
+            self.showMessage("Vision is either idling or in use map mode")
 
     def VisionUseMapStopBtn_click(self):
         if not self.vision_idle and self.vision_use_map_mode:
             self.gui_rover_command_client.send_list(['gums'])
-            self.CALCULATOR.show_message("Vision module is reseting please wait until ROVER reseting")
+            self.showMessage("Vision module is reseting please wait until ROVER reseting")
         else:
-            self.CALCULATOR.show_message("Vision is either idling or in build map mode")
+            self.showMessage("Vision is either idling or in build map mode")
 
 
 
@@ -610,7 +559,7 @@ class CalibrationUI():
         self.SV.calibrate_x_multi = self.temp_calibrate_x_multi
         self.SV.calibrate_y_multi = self.temp_calibrate_y_multi
         self.SV.calibrate_angle_multi = self.temp_calibrate_angle_multi
-        self.CALCULATOR.show_message("Confirm calibration : x : {} , y : {} , angle : {}  \
+        self.showMessage("Confirm calibration : x : {} , y : {} , angle : {}  \
             x multi : {} , y multi : {} , angle multi : {}" \
             .format(self.SV.calibrate_x, self.SV.calibrate_y, self.SV.calibrate_angle, \
                 self.SV.calibrate_x_multi, self.SV.calibrate_y_multi, self.SV.calibrate_angle_multi))
@@ -619,7 +568,7 @@ class CalibrationUI():
         self.initial_line.set_data(self.SV.local_obstacle_x, self.SV.local_obstacle_y)
 
     def closeEvent(self, event):
-        self.CALCULATOR.show_message("Calibration stop")
+        self.showMessage("Calibration stop")
         self.calibration_animation._stop()
         self.SV.calibration_run = False
         event.accept()

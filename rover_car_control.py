@@ -49,7 +49,7 @@ class CarControl:
             self.car_control.set_pwm(1 , 0, self.CC.car_control_steer)
 
         def move(self):
-            self.car_control.set_pwm(3, 0, self.CC.car_control_forward_pwm)
+            self.car_control.set_pwm(3, 0, self.CC.car_control_move)
 
         def stop(self):
             self.run_flag = False
