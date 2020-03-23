@@ -21,7 +21,6 @@ class Lidar():
             logging.info("Initializing Lidar_client")
             self.lidar_scan_port()
             if self.LI.lidar_connect:
-                self.LI.lidar_run = True
                 self.lidar_get_data_thread = LidarGetDataThread(self.LI, self.lidar)
                 # self.lidar_get_status_thread = LidarGetStatusThread(self.LI, self.lidar)
 
@@ -118,6 +117,7 @@ class LidarGetDataThread(threading.Thread):
 
     def run(self):
         logging.info("Lidar Get Data Thread Run")
+        self.LI.lidar_run = True
         try:
             for scan in self.lidar.iter_scans():
                 self.LI.lidar_data = np.array([list(i) for i in scan if i[2] > self.LI.lidar_minimum_radius])
@@ -131,6 +131,7 @@ class LidarGetDataThread(threading.Thread):
             logging.exception("Lidar Got Error")
             self.lidar.stop()
             self.lidar = rplidar.RPLidar(self.LI.lidar_USB_port)
+            self.LI.lidar_run = False
 
 
 

@@ -48,7 +48,6 @@ class Main():
 
         # Main initial variables
         self.auto_start = auto_start
-        self.main_run = False
         self.main_receive = []
 
         # Commander initail variables
@@ -94,6 +93,11 @@ class Main():
             'mb start':self._mb_start, 'mb stop':self._mb_stop, 'mbg':self._mb_g
         }
 
+        self.COM.command_calibration = {
+            "cal":self._cal,
+        }
+
+
         if self.auto_start:
 
 
@@ -114,7 +118,7 @@ class Main():
         '''Initialize vision system and communication '''
         try:
             logging.info("Initialize vision")
-            self.vision = rover_vision.Vision(self.VI)
+            self.vision = rover_vision.Vision(self.SV)
             logging.info("Vision initiated\n")
         except:
             print('\nError from Main : vision_init \n')
@@ -178,8 +182,8 @@ class Main():
 ############ Main main ###################
     def main_main(self):
         '''Main waiting for command'''
-        self.main_run = True
-        while self.main_run:
+        self.ROV.rover_run = True
+        while self.ROV.rover_run:
             try:
                 command = input("\nPlease enter command , enter 'h' for _help : ")
                 logging.info('Command : %s', command)
@@ -197,19 +201,21 @@ class Main():
                     self.COM.command_path_tracking[command]()
                 elif command in self.COM.command_map_builder:
                     self.COM.command_map_builder[command]()
+                elif command in self.COM.command_calibration:
+                    self.COM.command_calibration[command]()
                 else:
                     print('Unknown Command')
                 time.sleep(0.1)
             except KeyboardInterrupt:
                 self.end_main_all()
-                self.main_run = False
+                self.ROV.rover_run = False
             except:
                 print('Critical error happened on Main , all programs have to be shutdown')
                 self.end_main_all()
                 print('\nError from Main : main_main \n')
                 traceback.print_exc()
                 logging.exception('Got error :')
-                self.main_run = False
+                self.ROV.rover_run = False
 
     def end_main_all(self):
         '''Close all system except for tnc_main'''
@@ -264,11 +270,21 @@ class Main():
 ############ Command relative function ###########
     def _exit_all(self):
         self.end_main_all()
-        self.main_run = False
+        self.ROV.rover_run = False
     def _exit_l(self):
         self.end_lidar()
     def _exit_v(self):
         self.end_vision()
+
+######## Calibration ##############
+    def _cal(self):
+        self.CAL.calibrate_x = int(input("Calibrate x (mm): "))
+        self.CAL.calibrate_x_multi = abs(float(input("Calibrate x multi (%): ")))/100
+        self.CAL.calibrate_y = int(input("Calibrate y (mm): "))
+        self.CAL.calibrate_y_multi = abs(float(input("Calibrate y multi (%): ")))/100
+        self.CAL.calibrate_angle = int(input("Calibrate angle (mm): "))
+        self.CAL.calibrate_angle_multi = abs(float(input("Calibrate angle multi (%): ")))/100
+        self.CAL.calibrate_difference_between_lidar_and_vision = int(input("horizontal distance between lidar and vision"))
 
 ######### Map builder ###############
     def _mb_start(self):

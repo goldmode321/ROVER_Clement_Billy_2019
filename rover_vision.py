@@ -10,8 +10,9 @@ class Vision:
     The module for controlling Vision module, communicate with
     bridge, ip should be specify as the fix ip of vision module
     '''
-    def __init__(self, SharedVariable_vision, auto_start=True, ip=None):
-        self.VI = SharedVariable_vision
+    def __init__(self, SharedVariables, auto_start=True, ip=None):
+        self.SV = SharedVariables
+        self.VI = self.SV.VI
         if ip is not None:
             self.VI.vision_ip = ip
 
@@ -46,13 +47,14 @@ class Vision:
 
 
     def start_background_thread(self):
-        self.vision_thread = VisionGetDataThread(self.VI, vision=self.vision)
+        self.vision_thread = VisionGetDataThread(self.SV, vision=self.vision)
         logging.info('Vision Thread Start')
 
 
     def end(self):
         self.VI.vision_run = False
         if not self.VI.vision_idle:
+            time.sleep(0.2)
             self.reset()
         time.sleep(0.5)
         logging.info("'exit' command received, terminating program")
@@ -111,8 +113,10 @@ class Vision:
 
 
 class VisionGetDataThread(threading.Thread):
-    def __init__(self, SharedVariable_vision, vision, daemon=True):
-        self.VI = SharedVariable_vision
+    def __init__(self, SharedVariableS, vision, daemon=True):
+        self.SV = SharedVariableS
+        self.VI = self.SV.VI
+        self.CAL = self.SV.CAL
         self.vision = vision
         threading.Thread.__init__(self, daemon=daemon)
         self.start()
@@ -133,10 +137,10 @@ class VisionGetDataThread(threading.Thread):
                     status = self.vision.get_status()
                     pose = self.vision.get_pose()
                     self.VI.vision_status = status[0]
-                    self.VI.vision_x = pose[3]
-                    self.VI.vision_y = pose[4]
-                    self.VI.vision_angle = pose[5]
-                    self.VI.vision_angle_radian = math.radians(pose[5])
+                    self.VI.vision_x = pose[3] * self.CAL.calibrate_x_multi + self.CAL.calibrate_x
+                    self.VI.vision_y = pose[4] * self.CAL.calibrate_y_multi + self.CAL.calibrate_y
+                    self.VI.vision_angle = pose[5] * self.CAL.calibrate_angle_multi + self.CAL.calibrate_angle
+                    self.VI.vision_angle_radian = math.radians(self.VI.vision_angle)
                     if self.VI.vision_status == 1:
                         self.VI.vision_idle = True
                     else:
@@ -145,5 +149,6 @@ class VisionGetDataThread(threading.Thread):
                 time.sleep(0.15)
             except:
                 logging.exception('Vision thread got error : ')
+                print("Vision thread stop due to error")
                 self.VI.vision_run = False
 

@@ -122,7 +122,7 @@ class PathTracking:
                 self.path_tracking.next_target(manual_mode=True)
                 self.path_tracking.calculateCommand()
                 self.path_tracking.updateState_real()
-                self.record()
+                # self.record()
                 time.sleep(0.1)
 
 

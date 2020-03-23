@@ -1102,7 +1102,7 @@ border-color: rgb(0, 0, 0);</string>
 border-color: rgb(255, 0, 0);</string>
               </property>
               <property name="currentIndex">
-               <number>2</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="Console">
                <attribute name="title">
@@ -1137,7 +1137,7 @@ border-color: rgb(255, 0, 0);</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_5">
                 <item>
-                 <widget class="QWidget" name="LidarMap" native="true"/>
+                 <layout class="QVBoxLayout" name="verticalLayout_17"/>
                 </item>
                </layout>
               </widget>
@@ -1147,7 +1147,7 @@ border-color: rgb(255, 0, 0);</string>
                </attribute>
                <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
-                 <widget class="QWidget" name="GlobalMap" native="true"/>
+                 <layout class="QVBoxLayout" name="verticalLayout_19"/>
                 </item>
                </layout>
               </widget>

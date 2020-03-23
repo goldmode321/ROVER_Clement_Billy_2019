@@ -26,7 +26,7 @@
          <x>0</x>
          <y>0</y>
          <width>814</width>
-         <height>714</height>
+         <height>718</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -60,13 +60,18 @@
          </widget>
         </item>
         <item>
-         <widget class="Calibration" name="Calibration" native="true">
+         <widget class="QWidget" name="Calibration" native="true">
           <property name="minimumSize">
            <size>
             <width>500</width>
             <height>400</height>
            </size>
           </property>
+          <layout class="QVBoxLayout" name="verticalLayout_10">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_9"/>
+           </item>
+          </layout>
          </widget>
         </item>
         <item>
@@ -480,14 +485,6 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>Calibration</class>
-   <extends>QWidget</extends>
-   <header>calibration.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

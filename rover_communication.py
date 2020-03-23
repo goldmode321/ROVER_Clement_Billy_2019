@@ -33,8 +33,8 @@ class Communication():
 
 
         # Vision initial variables
-        self.vision_build_map_mode = False
-        self.vision_use_map_mode = False
+        self.VI.vision_build_map_mode = False
+        self.VI.vision_use_map_mode = False
 
         # GUI initial variables
         self.gui_server_run = False
@@ -57,7 +57,8 @@ class Communication():
         self.gui_server_run = True
         self.gui_command = {
             "gss": self._gui_set_speed, "gbm": self._gui_bm, "gum":self._gui_um, \
-            "gbms": self._gui_bm_stop, "gums":self._gui_um_stop, "gkcc":self._gui_keyboard_control
+            "gbms": self._gui_bm_stop, "gums":self._gui_um_stop, "gkcc":self._gui_keyboard_control,\
+                "gcal":self._gui_cal,
         }
 
         self.thread_gui = threading.Thread(target=self.guiSendAndRead, daemon=True)
@@ -68,28 +69,32 @@ class Communication():
 
     def guiGetCommand(self):
         while self.gui_server_run:
-
-            self.gui_command_receive = self.gui_test_connection_server.recv_list()
-            if self.gui_command_receive is not None:
-                if self.gui_command_receive[0] in self.gui_command:
-                    self.gui_command[self.gui_command_receive[0]]()
-                elif self.gui_command_receive[0] in self.COM.command_rover:
-                    self.COM.command_rover[self.gui_command_receive[0]]() # Referenced from CommanderDictionary
-                elif self.gui_command_receive[0] in self.COM.command_vision:
-                    self.COM.command_vision[self.gui_command_receive[0]]()
-                elif self.gui_command_receive[0] in self.COM.command_lidar:
-                    self.COM.command_lidar[self.gui_command_receive[0]]()
-                elif self.gui_command_receive[0] in self.COM.command_car_control:
-                    self.COM.command_car_control[self.gui_command_receive[0]]()
-                elif self.gui_command_receive[0] in self.COM.command_path_planning:
-                    self.COM.command_path_planning[self.gui_command_receive[0]]()
-                elif self.gui_command_receive[0] in self.COM.command_path_tracking:
-                    self.COM.command_path_tracking[self.gui_command_receive[0]]()
-                elif self.gui_command_receive[0] in self.COM.command_map_builder:
-                    self.COM.command_map_builder[self.gui_command_receive[0]]()
-                else:
-                    print('Unknown Command')
-            time.sleep(0.1)
+            try:
+                self.gui_command_receive = self.gui_command_server.recv_list()
+                if self.gui_command_receive is not None:
+                    if self.gui_command_receive[0] in self.gui_command:
+                        self.gui_command[self.gui_command_receive[0]]()
+                    elif self.gui_command_receive[0] in self.COM.command_rover:
+                        self.COM.command_rover[self.gui_command_receive[0]]() # Referenced from CommanderDictionary
+                    elif self.gui_command_receive[0] in self.COM.command_vision:
+                        self.COM.command_vision[self.gui_command_receive[0]]()
+                    elif self.gui_command_receive[0] in self.COM.command_lidar:
+                        self.COM.command_lidar[self.gui_command_receive[0]]()
+                    elif self.gui_command_receive[0] in self.COM.command_car_control:
+                        self.COM.command_car_control[self.gui_command_receive[0]]()
+                    elif self.gui_command_receive[0] in self.COM.command_path_planning:
+                        self.COM.command_path_planning[self.gui_command_receive[0]]()
+                    elif self.gui_command_receive[0] in self.COM.command_path_tracking:
+                        self.COM.command_path_tracking[self.gui_command_receive[0]]()
+                    elif self.gui_command_receive[0] in self.COM.command_map_builder:
+                        self.COM.command_map_builder[self.gui_command_receive[0]]()
+                    elif self.gui_command_receive[0] in self.COM.command_calibration:
+                        self.COM.command_calibration[self.gui_command_receive[0]]()
+                    else:
+                        print('Unknown Command')
+            except:
+                print("Something Wrong, maybe wrong protocol")
+            time.sleep(0.05)
 
 
 
@@ -141,6 +146,14 @@ class Communication():
         self.gui_cf_server.close()
         self.gui_pt_server.close()
 
+    def _gui_cal(self):
+        self.CAL.calibrate_x = self.gui_command_receive[1]
+        self.CAL.calibrate_x_multi = self.gui_command_receive[2]
+        self.CAL.calibrate_y = self.gui_command_receive[3]
+        self.CAL.calibrate_y_multi = self.gui_command_receive[4]
+        self.CAL.calibrate_angle = self.gui_command_receive[5]
+        self.CAL.calibrate_angle_multi = self.gui_command_receive[6]
+        self.CAL.calibrate_difference_between_lidar_and_vision = self.gui_command_receive[7]
 
     def _gui_keyboard_control(self):
         self.CC.car_control_move = self.gui_command_receive[1]
@@ -151,8 +164,7 @@ class Communication():
     def _gui_bm(self):
         # self.vision_server.send_list(['V', 'bm', self.gui_command_receive[1]])
         self.vision.build_map(self.gui_command_receive[1])
-        # self.vision_idle = False
-        self.vision_build_map_mode = True
+        self.VI.vision_build_map_mode = True
     def _gui_bm_stop(self):
         print("Vision save, please wait")
         # self.vision_server.send_list(['V', 'sv'])
@@ -162,20 +174,17 @@ class Communication():
         self.vision.reset()
 
         print("Vision is now idling")
-        # self.vision_idle = True
-        self.vision_build_map_mode = False
+        self.VI.vision_build_map_mode = False
     def _gui_um(self):
         # self.vision_server.send_list(['V', 'um', self.gui_command_receive[1]])
         self.vision.use_map(self.gui_command_receive[1])
-        # self.vision_idle = False
-        self.vision_use_map_mode = True
+        self.VI.vision_use_map_mode = True
     def _gui_um_stop(self):
         print("Vision reset, please wait")
         # self.vision_server.send_list(['V', 'rs'])
         self.vision.reset()
 
-        # self.vision_idle = True
-        self.vision_use_map_mode = False
+        self.VI.vision_use_map_mode = False
 
 
             # self.gui_rov_server

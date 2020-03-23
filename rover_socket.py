@@ -74,7 +74,8 @@ class UDP_server(object):
         except KeyboardInterrupt: 
             self.close() # Unbind socket from the adress
         except:
-            traceback.print_exc()
+            # traceback.print_exc()
+            pass
 
     def send_object(self, objects=None):
         if objects is not None:

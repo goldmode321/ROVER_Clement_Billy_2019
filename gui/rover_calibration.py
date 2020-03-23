@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\rover_calibration.ui'
+# Form implementation generated from reading ui file 'rover_calibration.ui'
 #
-# Created by: PyQt5 UI code generator 5.11.3
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -20,7 +20,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 814, 714))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 814, 718))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
@@ -37,9 +37,14 @@ class Ui_MainWindow(object):
         self.VisionData_label = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         self.VisionData_label.setObjectName("VisionData_label")
         self.verticalLayout_4.addWidget(self.VisionData_label)
-        self.Calibration = Calibration(self.scrollAreaWidgetContents)
+        self.Calibration = QtWidgets.QWidget(self.scrollAreaWidgetContents)
         self.Calibration.setMinimumSize(QtCore.QSize(500, 400))
         self.Calibration.setObjectName("Calibration")
+        self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.Calibration)
+        self.verticalLayout_10.setObjectName("verticalLayout_10")
+        self.verticalLayout_9 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_9.setObjectName("verticalLayout_9")
+        self.verticalLayout_10.addLayout(self.verticalLayout_9)
         self.verticalLayout_4.addWidget(self.Calibration)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
@@ -265,4 +270,3 @@ class Ui_MainWindow(object):
         self.ConfirmBtn.setText(_translate("MainWindow", "Confirm"))
         self.ExitBtn.setText(_translate("MainWindow", "Exit"))
 
-from calibration import Calibration

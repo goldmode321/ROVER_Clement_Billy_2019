@@ -59,14 +59,14 @@ class PathTracking:
         self.real_steer_command = 405 # 320 - 405 - 490 
 
         # Tracking
-        self.tracking_route_x = []
-        self.tracking_route_y = []
-        self.tracking_target_steering_rad = []
-        self.tracking_target_steering_deg = []
-        self.tracking_steering_deg = []
-        self.tracking_yaw = []
-        self.tracking_real_steer = []
-        self.tracking_theta_e_deg = []
+        # self.tracking_route_x = []
+        # self.tracking_route_y = []
+        # self.tracking_target_steering_rad = []
+        # self.tracking_target_steering_deg = []
+        # self.tracking_steering_deg = []
+        # self.tracking_yaw = []
+        # self.tracking_real_steer = []
+        # self.tracking_theta_e_deg = []
 
 class Astar:
     def __init__(self):
@@ -198,6 +198,9 @@ class GuiObject:
         self.mouse_x = 0
         self.mouse_y = 0
 
+        self.calibration_run = False
+
+
 class Communication:
     def __init__(self):
         self.command_rover = None
@@ -207,6 +210,7 @@ class Communication:
         self.command_path_tracking = None
         self.command_path_planning = None
         self.command_map_builder = None
+        self.command_calibration = None
 
         self.vision = None
         self.lidar = None
