@@ -97,6 +97,8 @@ class Vision:
         if mapid is not None:
             start_resp = self.vision.set_start(1, [mapid])
             print('\nset_start(), response: {}'.format(start_resp))
+            time.sleep(1)
+            print('\nset_correct : {}'.format(self.vision.set_correct1([100, 1352, 1352, 1352, 1352])))
             logging.info("'Build map' command received , mapid : %s ", mapid)
         else:
             print("\n'Build map' command received , but no mapid")

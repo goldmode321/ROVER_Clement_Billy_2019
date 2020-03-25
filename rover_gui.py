@@ -183,8 +183,8 @@ class ROVER_gui():
             brush=(0, 0, 255),
             pen=self.pen.dict["trans"]
         )
-        self.lidar_plot_widget.setXRange(-4000, 4000)
-        self.lidar_plot_widget.setYRange(-4000, 4000)
+        self.lidar_plot_widget.setXRange(-400, 400)
+        self.lidar_plot_widget.setYRange(-400, 400)
         self.lidar_plot_widget.addItem(self.lidar_plot)
         self.gui.verticalLayout_17.addWidget(self.lidar_plot_widget)
 
@@ -236,18 +236,23 @@ class ROVER_gui():
         self.global_plot_widget.addItem(self.backward_plot)
         self.gui.verticalLayout_19.addWidget(self.global_plot_widget)
 
-        self.gui.StopAllBtn.clicked.connect(self.StopAllBtn_click)
-        self.gui.KeyboardControlBtn.clicked.connect(self.KeyboardControlBtn_click)
-        self.gui.VisionBuildMapBtn.clicked.connect(self.VisionBuildMapBtn_click)
-        self.gui.VisionBuildMapStopBtn.clicked.connect(self.VisionBuildMapStopBtn_click)
-        self.gui.VisionUseMapBtn.clicked.connect(self.VisionUseMapBtn_click)
-        self.gui.VisionUseMapStopBtn.clicked.connect(self.VisionUseMapStopBtn_click)
+        self.mouse_view_box = self.global_plot_widget.plotItem.vb
+        self.signal_proxy_mouseMove = pyqtgraph.SignalProxy(self.global_plot_widget.scene().sigMouseMoved, rateLimit=30, slot=self.mouseMove)
+        self.signal_proxy_mousePress = pyqtgraph.SignalProxy(self.global_plot_widget.scene().sigMouseClicked, rateLimit=30, slot=self.mousePress)
+
+        self.gui.StopAllBtn.clicked.connect(self.stopAllBtnClick)
+        self.gui.KeyboardControlBtn.clicked.connect(self.keyboardControlBtnClick)
+        self.gui.VisionBuildMapBtn.clicked.connect(self.visionBuildMapBtnClick)
+        self.gui.VisionBuildMapStopBtn.clicked.connect(self.visionBuildMapStopBtnClick)
+        self.gui.VisionUseMapBtn.clicked.connect(self.visionUseMapBtnClick)
+        self.gui.VisionUseMapStopBtn.clicked.connect(self.visionUseMapStopBtnClick)
         self.gui.ShowMapBtn.clicked.connect(self.showMap)
-        self.gui.ShowMap_AddBtn.clicked.connect(self.ShowMap_AddBtn_click)
-        self.gui.KeyboardControl_SetSpeedBtn.clicked.connect(self.KeyboardControl_SetSpeedBtn_click)
-        self.gui.KeyBoardControl_speed.valueChanged.connect(self.KeyBoardControl_speed_value_change)
+        self.gui.ShowMap_AddBtn.clicked.connect(self.showMapAddBtnClick)
+        self.gui.KeyboardControl_SetSpeedBtn.clicked.connect(self.keyboardControlSetSpeedBtnClick)
+        self.gui.KeyBoardControl_speed.valueChanged.connect(self.keyBoardControlSpeedValueChange)
         self.gui.CalibrationBtn.clicked.connect(self.calibration)
-        self.gui.SaveMapBtn.clicked.connect(self.SaveMapBtn_click)
+        self.gui.SaveMapBtn.clicked.connect(self.saveMapBtnClick)
+        self.gui.ImportMapBtn.clicked.connect(self.importMapBtnClick)
 
 
         self.gui_test_connection_client = rover_socket.UDP_client(50011, ip=self.ROV.rover_ip)
@@ -299,6 +304,16 @@ class ROVER_gui():
         self.gui.console_1.append(str(message))
         self.gui.MessageBox_Edit.setText(str(message))
 
+    def mousePress(self, event):
+        print('pressed {}'.format(np.random.random_integers(0, 10, 1)))
+
+    def mouseMove(self, event):
+        pos = event[0] # using signal proxy turns original arguments into a tuple
+        if self.global_plot_widget.sceneBoundingRect().contains(pos):
+            mousePoint = self.mouse_view_box.mapSceneToView(pos)
+            self.GUI.mouse_x, self.GUI.mouse_y = int(mousePoint.x()), int(mousePoint.y())
+            self.gui.lcd_mouse_x.display(self.GUI.mouse_x)
+            self.gui.lcd_mouse_y.display(self.GUI.mouse_y)
 
     def checkStatus(self):
         for i, j in zip([self.ROV.rover_run, self.VI.vision_run, self.LI.lidar_run], 
@@ -362,7 +377,7 @@ class ROVER_gui():
         temp = self.gui_vi_client.recv_object(512)
         if temp is not None:
             self.VI = temp
-        temp = self.gui_li_client.recv_object(65536)
+        temp = self.gui_li_client.recv_object(65000)
         if temp is not None:
             self.LI = temp
         temp = self.gui_cal_client.recv_object(512)
@@ -371,16 +386,16 @@ class ROVER_gui():
         temp = self.gui_cc_client.recv_object(512)
         if temp is not None:
             self.CC = temp
-        temp = self.gui_lobs_client.recv_object(65536)
+        temp = self.gui_lobs_client.recv_object(65000)
         if temp is not None:
             self.LOBS = temp
-        temp = self.gui_gobs_client.recv_object(65536)
+        temp = self.gui_gobs_client.recv_object(65000)
         if temp is not None:
             self.GOBS = temp
-        temp = self.gui_as_client.recv_object(65536)
+        temp = self.gui_as_client.recv_object(65000)
         if temp is not None:
             self.AS = temp
-        temp = self.gui_cf_client.recv_object(65536)
+        temp = self.gui_cf_client.recv_object(65000)
         if temp is not None:
             self.CF = temp
         temp = self.gui_pt_client.recv_object(2048)
@@ -388,6 +403,15 @@ class ROVER_gui():
             self.PT = temp
         else:
             self.get_rover_status_retry += 1
+
+        if len(self.LI.lidar_radius) == len(self.LI.lidar_angle):
+            self.x = self.LI.lidar_radius * np.cos(self.LI.lidar_angle + 0.5*np.pi)
+            self.y = self.LI.lidar_radius * np.sin(self.LI.lidar_angle + 0.5*np.pi)
+        if hasattr(self, "CAL_GUI"):
+            if self.CAL_GUI.calibration_MainWindow.isVisible():
+                self.CAL_GUI.updateDate(self.LOBS, self.LI, self.VI, self.CAL)
+
+
 
     def calibration(self):
         '''Call out Calibration Map'''
@@ -410,12 +434,13 @@ class ROVER_gui():
     def showMap(self):
 
         def plot_lidar_map():
-            self.lidar_plot.setData(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
+            self.lidar_plot.setData(self.x, self.y)
 
         def plot_global_map():
             self.route_plot.setData(self.AS.route_x, self.AS.route_y)
+            self.lobs_plot.setData(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
             self.gobs_plot.setData(self.GOBS.global_obstacle_x, self.GOBS.global_obstacle_y)
-            self.end_point_plot.setData([self.AS.end_x], [self.AS.end_y])
+            # self.end_point_plot.setData([self.AS.end_x], [self.AS.end_y])
             self.rover_plot.setData([self.VI.vision_x], [self.VI.vision_y])
             self.fitted_route_plot.setData(self.CF.fitted_route_x, self.CF.fitted_route_y)
             
@@ -439,46 +464,70 @@ class ROVER_gui():
             self.animation_run = False
 
 
-    def ShowMap_AddBtn_click(self):
+    def showMapAddBtnClick(self):
         self.gui_command_client.send_list(["mbg"])
 
-    def SaveMapBtn_click(self):
+    def importMapBtnClick(self):
         try:
-            name = QtWidgets.QFileDialog.getSaveFileName(self, \
-                'Save File', "", "Rover Map Files (*.rovermap);;All Files (*)")
+            name = QtWidgets.QFileDialog.getOpenFileName(
+                self.MainWindow,
+                "Save File", "./map", "All Files (*)"
+            )
+            if name !=("", ""):
+                # data = np.load(name[0])
+                self.gui_command_client.send_list(["gimport", name[0]])
+        except:
+            traceback.print_exc()
+
+    def saveMapBtnClick(self):
+        try:
+            name = QtWidgets.QFileDialog.getSaveFileName(self.MainWindow, \
+                # 'Save File', "", "Rover Map Files (*.rovermap);;All Files (*)")
+                'Save File', "./map", "All Files (*)",)
             if name != ("", ""):
-                file = open(name[0],'w')
-                np.save(file, arr=self.GOBS.global_obstacle, allow_pickle=False)
-                file.close()
+                np.savez(
+                    name[0], 
+                    gobs=self.GOBS.global_obstacle,
+                    gobsx=self.GOBS.global_obstacle_x,
+                    gobsy=self.GOBS.global_obstacle_y,
+                    vid=self.VI.vision_map_id,
+                    calx=self.CAL.calibrate_x,
+                    calxm=self.CAL.calibrate_x_multi,
+                    caly=self.CAL.calibrate_y,
+                    calym=self.CAL.calibrate_y_multi,
+                    cala=self.CAL.calibrate_angle,
+                    calam=self.CAL.calibrate_angle_multi,
+                )
+                self.gui_command_client.send_list(["gsvgobs", name[0]])
+                self.showMessage("global map save to {}.npz".format(name))
         except TypeError:
             traceback.print_exc()
 
-    def StopAllBtn_click(self):
+    def stopAllBtnClick(self):
         self.showMessage("Stop ALL")
 
         if self.animation_run:
             self.lidar_plot_timer.stop()
 
-            self.gui.GlobalMap.global_map_axes.clear()
             self.animation_run = False
 
         if self.keyboard_control_run:
-            self.KeyboardControlTimer.stop()
+            self.keyboard_control_timer.stop()
             self.gui_command_client.send_list(['gkcc', 400, 405])
 
 
         
 
 
-    def KeyboardControlBtn_click(self):
+    def keyboardControlBtnClick(self):
 
         def controller():
             forward_pwm = self.CC.car_control_forward_pwm + self.gui.KeyBoardControl_speed.value()
             backward_pwm = self.CC.car_control_backward_pwm - self.gui.KeyBoardControl_speed.value()
             s_pwm = self.CC.car_control_stop_pwm
-            left_pwm = 409
-            right_pwm = 320
-            middle_pwm = self.CC.car_control_steer
+            left_pwm = 495
+            right_pwm = 315
+            middle_pwm = 400
             if keyboard.is_pressed('w') and not keyboard.is_pressed('a') and not keyboard.is_pressed('d'):
                 self.gui_command_client.send_list(['gkcc', forward_pwm, middle_pwm])
             elif keyboard.is_pressed('w') and keyboard.is_pressed('a') and not keyboard.is_pressed('d'):
@@ -495,7 +544,7 @@ class ROVER_gui():
                 self.gui_command_client.send_list(['gkcc', s_pwm, right_pwm])
             elif keyboard.is_pressed('a') and not keyboard.is_pressed('w') and not keyboard.is_pressed('s'):
                 self.gui_command_client.send_list(['gkcc', s_pwm, left_pwm])
-            else:
+            elif not keyboard.is_pressed('a') and not keyboard.is_pressed('w') and not keyboard.is_pressed('s') and not keyboard.is_pressed('d'):
                 self.gui_command_client.send_list(["gkcc", s_pwm, middle_pwm])
 
 
@@ -517,34 +566,35 @@ class ROVER_gui():
 
 
 
-        self.KeyboardControlTimer = QtCore.QTimer()
-        self.KeyboardControlTimer.timeout.connect(controller)
+        self.keyboard_control_timer = QtCore.QTimer()
+        self.keyboard_control_timer.timeout.connect(controller)
 
         if not self.keyboard_control_run:
             self.showMessage('Keyboard Control Start')
-            self.KeyboardControlTimer.start(100)
+            self.keyboard_control_timer.start(100)
             self.keyboard_control_run = True
         else:
-            self.KeyboardControlTimer.stop()
+            self.keyboard_control_timer.stop()
             self.showMessage('Keyboard Control Stop')
             self.keyboard_control_run = False
+            self.gui_command_client.send_list(['gkcc', 400, 405])
                     
 
-    def KeyboardControl_SetSpeedBtn_click(self):
+    def keyboardControlSetSpeedBtnClick(self):
         if self.ROV.rover_run:
             self.gui_command_client.send_list(["gss", self.gui.KeyBoardControl_speed.value()])
             self.showMessage("Set Car Speed " + str(self.gui.KeyBoardControl_speed.value()))
         else:
             self.showMessage("Warring : ROVER is not running")
 
-    def KeyBoardControl_speed_value_change(self):
+    def keyBoardControlSpeedValueChange(self):
         self.gui.SetSpeed_label.setText(str(self.gui.KeyBoardControl_speed.value()))
 
-    def WayPointBtn_click(self):
+    def wayPointBtnClick(self):
         self.showMessage("Way Point mode start !")
 
 
-    def VisionUseMapBtn_click(self):
+    def visionUseMapBtnClick(self):
         if self.VI.vision_idle:
             self.gui_command_client.send_list(['gum', self.gui.UseMapID.value()])
             self.showMessage('Vision start use map')
@@ -554,7 +604,7 @@ class ROVER_gui():
             else:
                 self.showMessage('Vision is not working')
 
-    def VisionBuildMapBtn_click(self):
+    def visionBuildMapBtnClick(self):
         if self.VI.vision_idle:
             self.gui_command_client.send_list(['gbm', self.gui.BuildMapID.value()])
             self.showMessage("Vision start building map")
@@ -564,14 +614,14 @@ class ROVER_gui():
             else:
                 self.showMessage('Vision is not working')
 
-    def VisionBuildMapStopBtn_click(self):
+    def visionBuildMapStopBtnClick(self):
         if not self.VI.vision_idle and self.VI.vision_build_map_mode:
             self.gui_command_client.send_list(['gbms'])
             self.showMessage("Vision module is reseting please wait until ROVER reseting")
         else:
             self.showMessage("Vision is either idling or in use map mode")
 
-    def VisionUseMapStopBtn_click(self):
+    def visionUseMapStopBtnClick(self):
         if not self.VI.vision_idle and self.VI.vision_use_map_mode:
             self.gui_command_client.send_list(['gums'])
             self.showMessage("Vision module is reseting please wait until ROVER reseting")
@@ -592,8 +642,9 @@ class CalibrationUI:
         self.VI = self.SV.VI
         self.GUI = self.SV.GUI
 
-        self.gui_command_client = gui_command_client
 
+        self.gui_command_client = gui_command_client
+        self.pen = Pens()
 
         self.calibration_MainWindow = QtWidgets.QMainWindow()
         self.calibration_gui = C_GUI.Ui_MainWindow()
@@ -608,6 +659,19 @@ class CalibrationUI:
         # self.temp_lobs_x = self.LOBS.local_obstacle_x
         # self.temp_lobs_y = self.LOBS.local_obstacle_y
         # self.temp_angle = self.VI.vision_angle
+
+        self.calibration_gui.XCalibration_constant_spinBox.setValue(self.CAL.calibrate_x)
+        self.calibration_gui.XCalibration_constant_slider.setValue(self.CAL.calibrate_x)
+        self.calibration_gui.XCalibration_spinBox.setValue(self.CAL.calibrate_x_multi * 100)
+        self.calibration_gui.XCalibration_slider.setValue(self.CAL.calibrate_x_multi * 100)
+        self.calibration_gui.YCalibration_constant_spinBox.setValue(self.CAL.calibrate_y)
+        self.calibration_gui.YCalibration_constant_slider.setValue(self.CAL.calibrate_y)
+        self.calibration_gui.YCalibration_spinBox.setValue(self.CAL.calibrate_y_multi * 100)
+        self.calibration_gui.YCalibration_slider.setValue(self.CAL.calibrate_y_multi * 100)
+        self.calibration_gui.AngleCalibration_constant_spinBox.setValue(self.CAL.calibrate_angle)
+        self.calibration_gui.AngleCalibration_constant_slider.setValue(self.CAL.calibrate_angle)
+        self.calibration_gui.AngleCalibration_spinBox.setValue(self.CAL.calibrate_angle_multi * 100)
+        self.calibration_gui.AngleCalibration_slider.setValue(self.CAL.calibrate_angle_multi * 100)
 
 
         self.calibration_gui.XCalibration_constant_spinBox.valueChanged.connect(self.x_spin)
@@ -629,17 +693,57 @@ class CalibrationUI:
         self.calibration_gui.ExportBtn.clicked.connect(self.ExportBtn_click)
         self.calibration_gui.ImportBtn.clicked.connect(self.ImportBtn_click)
 
-        self.initial_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.local_obstacle_x, self.SV.local_obstacle_y, 'g.')
-        self.current_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.local_obstacle_x, self.SV.local_obstacle_y, 'b.')
-        self.calibrate_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.local_obstacle_x, self.SV.local_obstacle_y, 'r.')
-        self.position_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.vision_data[0], self.SV.vision_data[1], 'bo')
-        self.calibrate_position_line, = self.calibration_gui.Calibration.calibration_map_axes.plot(self.SV.vision_data[0], self.SV.vision_data[1], 'ro')
+
+        self.plot_widget = pyqtgraph.PlotWidget(background='w')
+        self.initial_plot = pyqtgraph.ScatterPlotItem(
+            self.LOBS.local_obstacle_x,
+            self.LOBS.local_obstacle_y,
+            symbol='o',
+            size = 10,
+            brush=(0, 0, 0),
+            pen=self.pen.dict["trans"]
+        )
+        self.lobs_plot = pyqtgraph.ScatterPlotItem(
+            symbol='o',
+            size = 10,
+            brush=(0, 0, 255),
+            pen=self.pen.dict["trans"]
+        )
+        self.temp_plot = pyqtgraph.ScatterPlotItem(
+            symbol='o',
+            size=10,
+            brush=(0, 255 ,0),
+            pen=self.pen.dict["trans"]
+        )
+        self.rover_plot = pyqtgraph.ScatterPlotItem(
+            symbol='o',
+            size=10,
+            brush=(255, 0 ,0),
+            pen=self.pen.dict["trans"]
+        )
+        self.temp_rover_plot = pyqtgraph.ScatterPlotItem(
+            symbol='o',
+            size=10,
+            brush=(100, 0 ,0),
+            pen=self.pen.dict["trans"]
+        )
+
+        self.plot_widget.addItem(self.initial_plot)
+        self.plot_widget.addItem(self.lobs_plot)
+        self.plot_widget.addItem(self.temp_plot)
+        self.plot_widget.addItem(self.rover_plot)
+        self.plot_widget.addItem(self.temp_rover_plot)
+        self.calibration_gui.verticalLayout_9.addWidget(self.plot_widget)
+
 
     def show_window(self):
         self.calibration_MainWindow.show()
-        self.calibration_animation = FuncAnimation(self.calibration_gui.Calibration.figure, self.animation, blit=True, interval=50)
+        self.animation_timer = QtCore.QTimer()
+        self.animation_timer.timeout.connect(self.animation)
+        self.animation_timer.start(100)
 
     def close_window(self):
+        self.animation_timer.stop()
         self.calibration_MainWindow.close()
 
 
@@ -713,37 +817,43 @@ class CalibrationUI:
 
 
     def ResetBtn_click(self):
-        self.initial_line.set_data(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
+        self.initial_plot.setData(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
 
     def closeEvent(self, event):
         # self.gui.showMessage("Calibration stop")
-        self.calibration_animation._stop()
+        self.animation_timer.stop()
         self.GUI.calibration_run = False
         event.accept()
 
-    def animation(self, i):
+    def updateDate(self, LOBS, LI, VI, CAL):
+        self.LOBS = LOBS
+        self.LI = LI
+        self.VI = VI
+        self.CAL = CAL
+
+    def animation(self):
         self.calibration_gui.VisionData_label.setText(
-            "Vx: {} Vy: {} Vangle: {}".format(self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle)
+            "Vx: {} Vy: {} Vangle: {}".format(int(self.VI.vision_x), int(self.VI.vision_y), int(self.VI.vision_angle))
         )
 
-        temp_vision_x = self.VI.vision_x * self.temp_calibrate_x_multi + self.temp_calibrate_x
-        temp_vision_y = self.VI.vision_y * self.temp_calibrate_y_multi + self.temp_calibrate_y
-        temp_vision_angle = self.VI.vision_angle * self.temp_calibrate_angle_multi + self.temp_calibrate_angle
-        temp_vision_angle_radian = np.radians(temp_vision_angle)
-        temp_local_obstacle_x = np.round(np.cos(self.LI.lidar_angle - \
-                temp_vision_angle_radian + 0.5*np.pi)* \
-                self.LI.lidar_radius + temp_vision_x, 0)
-        temp_local_obstacle_y = np.round(np.sin(self.LI.lidar_angle - \
-                temp_vision_angle_radian + 0.5*np.pi)*\
-                self.LI.lidar_radius + temp_vision_y, 0)
+        self.temp_vision_x = self.VI.vision_x * self.temp_calibrate_x_multi + self.temp_calibrate_x
+        self.temp_vision_y = self.VI.vision_y * self.temp_calibrate_y_multi + self.temp_calibrate_y
+        self.temp_vision_angle = self.VI.vision_angle * self.temp_calibrate_angle_multi + self.temp_calibrate_angle
+        self.temp_vision_angle_radian = np.radians(self.temp_vision_angle)
 
-        self.current_line.set_data(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
-        self.calibrate_line.set_data(temp_local_obstacle_x, temp_local_obstacle_y)
-        self.position_line.set_data(self.VI.vision_data[0], self.VI.vision_data[1])
-        self.calibrate_position_line.set_data(temp_vision_x, temp_vision_y)
-        self.calibration_gui.Calibration.calibration_map_axes.autoscale(True)
+        if len(self.LI.lidar_angle) == len(self.LI.lidar_radius):
+            self.temp_local_obstacle_x = np.round(np.cos(self.LI.lidar_angle - \
+                    self.temp_vision_angle_radian + 0.5*np.pi)* \
+                    self.LI.lidar_radius + self.temp_vision_x, 0)
+            self.temp_local_obstacle_y = np.round(np.sin(self.LI.lidar_angle - \
+                    self.temp_vision_angle_radian + 0.5*np.pi)*\
+                    self.LI.lidar_radius + self.temp_vision_y, 0)
 
-        return self.current_line, self.calibrate_line, self.position_line, self.calibrate_position_line, self.initial_line,
+        self.lobs_plot.setData(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
+        self.temp_plot.setData(self.temp_local_obstacle_x, self.temp_local_obstacle_y)
+        self.rover_plot.setData([self.VI.vision_data[0]], [self.VI.vision_data[1]])
+        self.temp_rover_plot.setData([self.temp_vision_x], [self.temp_vision_y])
+
 
     def ExportBtn_click(self):
         try:

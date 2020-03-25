@@ -129,6 +129,7 @@ class Vision:
         self.vision_angle_radian = 0
         self.vision_status = -1
         self.vision_data = [0, 0, 0, self.vision_status]
+        self.vision_map_id = 1
 
 
 class Lidar:
@@ -159,6 +160,12 @@ class MapPlotting:
 
 class Calibration:
     def __init__(self):
+        # self.calibrate_x = 0
+        # self.calibrate_y = 0
+        # self.calibrate_angle = 0
+        # self.calibrate_x_multi = 1
+        # self.calibrate_y_multi = 1
+        # self.calibrate_angle_multi = 1
         self.calibrate_x = 0
         self.calibrate_y = 0
         self.calibrate_angle = 0
@@ -175,8 +182,8 @@ class CarControl:
         self.car_control_receive = None
         self.car_control_previous_receive = None
         self.car_control_state = 'stop'
-        self.car_control_forward_pwm = 410 # 403
-        self.car_control_backward_pwm = 370  # 381
+        self.car_control_forward_pwm = 412 # 403
+        self.car_control_backward_pwm = 358  # 381
         self.car_control_stop_pwm = 400
         self.car_control_add_speed = 1 # Speed adjust from gui
         self.car_control_steer = 405 # 320 - 405 - 490
@@ -211,6 +218,8 @@ class Communication:
         self.command_path_planning = None
         self.command_map_builder = None
         self.command_calibration = None
+
+        self.gui_command_receive = []
 
         self.vision = None
         self.lidar = None

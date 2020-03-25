@@ -1102,7 +1102,7 @@ border-color: rgb(0, 0, 0);</string>
 border-color: rgb(255, 0, 0);</string>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="Console">
                <attribute name="title">
@@ -1148,6 +1148,44 @@ border-color: rgb(255, 0, 0);</string>
                <layout class="QVBoxLayout" name="verticalLayout_9">
                 <item>
                  <layout class="QVBoxLayout" name="verticalLayout_19"/>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_13">
+                  <item>
+                   <widget class="QLabel" name="label_7">
+                    <property name="text">
+                     <string>X:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLCDNumber" name="lcd_mouse_x">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="label_8">
+                    <property name="text">
+                     <string>Y:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLCDNumber" name="lcd_mouse_y">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
                </layout>
               </widget>

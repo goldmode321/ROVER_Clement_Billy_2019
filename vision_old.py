@@ -67,6 +67,7 @@ def manual_mode(proxy):
                     itercmd = iter(cmd_list)
                     next(itercmd)
                     length_array = [int(ii) for ii in itercmd] 
+                    print(length_array)
                     start_resp = proxy.set_correct1(length_array)
                     print( 'Proxy.set_start(), response: {}'.format(start_resp) )       
             

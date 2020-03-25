@@ -95,9 +95,22 @@ class UDP_server(object):
                 if self.addr is None:
                     print('UDP server needs receive from UDP client first')
                 else:
-                    self.sock.sendto(dill.dumps(objects), self.addr)
+                    temp_objects = dill.dumps(objects)
+                    if len(temp_objects) > 65000:
+                        send_flag = True
+                        i = 0
+                        while send_flag:
+                            split_object = temp_objects[ i*65000 : (i+1)*65000]
+                            self.sock.sendto(split_object)
+                            if len(split_object) <= 65000:
+                                send_flag = False
+                    
+                    else:
+                        self.sock.sendto(temp_objects, self.addr)
             except TypeError as err:
                 print(err)
+            except:
+                print("socket send object back error")
         else:
             pass
 
@@ -201,13 +214,20 @@ class UDP_client(object):
     def recv_object(self, length = 4096):
         try:
 
-            try:
-                temp_receive_object = self.sock.recv(length)
-                receive_object = dill.loads(temp_receive_object)
+            receive_object_flag = True
+            receive_object = b''
+            while receive_object_flag:
+                try:
+                    temp_receive_object, self.addr = self.sock.recvfrom(length)
+                    receive_object += temp_receive_object
+                    if len(temp_receive_object) < length:
+                        receive_object_flag = False
+                except:
+                    receive_object_flag = False
+            # print(receive_object)
+            if receive_object != b'' and receive_object != None:
+                receive_object = dill.loads(receive_object) 
                 return receive_object
-            except:
-                print("Not enough receive space")
-                return None
 
 
         except socket.timeout: # if server didn't get any data in a period of time 

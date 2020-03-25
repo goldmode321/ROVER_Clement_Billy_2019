@@ -4,6 +4,7 @@ import subprocess
 import threading
 import multiprocessing
 import logging
+import numpy as np
 import Adafruit_PCA9685
 
 import rover_socket
@@ -63,7 +64,7 @@ class Main():
         self.gui_receive = []
 
 
-        self.COM.command_rover = {'exit all':self._exit_all, 'next':self._next}
+        self.COM.command_rover = {'exit all':self._exit_all, 'next':self._next, 'svgobs':self._svgobs}
 
         self.COM.command_lidar = {
             'exit l':self._exit_l, 'li':self._li, 'gld':self._gld, 'next':self._next, \
@@ -72,9 +73,11 @@ class Main():
 
         self.COM.command_vision = {
             'exit v':self._exit_v, 'vi':self._vi, 'vs':self._vs, 'gs':self._gs, 'al':self._al, \
-                'cc':self._vcc, 'sv':self._sv, 'vrs':self._vrs, 'gp c':self._gp_c, \
+                'cc':self._vcc, 'svv':self._sv, 'vrs':self._vrs, 'gp c':self._gp_c, \
                     'gp exit':self._gp_exit, 'gp':self._gp, 'bm':self._bm, 'um':self._um, \
-                        'next':self._next
+                        'next':self._next,
+            "gbm": self._gui_bm, "gum":self._gui_um,
+                        "gbms": self._gui_bm_stop, "gums":self._gui_um_stop,
         }
 
         self.COM.command_car_control = {
@@ -275,6 +278,24 @@ class Main():
         self.end_lidar()
     def _exit_v(self):
         self.end_vision()
+    def _svgobs(self):
+        name = input("Save name")
+        if name != "":
+            np.savez(
+                name, 
+                gobs=self.GOBS.global_obstacle,
+                gobsx=self.GOBS.global_obstacle_x,
+                gobsy=self.GOBS.global_obstacle_y,
+                vid=self.VI.vision_map_id,
+                calx=self.CAL.calibrate_x,
+                calxm=self.CAL.calibrate_x_multi,
+                caly=self.CAL.calibrate_y,
+                calym=self.CAL.calibrate_y_multi,
+                cala=self.CAL.calibrate_angle,
+                calam=self.CAL.calibrate_angle_multi,
+            )
+            print("global map save to {}.npz".format(name))
+        print("Abort save process")
 
 ######## Calibration ##############
     def _cal(self):
@@ -339,8 +360,8 @@ class Main():
         print('status : {} | x : {} | y : {} | theta : {} '.format(self.VI.vision_status, self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle))
     def _bm(self):
         try:
-            mapid = int(input('MapID : '))
-            self.vision.build_map(mapid)
+            self.VI.vision_map_id = int(input('MapID : '))
+            self.vision.build_map(self.VI.vision_map_id)
             try:
                 input("Use Ctrl+C or enter any key to end current process : ")
                 self.vision.save()
@@ -354,8 +375,8 @@ class Main():
             print('Abort')
     def _um(self):
         try:
-            mapid = int(input('MapID : '))
-            self.vision.use_map(mapid)
+            self.VI.vision_map_id = int(input('MapID : '))
+            self.vision.use_map(self.VI.vision_map_id)
             try:
                 input("Use Ctrl+C or enter any key to end current process : ")
                 self.vision.save()
@@ -369,6 +390,27 @@ class Main():
             print('Abort')
     def _next(self):
         pass
+
+    def _gui_bm(self):
+        self.VI.vision_map_id = self.COM.gui_command_receive[1]
+        self.vision.build_map(self.VI.vision_map_id)
+        self.VI.vision_build_map_mode = True
+    def _gui_bm_stop(self):
+        print("Vision save, please wait")
+        self.vision.save()
+        print("Vision reset, please wait")
+        self.vision.reset()
+
+        print("Vision is now idling")
+        self.VI.vision_build_map_mode = False
+    def _gui_um(self):
+        self.VI.vision_map_id = self.COM.gui_command_receive[1]
+        self.vision.use_map(self.VI.vision_map_id)
+        self.VI.vision_use_map_mode = True
+    def _gui_um_stop(self):
+        print("Vision reset, please wait")
+        self.vision.reset()
+        self.VI.vision_use_map_mode = False
 
 ######### Car Control #########
     def _cc_i(self):

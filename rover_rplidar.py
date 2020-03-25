@@ -96,6 +96,8 @@ class Lidar():
 
     def end(self):
         self.LI.lidar_run = False
+        if self.lidar_get_data_thread.isAlive():
+            self.lidar_get_data_thread.join()
         self.lidar.stop()  
         self.lidar.disconnect()
         logging.info("RPLidar disconnect")  
@@ -122,7 +124,7 @@ class LidarGetDataThread(threading.Thread):
             for scan in self.lidar.iter_scans():
                 self.LI.lidar_data = np.array([list(i) for i in scan if i[2] > self.LI.lidar_minimum_radius])
                 self.LI.lidar_angle = np.array(np.radians(self.LI.lidar_data[:, 1] * (-1)))
-                self.LI.lidar_radius = np.array(self.LI.lidar_data[:, 2])
+                self.LI.lidar_radius = np.array(self.LI.lidar_data[:, 2]) / 10
                 if not self.LI.lidar_run:
                     time.sleep(0.1)
                     raise KeyboardInterrupt
