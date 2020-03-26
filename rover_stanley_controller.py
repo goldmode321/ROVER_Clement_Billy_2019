@@ -23,7 +23,7 @@ class StanleyController:
     def updateState_real(self):
         self.PT.current_x = self.VI.vision_x
         self.PT.current_y = self.VI.vision_y
-        self.PT.current_yaw = self.VI.vision_angle
+        self.PT.current_yaw = - self.VI.vision_angle + 90
 
 
     def next_target(self, manual_mode=False):
@@ -58,12 +58,12 @@ class StanleyController:
     def calculateCommand(self):
         self.next_target()
         if self.PT.velocity >= 0:
-            self.PT.theta_e = self.normalizeAngleRadian(self.normalizeAngleDegree(np.radians(self.PT.current_yaw)) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
+            self.PT.theta_e = self.PT.theta_e_gain * self.normalizeAngleRadian(self.normalizeAngleDegree(np.radians(self.PT.current_yaw)) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
             self.PT.theta_e_deg = np.degrees(self.PT.theta_e)
 
-            self.PT.theta_d = np.arctan2(self.PT.control_gain*self.error_front_axle, self.PT.velocity)
+            self.PT.theta_d = np.arctan2(self.PT.theta_d_gain*self.error_front_axle, self.PT.velocity)
             self.PT.theta_d_deg = np.degrees(self.PT.theta_d)
-            self.PT.steering_target_angle_rad = - self.PT.theta_e + self.PT.theta_d
+            self.PT.steering_target_angle_rad = self.PT.theta_e + self.PT.theta_d
 
 
             self.PT.steering_target_angle_deg = np.degrees(self.PT.steering_target_angle_rad)
@@ -84,7 +84,7 @@ class StanleyController:
             self.PT.theta_e = self.normalizeAngleRadian(np.radians(self.PT.current_yaw) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
             self.PT.theta_e_deg = np.degrees(self.PT.theta_e)
 
-            self.PT.theta_d = np.arctan2(self.PT.control_gain*self.error_front_axle, self.PT.velocity)
+            self.PT.theta_d = np.arctan2(self.PT.theta_d_gain*self.error_front_axle, self.PT.velocity)
             self.PT.theta_d_deg = np.degrees(self.PT.theta_d)
             self.PT.steering_target_angle_rad = self.PT.theta_e - self.PT.theta_d
 

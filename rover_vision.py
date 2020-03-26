@@ -1,5 +1,6 @@
 import time
 import xmlrpc.client as xmlrpclib
+import numpy as np
 import traceback
 import threading
 import logging
@@ -97,7 +98,7 @@ class Vision:
         if mapid is not None:
             start_resp = self.vision.set_start(1, [mapid])
             print('\nset_start(), response: {}'.format(start_resp))
-            time.sleep(1)
+            time.sleep(2)
             print('\nset_correct : {}'.format(self.vision.set_correct1([100, 1352, 1352, 1352, 1352])))
             logging.info("'Build map' command received , mapid : %s ", mapid)
         else:
@@ -129,20 +130,19 @@ class VisionGetDataThread(threading.Thread):
         time.sleep(0.1)
         while self.VI.vision_run:
             try:
-                # print('v')
                 if self.VI.reset_flag:
-                    # time.sleep(7)
                     self.VI.reset_flag = False
-                    # time.sleep(1)
                     pass
                 else:
                     status = self.vision.get_status()
                     pose = self.vision.get_pose()
                     self.VI.vision_status = status[0]
-                    self.VI.vision_x = pose[3] * self.CAL.calibrate_x_multi + self.CAL.calibrate_x
-                    self.VI.vision_y = pose[4] * self.CAL.calibrate_y_multi + self.CAL.calibrate_y
                     self.VI.vision_angle = pose[5] * self.CAL.calibrate_angle_multi + self.CAL.calibrate_angle
                     self.VI.vision_angle_radian = math.radians(self.VI.vision_angle)
+                    self.VI.vision_x = round((pose[3]-self.CAL.calibrate_dis_lv*np.sin(self.VI.vision_angle_radian))* \
+                        self.CAL.calibrate_x_multi + self.CAL.calibrate_x, 1)
+                    self.VI.vision_y = round((pose[4]-self.CAL.calibrate_dis_lv*np.cos(self.VI.vision_angle_radian))* \
+                        self.CAL.calibrate_y_multi + self.CAL.calibrate_y, 1)
                     if self.VI.vision_status == 1:
                         self.VI.vision_idle = True
                     else:

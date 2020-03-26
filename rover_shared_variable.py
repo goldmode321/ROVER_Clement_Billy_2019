@@ -30,7 +30,6 @@ class PathTracking:
         # self.max_steering_angle = numpy.radians(30)
         self.max_steering_angle = 30
         self.interval = 100 # ms
-        self.control_gain = 1
         self.speed_propotional_gain = 1
         self.distance_front_rear_wheel = 36
 
@@ -39,8 +38,10 @@ class PathTracking:
         self.target_position = [0, 0]
         self.theta_e = 0
         self.theta_e_deg = 0
+        self.theta_e_gain = 1
         self.theta_d = 0
         self.theta_d_deg = 0
+        self.theta_d_gain = 1
 
 
         # Car state
@@ -56,7 +57,7 @@ class PathTracking:
         self.steering_angle_deg = 0
         self.real_steer_rad = 0
         self.real_steer_deg = 0
-        self.real_steer_command = 405 # 320 - 405 - 490 
+        self.real_steer_command = 400 # 495 - 405 - 310 
 
         # Tracking
         # self.tracking_route_x = []
@@ -75,8 +76,8 @@ class Astar:
         self.route_x = list()
         self.route_y = list()
         self.route_plot = None
-        self.step_unit = 60 # cm
-        self.rover_size = 30
+        self.step_unit = 40 # cm
+        self.rover_size = 20
         self.obstacle_size = 1
         self.astar_planning_time = 0
         self.reach_target = False
@@ -141,6 +142,7 @@ class Lidar:
         self.lidar_connect = False
         self.lidar_state = list()
         self.lidar_minimum_radius = 350
+        self.lidar_maximum_radius = 1200
         self.lidar_data = numpy.array([[0,0,0],[1,1,1]])
         self.lidar_angle = numpy.array([0])
         self.lidar_radius = numpy.array([0])
@@ -172,7 +174,7 @@ class Calibration:
         self.calibrate_x_multi = 1
         self.calibrate_y_multi = 1
         self.calibrate_angle_multi = 1
-        self.calibrate_difference_between_lidar_and_vision = 130
+        self.calibrate_dis_lv = 13 # distance between vision and lidar
         self.temp_calibrate_difference_between_lidar_and_vision = 130
         self.calibration_run = False
 
@@ -186,7 +188,7 @@ class CarControl:
         self.car_control_backward_pwm = 358  # 381
         self.car_control_stop_pwm = 400
         self.car_control_add_speed = 1 # Speed adjust from gui
-        self.car_control_steer = 405 # 320 - 405 - 490
+        self.car_control_steer = 400 # left 495 - 400 - right 315
         self.car_control_delay = 0.1 # Second
         self.car_control_move = 400
 

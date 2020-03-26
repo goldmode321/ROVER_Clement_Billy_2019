@@ -41,7 +41,7 @@ class Pens:
         }
 
 class Arrow:
-    def __init__(self, x=0, y=0, length=90, side_len=30, angle=0, color="or"):
+    def __init__(self, x=0, y=0, length=10, side_len=5, angle=0, color="or"):
         '''
         color = ['or', 'db]
         angle = radians
@@ -177,14 +177,15 @@ class ROVER_gui():
 
         ### Lidar Plot
         self.lidar_plot_widget = pyqtgraph.PlotWidget(background='w')
+        self.lidar_rover_plot = self.lidar_plot_widget.plot(pen=self.pen.dict["g"])
         self.lidar_plot = pyqtgraph.ScatterPlotItem(
             symbol='o',
             size = 10,
             brush=(0, 0, 255),
             pen=self.pen.dict["trans"]
         )
-        self.lidar_plot_widget.setXRange(-400, 400)
-        self.lidar_plot_widget.setYRange(-400, 400)
+        self.lidar_plot_widget.setXRange(-self.LI.lidar_maximum_radius/10 - 10, self.LI.lidar_maximum_radius/10 + 10)
+        self.lidar_plot_widget.setYRange(-self.LI.lidar_maximum_radius/10 - 10, self.LI.lidar_maximum_radius/10 + 10)
         self.lidar_plot_widget.addItem(self.lidar_plot)
         self.gui.verticalLayout_17.addWidget(self.lidar_plot_widget)
 
@@ -226,19 +227,33 @@ class ROVER_gui():
             brush=(200, 0, 0),
             pen=self.pen.dict["trans"],
         )
+        self.pt_point_plot = pyqtgraph.ScatterPlotItem(
+            symbol='x',
+            size=20,
+            brush=(0, 200, 200)
+        )
         self.route_plot = self.global_plot_widget.plot(pen=self.pen.dict["route"])
         self.fitted_route_plot = self.global_plot_widget.plot(pen=self.pen.dict["froute"])
+        self.vision_arrow = Arrow()
         self.global_plot_widget.addItem(self.gobs_plot)
         self.global_plot_widget.addItem(self.lobs_plot)
         self.global_plot_widget.addItem(self.end_point_plot)
         self.global_plot_widget.addItem(self.rover_plot)
         self.global_plot_widget.addItem(self.forward_plot)
         self.global_plot_widget.addItem(self.backward_plot)
+        self.global_plot_widget.addItem(self.pt_point_plot)
+        self.global_plot_widget.addItem(self.vision_arrow.arror_plot)
         self.gui.verticalLayout_19.addWidget(self.global_plot_widget)
 
         self.mouse_view_box = self.global_plot_widget.plotItem.vb
         self.signal_proxy_mouseMove = pyqtgraph.SignalProxy(self.global_plot_widget.scene().sigMouseMoved, rateLimit=30, slot=self.mouseMove)
         self.signal_proxy_mousePress = pyqtgraph.SignalProxy(self.global_plot_widget.scene().sigMouseClicked, rateLimit=30, slot=self.mousePress)
+
+        self.gui.spin_lidar_max.setValue(self.LI.lidar_maximum_radius)
+        self.gui.spin_lidar_min.setValue(self.LI.lidar_minimum_radius)
+        self.gui.dspin_pt_e_gain.setValue(self.PT.theta_e_gain)
+        self.gui.dspin_pt_d_gain.setValue(self.PT.theta_d_gain)
+
 
         self.gui.StopAllBtn.clicked.connect(self.stopAllBtnClick)
         self.gui.KeyboardControlBtn.clicked.connect(self.keyboardControlBtnClick)
@@ -253,6 +268,10 @@ class ROVER_gui():
         self.gui.CalibrationBtn.clicked.connect(self.calibration)
         self.gui.SaveMapBtn.clicked.connect(self.saveMapBtnClick)
         self.gui.ImportMapBtn.clicked.connect(self.importMapBtnClick)
+        self.gui.btn_set_lidar_radius.clicked.connect(self.setLidarRadius)
+        self.gui.btn_pp_gain.clicked.connect(self.setPTControlGain)
+        self.gui.btn_set_end.clicked.connect(self.setEndPosition)
+        self.gui.btn_set_as.clicked.connect(self.setASParameter)
 
 
         self.gui_test_connection_client = rover_socket.UDP_client(50011, ip=self.ROV.rover_ip)
@@ -347,6 +366,15 @@ class ROVER_gui():
                 + "\n Status: " + str(self.LI.lidar_state))
 
             self.gui.CurrentSpeed_text.setText(str(self.CC.car_control_move))
+            self.gui.line_pp_time.setText(str(self.AS.astar_planning_time))
+            self.gui.VisionData_text.setText("x: {} y: {} a: {}".format(self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle))
+            self.gui.slider_steer.setValue(self.CC.car_control_steer)
+            self.gui.slider_speed.setValue(self.CC.car_control_move)
+            self.gui.lcd_target_steer.display(self.PT.steering_target_angle_deg)
+            self.gui.lcd_real_steer.display(self.PT.real_steer_deg)
+            self.gui.lcd_theta_e.display(self.PT.theta_e_deg)
+            self.gui.lcd_theta_d.display(self.PT.theta_d_deg)
+            self.gui.lcd_global_steer.display(self.PT.steering_angle_deg)
         else:
             self.LI.lidar_run, self.ROV.rover_run, self.VI.vision_run = False, False, False
             self.gui.CurrentSpeed_text.setText("No connection")
@@ -374,7 +402,7 @@ class ROVER_gui():
         temp = self.gui_rov_client.recv_object(256)
         if temp is not None:
             self.ROV = temp
-        temp = self.gui_vi_client.recv_object(512)
+        temp = self.gui_vi_client.recv_object(1024)
         if temp is not None:
             self.VI = temp
         temp = self.gui_li_client.recv_object(65000)
@@ -440,9 +468,11 @@ class ROVER_gui():
             self.route_plot.setData(self.AS.route_x, self.AS.route_y)
             self.lobs_plot.setData(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
             self.gobs_plot.setData(self.GOBS.global_obstacle_x, self.GOBS.global_obstacle_y)
-            # self.end_point_plot.setData([self.AS.end_x], [self.AS.end_y])
+            self.end_point_plot.setData([self.AS.end_x], [self.AS.end_y])
             self.rover_plot.setData([self.VI.vision_x], [self.VI.vision_y])
             self.fitted_route_plot.setData(self.CF.fitted_route_x, self.CF.fitted_route_y)
+            self.vision_arrow.setPos2(self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle_radian + 0.5*np.pi)
+            self.pt_point_plot.setData([self.PT.target_position[0]], [self.PT.target_position[1]])
             
 
         # print("show map")
@@ -499,7 +529,7 @@ class ROVER_gui():
                     calam=self.CAL.calibrate_angle_multi,
                 )
                 self.gui_command_client.send_list(["gsvgobs", name[0]])
-                self.showMessage("global map save to {}.npz".format(name))
+                self.showMessage("global map save to {}.npz".format(name[0]))
         except TypeError:
             traceback.print_exc()
 
@@ -516,8 +546,19 @@ class ROVER_gui():
             self.gui_command_client.send_list(['gkcc', 400, 405])
 
 
-        
+    def setLidarRadius(self):
+        self.gui_command_client.send_list(["glmm", self.gui.spin_lidar_max.value(), self.gui.spin_lidar_min.value()])        
+        self.lidar_plot_widget.setXRange(-self.gui.spin_lidar_max.value()/10 - 10, self.gui.spin_lidar_max.value()/10 + 10)
+        self.lidar_plot_widget.setYRange(-self.gui.spin_lidar_max.value()/10 - 10, self.gui.spin_lidar_max.value()/10 + 10)
 
+    def setPTControlGain(self):
+        self.gui_command_client.send_list(["gptg", self.gui.dspin_pt_e_gain.value(), self.gui.dspin_pt_d_gain.value()])
+
+    def setEndPosition(self):
+        self.gui_command_client.send_list(["gppe", self.gui.spin_end_x.value(), self.gui.spin_end_y.value()])
+
+    def setASParameter(self):
+        self.gui_command_client.send_list(["gppr", self.gui.spin_rover_size.value(), self.gui.spin_unit_step.value()])
 
     def keyboardControlBtnClick(self):
 
@@ -674,6 +715,7 @@ class CalibrationUI:
         self.calibration_gui.AngleCalibration_slider.setValue(self.CAL.calibrate_angle_multi * 100)
 
 
+
         self.calibration_gui.XCalibration_constant_spinBox.valueChanged.connect(self.x_spin)
         self.calibration_gui.YCalibration_constant_spinBox.valueChanged.connect(self.y_spin)
         self.calibration_gui.AngleCalibration_constant_spinBox.valueChanged.connect(self.angle_spin)
@@ -728,6 +770,8 @@ class CalibrationUI:
             pen=self.pen.dict["trans"]
         )
 
+        self.lobs_plot.setData(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
+        self.initial_plot.setData(self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)
         self.plot_widget.addItem(self.initial_plot)
         self.plot_widget.addItem(self.lobs_plot)
         self.plot_widget.addItem(self.temp_plot)
@@ -812,7 +856,7 @@ class CalibrationUI:
             "gcal", self.temp_calibrate_x, self.temp_calibrate_x_multi,
             self.temp_calibrate_y, self.temp_calibrate_y_multi,
             self.temp_calibrate_angle, self.temp_calibrate_angle_multi,
-            self.CAL.calibrate_difference_between_lidar_and_vision
+            self.CAL.calibrate_dis_lv
         ])
 
 
@@ -839,7 +883,7 @@ class CalibrationUI:
         self.temp_vision_x = self.VI.vision_x * self.temp_calibrate_x_multi + self.temp_calibrate_x
         self.temp_vision_y = self.VI.vision_y * self.temp_calibrate_y_multi + self.temp_calibrate_y
         self.temp_vision_angle = self.VI.vision_angle * self.temp_calibrate_angle_multi + self.temp_calibrate_angle
-        self.temp_vision_angle_radian = np.radians(self.temp_vision_angle)
+        self.temp_vision_angle_radian = 0 + np.radians(self.temp_vision_angle)
 
         if len(self.LI.lidar_angle) == len(self.LI.lidar_radius):
             self.temp_local_obstacle_x = np.round(np.cos(self.LI.lidar_angle - \

@@ -59,6 +59,8 @@ class Communication():
         self.gui_command = {
             "gss": self._gui_set_speed, "gkcc":self._gui_keyboard_control,
             "gcal":self._gui_cal, "gsvgobs":self._gui_svgobs, "gimport":self._gui_import,
+            "glmm":self._gui_lmm, "gptg":self._gui_pt_gain, "gppe":self._gui_pp_e,
+            "gppr":self._gui_pp_r,
 
         }
 
@@ -156,7 +158,7 @@ class Communication():
         self.CAL.calibrate_y_multi = self.COM.gui_command_receive[4]
         self.CAL.calibrate_angle = self.COM.gui_command_receive[5]
         self.CAL.calibrate_angle_multi = self.COM.gui_command_receive[6]
-        self.CAL.calibrate_difference_between_lidar_and_vision = self.COM.gui_command_receive[7]
+        self.CAL.calibrate_dis_lv = self.COM.gui_command_receive[7]
 
     def _gui_keyboard_control(self):
         self.CC.car_control_move = self.COM.gui_command_receive[1]
@@ -183,6 +185,10 @@ class Communication():
         except:
             traceback.print_exc()
 
+    def _gui_lmm(self):
+        self.LI.lidar_maximum_radius = self.COM.gui_command_receive[1]
+        self.LI.lidar_minimum_radius = self.COM.gui_command_receive[2]
+
     def _gui_svgobs(self):
         if self.COM.gui_command_receive[1] != "":
             np.savez(
@@ -201,7 +207,17 @@ class Communication():
             print("global map save to {}".format(self.COM.gui_command_receive[1]))
         print("Abort save process")
 
+    def _gui_pt_gain(self):
+        self.PT.theta_e_gain = self.COM.gui_command_receive[1]
+        self.PT.theta_d_gain = self.COM.gui_command_receive[2]
 
+    def _gui_pp_e(self):
+        self.AS.end_x = self.COM.gui_command_receive[1]
+        self.AS.end_y = self.COM.gui_command_receive[2]
+
+    def _gui_pp_r(self):
+        self.AS.rover_size = self.COM.gui_command_receive[1]
+        self.AS.step_unit = self.COM.gui_command_receive[2]
 
 
 

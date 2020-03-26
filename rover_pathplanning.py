@@ -2,7 +2,7 @@ import time
 import numpy as np
 import pyqtgraph
 import scipy.spatial
-
+import threading
 import itertools
 
 from rover_curve_fitting import Bspline
@@ -317,7 +317,14 @@ class AstarPathPlanning_ori:
             last_node_id = new_node.last_node_id
         self.AS.route_x, self.AS.route_y = route_x.reverse(), route_y.reverse()
 
-
+class AstarPathPlanningThread(AstarPathPlanning, threading.Thread):
+    def __init__(self, SharedVariable):
+        AstarPathPlanning.__init__(self, SharedVariable)
+        threading.Thread.__init__(self, daemon=True)
+        self.start()
+    def run(self):
+        self.planning()
+        
 
 
 class AstarPathPlanning_sim(AstarPathPlanning_ori):

@@ -35,6 +35,7 @@ class PathTracking:
         if self.p_t_thread_manual.run_flag:
             print("Path Tracking Manual Mode is already ran")
         else:
+            self.p_t_thread_manual = self.PathTrackingThreadManual(self.SV, self.p_t)
             self.p_t_thread_manual.start()
 
     def autoControl(self):
@@ -44,6 +45,7 @@ class PathTracking:
         if self.p_t_thread_auto.run_flag:
             print("Path Tracking Auto Mode is already ran")
         else:
+            self.p_t_thread_auto = self.PathTrackingThreadAuto(self.SV, self.p_t)
             self.p_t_thread_auto.start()
 
 
@@ -71,6 +73,7 @@ class PathTracking:
         def __init__(self, SharedVariables, path_tracking):
             super().__init__(daemon=True)
             self.SV = SharedVariables
+            self.CC = self.SV.CC
             self.PT = self.SV.PT
             self.path_tracking = path_tracking
             self.run_flag = False
@@ -122,6 +125,7 @@ class PathTracking:
                 self.path_tracking.next_target(manual_mode=True)
                 self.path_tracking.calculateCommand()
                 self.path_tracking.updateState_real()
+                self.CC.car_control_steer = 400 + int(self.PT.real_steer_deg*85/30)
                 # self.record()
                 time.sleep(0.1)
 
@@ -130,6 +134,7 @@ class PathTracking:
     class PathTrackingThreadAuto(PathTrackingThreadManual):
         def __init__(self, SharedVariables, path_tracking):
             self.SV = SharedVariables
+            self.CC = self.SV.CC
             self.PT = self.SV.PT
             self.path_tracking = path_tracking
             super().__init__(self.SV, self.path_tracking)
@@ -142,6 +147,7 @@ class PathTracking:
                 self.path_tracking.next_target()
                 self.path_tracking.calculateCommand()
                 self.path_tracking.updateState_real()
+                self.CC.car_control_steer = 405 - int(self.PT.real_steer_deg*85/30)
                 # self.record()
 
                 time.sleep(0.1)

@@ -64,18 +64,21 @@ class Main():
         self.gui_receive = []
 
 
-        self.COM.command_rover = {'exit all':self._exit_all, 'next':self._next, 'svgobs':self._svgobs}
+        self.COM.command_rover = {
+            'exit all':self._exit_all, 'next':self._next, 'svgobs':self._svgobs,
+            "import":self._import,
+        }
 
         self.COM.command_lidar = {
             'exit l':self._exit_l, 'li':self._li, 'gld':self._gld, 'next':self._next, \
-                'lr':self._lr, 'ls':self._ls,
+                'lr':self._lr, 'ls':self._ls, "lmm":self._lmm,
         }
 
         self.COM.command_vision = {
             'exit v':self._exit_v, 'vi':self._vi, 'vs':self._vs, 'gs':self._gs, 'al':self._al, \
                 'cc':self._vcc, 'svv':self._sv, 'vrs':self._vrs, 'gp c':self._gp_c, \
                     'gp exit':self._gp_exit, 'gp':self._gp, 'bm':self._bm, 'um':self._um, \
-                        'next':self._next,
+                        'next':self._next, "vsc":self._vsc,
             "gbm": self._gui_bm, "gum":self._gui_um,
                         "gbms": self._gui_bm_stop, "gums":self._gui_um_stop,
         }
@@ -90,6 +93,7 @@ class Main():
         }
         self.COM.command_path_planning = {
             'pp':self._pp, 'pps':self._pp_s, 'ppe':self._pp_e, 'ppv':self._pp_v,
+            "ppr":self._pp_r,
         }
 
         self.COM.command_map_builder = {
@@ -297,6 +301,26 @@ class Main():
             print("global map save to {}.npz".format(name))
         print("Abort save process")
 
+    def _import(self):
+        try:
+            name = input("Import name") + ".npz"
+            if name != "":
+                data = np.load("./map/{}".format(name))
+                self.GOBS.global_obstacle = data["gobs"]
+                self.GOBS.global_obstacle_x = data["gobsx"]
+                self.GOBS.global_obstacle_y = data["gobsy"]
+                self.VI.vision_map_id = int(data["vid"])
+                self.CAL.calibrate_x = int(data["calx"])
+                self.CAL.calibrate_x_multi = float(data["calxm"])
+                self.CAL.calibrate_y = int(data["caly"])
+                self.CAL.calibrate_y_multi = float(data["calym"])
+                self.CAL.calibrate_angle = int(data["cala"])
+                self.CAL.calibrate_angle_multi = float(data["calam"])
+                print("Import map {} complete".format(name))
+        except:
+            traceback.print_exc()
+
+
 ######## Calibration ##############
     def _cal(self):
         self.CAL.calibrate_x = int(input("Calibrate x (mm): "))
@@ -305,7 +329,7 @@ class Main():
         self.CAL.calibrate_y_multi = abs(float(input("Calibrate y multi (%): ")))/100
         self.CAL.calibrate_angle = int(input("Calibrate angle (mm): "))
         self.CAL.calibrate_angle_multi = abs(float(input("Calibrate angle multi (%): ")))/100
-        self.CAL.calibrate_difference_between_lidar_and_vision = int(input("horizontal distance between lidar and vision"))
+        self.CAL.calibrate_dis_lv = int(input("horizontal distance between lidar and vision"))
 
 ######### Map builder ###############
     def _mb_start(self):
@@ -330,6 +354,15 @@ class Main():
 
     def _ls(self):
         self.lidar.lidar_stop()
+    
+    def _lmm(self):
+        maximum_radius = int(input("Lidar max radius"))
+        minimum_radius = int(input("Lidar min radius"))
+        if maximum_radius > minimum_radius:
+            self.LI.lidar_maximum_radius = maximum_radius
+            self.LI.lidar_minimum_radius = minimum_radius
+        else:
+            print("Lidar max radius must be larger than min radius")
 
     def _gld(self):
         print(self.LI.lidar_data)
@@ -412,6 +445,9 @@ class Main():
         self.vision.reset()
         self.VI.vision_use_map_mode = False
 
+    def _vsc(self):
+        input("input calibration : ")
+
 ######### Car Control #########
     def _cc_i(self):
         self.car_control_init()
@@ -428,6 +464,7 @@ class Main():
 ############# Path Planning ##############
     def _pp(self):
         print("Start Planning")
+        self._pp_v()
         self.path_planning.planning()
         self.curve_fitting.fitting()
 
@@ -438,12 +475,16 @@ class Main():
 
     def _pp_e(self):
         self.AS.end_x = int(input("End X Pos : "))
-        self.AS.end_x = int(input("End X Pos : "))
+        self.AS.end_y = int(input("End Y Pos : "))
 
     def _pp_v(self):
         self.AS.start_x = int(self.VI.vision_x)
         self.AS.start_y = int(self.VI.vision_y)
-        self.AS.attitude[0] = int(self.VI.vision_angle)
+        self.AS.attitude[0] = int(self.VI.vision_angle + 90)
+
+    def _pp_r(self):
+        self.AS.step_unit = int(input("Step unit (cm) :"))
+        self.AS.rover_size = int(input("Rover size (cm) :"))
 
 ################## Path Tracking #############
     def _pt_i(self):
@@ -460,10 +501,15 @@ class Main():
     def _pt_stop(self):
         self.path_tracking.stop()
 
+    def _pt_g(self):
+        self.PT.theta_e_gain = float(input("Theta e gain : "))
+        self.PT.theta_d_gain = float(input("Theta d gain"))
+
     def _pt_swi(self):
         print("stanley, stanley_sim : ")
         method = input("Choose : ")
         self.path_tracking.switchMethod(method)
+
 
 
 if __name__ == "__main__":
