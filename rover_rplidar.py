@@ -128,6 +128,8 @@ class LidarGetDataThread(threading.Thread):
                 if not self.LI.lidar_run:
                     time.sleep(0.1)
                     raise KeyboardInterrupt
+        except IndexError:
+            pass
 
         except:
             logging.exception("Lidar Got Error")

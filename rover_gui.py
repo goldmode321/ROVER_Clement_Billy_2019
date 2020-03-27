@@ -528,8 +528,11 @@ class ROVER_gui():
                     cala=self.CAL.calibrate_angle,
                     calam=self.CAL.calibrate_angle_multi,
                 )
-                self.gui_command_client.send_list(["gsvgobs", name[0]])
-                self.showMessage("global map save to {}.npz".format(name[0]))
+                index1 = name[0].rfind("/")
+                index2 = name[0].rfind(".")
+                rover_file_name = name[0][index1 + 1: index2]
+                self.gui_command_client.send_list(["gsvgobs", rover_file_name])
+                self.showMessage("global map save to {}.npz".format(rover_file_name))
         except TypeError:
             traceback.print_exc()
 

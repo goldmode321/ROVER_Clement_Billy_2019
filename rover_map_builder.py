@@ -35,18 +35,36 @@ class MapBuilder:
 
 
     def get_global_obstacle(self):
+        # # combine it into form of (x1,y1), (x2, y2),...
+        # temp_global_obstacle = numpy.vstack((self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)).T
+        # # Filt old obstacle data
+        # new_global_obstacle = numpy.asarray([i for i in temp_global_obstacle if not i in self.GOBS.global_obstacle])
+        # if len(new_global_obstacle) > 0 and len(self.GOBS.global_obstacle) > 0:
+        #     self.GOBS.global_obstacle = numpy.concatenate((self.GOBS.global_obstacle, new_global_obstacle))
+        # elif len(self.GOBS.global_obstacle) == 0:
+        #     self.GOBS.global_obstacle = new_global_obstacle
+        # self.GOBS.global_obstacle_x = self.GOBS.global_obstacle[:, 0]
+        # self.GOBS.global_obstacle_y = self.GOBS.global_obstacle[:, 1]
+        # # self.GOBS.global_obstacle_buffer = [self.GOBS.global_obstacle_buffer, new_global_obstacle]
+        # print(len(self.GOBS.global_obstacle_x))
+
         # combine it into form of (x1,y1), (x2, y2),...
         temp_global_obstacle = numpy.vstack((self.LOBS.local_obstacle_x, self.LOBS.local_obstacle_y)).T
+        # Find new Obstacle index
+        temp_bool_index = numpy.isin(temp_global_obstacle, self.GOBS.global_obstacle, invert=True)
+        temp_index = numpy.where(temp_bool_index)
+        temp_index = numpy.unique(temp_index[0])
         # Filt old obstacle data
-        new_global_obstacle = numpy.asarray([i for i in temp_global_obstacle if not i in self.GOBS.global_obstacle])
-        if len(self.GOBS.global_obstacle) == 0:
-            self.GOBS.global_obstacle = new_global_obstacle
-        elif len(new_global_obstacle) > 0:
+        new_global_obstacle = temp_global_obstacle[temp_index]
+        if len(new_global_obstacle) > 0 and len(self.GOBS.global_obstacle) > 0:
             self.GOBS.global_obstacle = numpy.concatenate((self.GOBS.global_obstacle, new_global_obstacle))
+        elif len(self.GOBS.global_obstacle) == 0:
+            self.GOBS.global_obstacle = new_global_obstacle
         self.GOBS.global_obstacle_x = self.GOBS.global_obstacle[:, 0]
         self.GOBS.global_obstacle_y = self.GOBS.global_obstacle[:, 1]
         # self.GOBS.global_obstacle_buffer = [self.GOBS.global_obstacle_buffer, new_global_obstacle]
         print(len(self.GOBS.global_obstacle_x))
+
 
     def get_x_axis_limit(self):
         ''' return value set for set_xlim()'''
