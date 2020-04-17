@@ -122,6 +122,9 @@ class Vision:
         self.vision_run = False
         self.reset_flag = False
         self.vision_idle = False
+        self.temp_vision_x = 0
+        self.temp_viison_y = 0
+        self.temp_vision_angle_deg = 0
         self.vision_x = 0
         self.vision_y = 0
         self.vision_angle = 0
@@ -162,17 +165,11 @@ class MapPlotting:
 
 class Calibration:
     def __init__(self):
-        # self.calibrate_x = 0
-        # self.calibrate_y = 0
-        # self.calibrate_angle = 0
-        # self.calibrate_x_multi = 1
-        # self.calibrate_y_multi = 1
-        # self.calibrate_angle_multi = 1
         self.calibrate_x = 0
         self.calibrate_y = 0
-        self.calibrate_angle = 0
         self.calibrate_x_multi = 1
         self.calibrate_y_multi = 1
+        self.calibrate_angle = 0
         self.calibrate_angle_multi = 1
         self.calibrate_dis_lv = 13 # distance between vision and lidar
         self.temp_calibrate_difference_between_lidar_and_vision = 130

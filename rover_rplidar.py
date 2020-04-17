@@ -122,9 +122,14 @@ class LidarGetDataThread(threading.Thread):
         self.LI.lidar_run = True
         try:
             for scan in self.lidar.iter_scans():
-                self.LI.lidar_data = np.array([list(i) for i in scan if i[2] > self.LI.lidar_minimum_radius and i[2] < self.LI.lidar_maximum_radius])
-                self.LI.lidar_angle = np.array(np.radians(self.LI.lidar_data[:, 1] * (-1)))
-                self.LI.lidar_radius = np.array(self.LI.lidar_data[:, 2]) / 10
+                if len(scan) > 1:
+                    self.LI.lidar_data = np.array([list(i) for i in scan if i[2] > self.LI.lidar_minimum_radius and i[2] < self.LI.lidar_maximum_radius])
+                    if len(self.LI.lidar_data) > 1:
+                        self.LI.lidar_angle = np.array(np.radians(self.LI.lidar_data[:, 1] * (-1) + 90))
+                        self.LI.lidar_radius = np.array(self.LI.lidar_data[:, 2]) / 10
+                    else:
+                        self.LI.lidar_angle = np.array([])
+                        self.LI.lidar_radius = np.array([])
                 if not self.LI.lidar_run:
                     time.sleep(0.1)
                     raise KeyboardInterrupt

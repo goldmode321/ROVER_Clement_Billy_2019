@@ -137,12 +137,9 @@ class VisionGetDataThread(threading.Thread):
                     status = self.vision.get_status()
                     pose = self.vision.get_pose()
                     self.VI.vision_status = status[0]
-                    self.VI.vision_angle = pose[5] * self.CAL.calibrate_angle_multi + self.CAL.calibrate_angle
-                    self.VI.vision_angle_radian = math.radians(self.VI.vision_angle)
-                    self.VI.vision_x = round((pose[3]-self.CAL.calibrate_dis_lv*np.sin(self.VI.vision_angle_radian))* \
-                        self.CAL.calibrate_x_multi + self.CAL.calibrate_x, 1)
-                    self.VI.vision_y = round((pose[4]-self.CAL.calibrate_dis_lv*np.cos(self.VI.vision_angle_radian))* \
-                        self.CAL.calibrate_y_multi + self.CAL.calibrate_y, 1)
+                    self.VI.temp_vision_angle_deg = pose[5]
+                    self.VI.temp_vision_x = round(pose[3], 1)
+                    self.VI.temp_vision_y = round(pose[4], 1)
                     if self.VI.vision_status == 1:
                         self.VI.vision_idle = True
                     else:
