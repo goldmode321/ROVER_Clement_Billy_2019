@@ -5,8 +5,9 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import  traceback
 import os, sys
 import multiprocessing
+from multiprocessing import Queue
 import threading
-from queue import Queue
+import multiprocessing
 import scipy.spatial
 
 import gui.simulator as sim_ui
@@ -342,7 +343,8 @@ class App:
         self.end_point_plot.setData([self.SV.AS.end_x], [self.SV.AS.end_y])
 
     def plot_route(self):
-        self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
+        if len(self.SV.AS.route_x):
+            self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
 
     def plot_path_tracking(self):
         self.path_tracking_route_plot.setData(self.SV.PT.tracking_route_x, self.SV.PT.tracking_route_y)
@@ -542,7 +544,7 @@ class App:
 
     def change_path_planning_mode(self, mode=0):
         if self.gui.radio_original_a.isChecked():
-            self.astar = rover_pathplanning.AstarPathPlanning_sim(self.SV)
+            self.astar = rover_pathplanning.AstarPathPlanning_ori(self.SV)
             print("Method change to Astar_Original")
         elif self.gui.radio_a_v2.isChecked():
             self.astar = rover_pathplanning.AstarPathPlanning_sim_v2(self.SV)
@@ -724,6 +726,226 @@ class Astar_thread(threading.Thread):
         self.SV.GUI.forward_plot.setData(forward_list_x, forward_list_y)
         self.SV.GUI.backward_plot.setData(backward_list_x, backward_list_y)
 
+# class Astar_thread(threading.Thread):
+#     def __init__(self, SharedVariables, astar, CF):
+#         self.start_time = time.time()
+#         super().__init__(daemon=True)
+#         self.SV = SharedVariables
+#         self.AS = self.SV.AS
+#         self.GOBS = self.SV.GOBS
+#         self.CF = CF
+#         self.astar = astar
+#         self.as_queue = Queue()
+#         self.as_command_queue = Queue()
+#         self.process = AstarPathPlanningProcess(self.AS, self.GOBS, self.as_queue, self.as_command_queue)
+#         print("wait a second")
+#         time.sleep(1)
+#         print("start")
+#         self.as_command_queue.put(123)
 
-if __name__ == "__main__":
-    App()
+
+#     def run(self):
+#         temp_as = self.as_queue.get()
+#         # self.AS.astar_planning_time = time.time() - self.start_time
+#         self.SV.AS.route_x = temp_as.route_x
+#         self.SV.AS.route_y = temp_as.route_y
+#         self.AS.astar_planning_time = temp_as.astar_planning_time
+#         self.SV.GUI.route_plot.setData(self.SV.AS.route_x, self.SV.AS.route_y)
+#         self.SV.GUI.gui.lcd_astar_planning_time.display(self.SV.AS.astar_planning_time)
+#         self.CF.fitting()
+#         self.SV.GUI.fitted_route_plot.setData(self.SV.CF.fitted_route_x, self.SV.CF.fitted_route_y)
+#         self.plot_forwrd_backward()
+
+#     def plot_forwrd_backward(self):
+#         forward_list_x = list()
+#         forward_list_y = list()
+#         backward_list_x = list() 
+#         backward_list_y = list()
+#         for i, j in enumerate(self.SV.AS.forward_backward_record):
+#             if j == 'forward':
+#                 forward_list_x.append(self.SV.AS.route_x[i])
+#                 forward_list_y.append(self.SV.AS.route_y[i])
+#             else:
+#                 backward_list_x.append(self.SV.AS.route_x[i])
+#                 backward_list_y.append(self.SV.AS.route_y[i])
+#         self.SV.GUI.forward_plot.setData(forward_list_x, forward_list_y)
+#         self.SV.GUI.backward_plot.setData(backward_list_x, backward_list_y)
+
+
+# class AstarPathPlanning_ori:
+#     def __init__(self, SharedVariable_AS, SharedVariable_GOBS):
+#         self.AS = SharedVariable_AS
+#         self.GOBS = SharedVariable_GOBS
+
+#         self.motion = [
+#             [0, 'forward'],
+#             [45, 'forward'],
+#             [90, 'forward'],
+#             [315, 'forward'],
+#             [180, 'forward'],
+#             [135, 'forward'],
+#             [225, 'forward'],
+#             [270, 'forward'],
+#         ]
+#         self.motion_dict = {
+#             0:[1, 0],
+#             45:[1, 1],
+#             90:[0, 1],
+#             135:[-1, 1],
+#             180:[-1, 0],
+#             225:[-1, -1],
+#             270:[0, -1],
+#             315:[1, -1],
+#         }
+#         self.node_calculated = dict() # Close set
+#         # self.calculated_path_dictionary = dict() # Open set
+#         self.node_use_for_calculation = dict() # Open set
+#         # self.node_best_path = dict()
+
+
+#     class Node:
+#         ''' Define parameters in a Node (point) : node_x, node_y, cost, node ID'''
+#         def __init__(self, x, y, cost, last_node_id, attitude):
+#             self.x, self.y, self.cost, self.last_node_id, self.attitude = x, y, cost, last_node_id, attitude
+
+#     def calculate_cost(self, node, movement, motion):
+#         node.cost += round(np.hypot(movement[0], movement[1]), 1) + (0 if motion[1] == 'forward' else 1)*self.AS.step_unit
+
+#         return node.cost
+
+#     def node_invaild(self, node):
+#         return True if np.min(np.hypot(self.GOBS.global_obstacle_x - node.x, self.GOBS.global_obstacle_y - node.y)) < \
+#             self.AS.rover_size + self.AS.obstacle_size else False
+
+#     def repeated_node(self, node):
+#         '''To check if node is calcualted (In close set)'''
+#         return True if str(node.x) + ',' + str(node.y) in self.node_calculated else False
+
+#     def reset(self):
+#         self.node_use_for_calculation = dict()
+#         self.node_calculated = dict()
+
+
+
+
+#     def planning(self):
+#         start_time = time.time()
+#         # start point
+#         self.reset()
+#         self.AS.attitude[0] = int(self.AS.attitude[0]/30)*30 # fit into motion dictionary
+#         current_node = self.Node(
+#             self.AS.start_x,
+#             self.AS.start_y,
+#             0,
+#             str(self.AS.start_x) + ',' + str(self.AS.start_y),
+#             self.AS.attitude
+#         )
+#         target_node = self.Node(
+#             self.AS.end_x,
+#             self.AS.end_y,
+#             0,
+#             "",
+#             self.AS.attitude
+#         )
+#         self.AS.reach_target = reach_target = False
+#         self.node_use_for_calculation[str(current_node.x) + ',' + str(current_node.y)] = current_node
+#         while not reach_target:
+#             # print(len(self.node_use_for_calculation))
+#             if len(self.node_use_for_calculation) == 0:
+#                 self.calculate_path(current_node, self.node_calculated)
+#                 print("No route to go to target")
+#                 self.AS.reach_target = False
+#                 break
+#             # Open set, which is used for calculation, find lowest cost node for calculation
+#             current_node_id = min(self.node_use_for_calculation, key=lambda i: self.node_use_for_calculation[i].cost)
+#             current_node = self.node_use_for_calculation[current_node_id]
+
+#             # Remove this node from open_set
+#             del self.node_use_for_calculation[current_node_id]
+#             # Then add it to close_set, which is the one that already calculated
+#             self.node_calculated[current_node_id] = current_node
+
+
+
+#             if np.hypot(current_node.x - self.AS.end_x, current_node.y - self.AS.end_y) <= self.AS.step_unit:
+#                 print("Target reached")
+#                 target_node.last_node_id = str(current_node.x) + ',' + str(current_node.y)
+#                 target_node.attitude = current_node.attitude
+#                 self.calculate_path(target_node, self.node_calculated)
+#                 self.reach_target = reach_target = True
+#                 break
+#             # print(current_node_id)
+
+
+#             # Node calculation
+#             for motion in self.motion:
+#                 movement = self.motion_dict[motion[0]]
+#                 new_node = self.Node(
+#                     current_node.x + self.AS.step_unit * movement[0],
+#                     current_node.y + self.AS.step_unit * movement[1],
+#                     current_node.cost,
+#                     current_node_id,
+#                     [motion[0], "forward" if motion[1] == current_node.attitude[1] else "backward"]
+#                 )
+#                 if self.node_invaild(new_node):
+#                     continue
+#                 if self.repeated_node(new_node):
+#                     continue
+#                 # new_node.cost += np.hypot(movement[0], movement[1])
+#                 new_node.cost = self.calculate_cost(new_node, movement, motion)
+#                 if str(new_node.x) + ',' + str(new_node.y) not in self.node_use_for_calculation:
+#                     # Save it if it is a completely new node
+#                    self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node
+#                 else: # If not new node, see if it is the best path for now (lower cost)
+#                     if self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)].cost > new_node.cost:
+#                         self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)] = new_node
+#                     elif self.node_use_for_calculation[str(new_node.x) + ',' + str(new_node.y)].cost == new_node.cost:
+#                         pass
+
+#         end_time = time.time()
+#         self.AS.astar_planning_time = end_time - start_time
+
+#     def calculate_path(self, current_node, node_calculated):
+#         '''Start from current node to start point'''
+#         route_x = [current_node.x]
+#         route_y = [current_node.y]
+#         forward_backward_list = [current_node.attitude[1]]
+#         last_node_id = current_node.last_node_id
+#         while True:
+#             if last_node_id == str(self.AS.start_x) + ',' + str(self.AS.start_y):
+#                 route_x.append(self.AS.start_x)
+#                 route_y.append(self.AS.start_y)
+#                 forward_backward_list.append(self.AS.attitude[1])
+#                 route_x.reverse()
+#                 route_y.reverse()
+#                 forward_backward_list.reverse()
+#                 break
+#             new_node = node_calculated[last_node_id]
+#             route_x.append(new_node.x)
+#             route_y.append(new_node.y)
+#             forward_backward_list.append(new_node.attitude[1])
+#             last_node_id = new_node.last_node_id
+#         self.AS.route_x, self.AS.route_y, self.AS.forward_backward_record = route_x, route_y, forward_backward_list
+
+# class AstarPathPlanningProcess(AstarPathPlanning_ori, multiprocessing.Process):
+#     def __init__(self, SharedVariable_AS, SharedVariable_GOBS, as_queue, as_command_queue):
+#         multiprocessing.Process.__init__(self)
+#         self.AS = SharedVariable_AS
+#         self.GOBS = SharedVariable_GOBS
+#         AstarPathPlanning_ori.__init__(self, self.AS, self.GOBS)
+#         self.as_queue = as_queue
+#         self.as_command_queue = as_command_queue
+#         # self.as_queue = Queue()
+#         self.start()
+#     def run(self):
+#         self.as_command_queue.get()
+#         self.planning()
+#         if self.as_queue.empty():
+#             self.as_queue.put(self.AS)
+#         else:
+#             self.as_queue.get(False)
+#             self.as_queue.put(self.AS)
+
+
+# if __name__ == "__main__":
+#     App()
