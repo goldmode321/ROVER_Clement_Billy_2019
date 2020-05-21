@@ -16,6 +16,14 @@ class PathTracking:
             "stanley_sim": rover_stanley_controller.StanleyController_sim,
         }
         self.SV = SharedVariables
+        self.PT = self.SV.PT
+        self.COM = self.SV.COM
+        self.COM.command_path_tracking["pt m"] = self.manualControl
+        self.COM.command_path_tracking["pt a"] = self.autoControl
+        self.COM.command_path_tracking["pt stop"] = self.stop
+        self.COM.command_path_tracking["pt switch"] = self.switchMethod
+        self.COM.command_path_tracking["pt gain"] = self.change_gain
+
         try:
             self.p_t = self.p_t_method[method](self.SV)
             self.p_t_thread_manual = self.PathTrackingThreadManual(self.SV, self.p_t)
@@ -54,6 +62,8 @@ class PathTracking:
             print("Please stop path tracking first before switch method")
         else:
             try:
+                print("stanley, stanley_sim : ")
+                method = input("Choose : ")
                 self.p_t = self.p_t_method[method](self.SV)
             except:
                 print("name error")
@@ -66,7 +76,11 @@ class PathTracking:
         elif self.p_t_thread_sim.run_flag:
             self.p_t_thread_sim.stop()
 
-    def simulate(self):
+    def change_gain(self):
+        self.PT.theta_e_gain = float(input("Theta e gain : "))
+        self.PT.theta_d_gain = float(input("Theta d gain"))
+
+    def _simulate(self):
         self.p_t_thread_sim.start()
 
     class PathTrackingThreadManual(threading.Thread):
@@ -119,12 +133,12 @@ class PathTracking:
 
         def run(self):
             self.run_flag = True
-            self.path_tracking.updateState_real()
+            self.path_tracking.update_state_real()
             self.resetRecord()
             while self.run_flag:
                 self.path_tracking.next_target(manual_mode=True)
-                self.path_tracking.calculateCommand()
-                self.path_tracking.updateState_real()
+                self.path_tracking.calculate_command()
+                self.path_tracking.update_state_real()
                 self.CC.car_control_steer = 400 + int(self.PT.real_steer_deg*85/30)
                 # self.record()
                 time.sleep(0.1)
@@ -141,12 +155,12 @@ class PathTracking:
 
         def run(self):
             self.run_flag = True
-            self.path_tracking.updateState_real()
+            self.path_tracking.update_state_real()
             self.resetRecord()
             while self.run_flag:
                 self.path_tracking.next_target()
-                self.path_tracking.calculateCommand()
-                self.path_tracking.updateState_real()
+                self.path_tracking.calculate_command()
+                self.path_tracking.update_state_real()
                 self.CC.car_control_steer = 405 - int(self.PT.real_steer_deg*85/30)
                 # self.record()
 
@@ -166,7 +180,7 @@ class PathTracking:
             self.resetRecord()
             while self.run_flag:
                 self.path_tracking.next_target()
-                self.path_tracking.calculateCommand()
+                self.path_tracking.calculate_command()
                 self.path_tracking.update_state()
                 # self.record()
 

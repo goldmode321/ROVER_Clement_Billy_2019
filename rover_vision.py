@@ -11,20 +11,29 @@ class Vision:
     The module for controlling Vision module, communicate with
     bridge, ip should be specify as the fix ip of vision module
     '''
-    def __init__(self, SharedVariables, auto_start=True, ip=None):
+    def __init__(self, SharedVariables, ip=None):
         self.SV = SharedVariables
         self.VI = self.SV.VI
+        self.COM = self.SV.COM
+        self.COM.command_vision["vs"] = lambda: print('Vision server : {}\n'.format(self.VI.vision_run))
+        self.COM.command_vision["gs"] = self.show_vision_status
+        self.COM.command_vision["sv"] = self.save
+        self.COM.command_vision["al"] = self.alive
+        self.COM.command_vision["vcc"] = self.check_cpu_speed
+        self.COM.command_vision["vrs"] = self.reset
+        self.COM.command_vision["gp"] = lambda: print('status : {} | x : {} | y : {} | theta : {} '.format(self.VI.vision_status, self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle))
+        self.COM.command_vision["gp start"] = self.continuous_show_vision_data
+        self.COM.command_vision["gp stop"] = self.stop_show_vision_data
+        self.COM.command_vision["bm"] = self.build_map
+        self.COM.command_vision["um"] = self.use_map
+        self.COM.command_vision["gbm"] = self.gui_build_map
+        self.COM.command_vision["gum"] = self.gui_um
+        self.COM.command_vision["gbms"] = self.gui_build_map_stop
+        self.COM.command_vision["gums"] = self.gui_um_stop
+
         if ip is not None:
             self.VI.vision_ip = ip
-
-        if auto_start:
-            self.autorun()
-
-    def autorun(self):
-        ''' Auto start step'''
         self.init()
-
-
 
     def init(self):
         ''' Initialize communication with vision module and tcn_bridge'''
@@ -49,7 +58,7 @@ class Vision:
 
     def start_background_thread(self):
         self.vision_thread = VisionGetDataThread(self.SV, vision=self.vision)
-        logging.info('Vision Thread Start')
+        print('Vision Thread Start')
 
 
     def end(self):
@@ -92,28 +101,124 @@ class Vision:
         print("Please wait for 10 seconds")
         time.sleep(10)
         self.VI.vision_run = True
+        self.VI.vision_build_map_mode = False
+        self.VI.vision_use_map_mode = False
         self.start_background_thread()
 
-    def build_map(self, mapid): # Build map
-        if mapid is not None:
-            start_resp = self.vision.set_start(1, [mapid])
+    def build_map(self): # Build map
+        try:
+            self.VI.vision_map_id = int(input('MapID : '))
+            if self.VI.vision_map_id is not None:
+                start_resp = self.vision.set_start(1, [self.VI.vision_map_id])
+                print('\nset_start(), response: {}'.format(start_resp))
+                self.VI.vision_build_map_mode = True
+                time.sleep(2)
+                print('\nset_correct : {}'.format(self.vision.set_correct1([100, 1352, 1352, 1352, 1352])))
+                try:
+                    input("Use Ctrl+C or enter any key to end current process : ")
+                    self.save()
+                    self.reset()
+                except KeyboardInterrupt:
+                    self.save()
+                    self.reset()
+                self.VI.vision_build_map_mode = False
+            else:
+                print("\n'Build map' command received , but no mapid")
+        except ValueError:
+            print('Please specify MapID in integer')
+        except KeyboardInterrupt:
+            print('Abort')
+
+    def use_map(self): # Use map
+        try:
+            self.VI.vision_map_id = int(input('MapID : '))
+            if self.VI.vision_map_id is not None:
+                start_resp = self.vision.set_start(0, [self.VI.vision_map_id])
+                print('\nset_start(), response: {}'.format(start_resp))
+                self.VI.vision_use_map_mode = True
+                try:
+                    input("Use Ctrl+C or enter any key to end current process : ")
+                    self.save()
+                    self.reset()
+                except KeyboardInterrupt:
+                    self.save()
+                    self.reset()
+                self.VI.vision_use_map_mode = False
+            else:
+                print("\n'Use map' command received , but no mapid")
+        except ValueError:
+            print('Please specify MapID in integer')
+        except KeyboardInterrupt:
+            print('Abort')
+
+    def gui_build_map(self):
+        self.VI.vision_map_id = self.COM.gui_command_receive[1]
+        if self.VI.vision_map_id is not None:
+            start_resp = self.vision.set_start(1, [self.VI.vision_map_id])
+            self.VI.vision_build_map_mode = True
             print('\nset_start(), response: {}'.format(start_resp))
             time.sleep(2)
             print('\nset_correct : {}'.format(self.vision.set_correct1([100, 1352, 1352, 1352, 1352])))
-            logging.info("'Build map' command received , mapid : %s ", mapid)
         else:
             print("\n'Build map' command received , but no mapid")
-            logging.info("'Build map' command received , but no mapid")
 
-    def use_map(self, mapid): # Use map
-        if mapid is not None:
-            start_resp = self.vision.set_start(0, [mapid])
+    def gui_build_map_stop(self):
+        print("Vision save, please wait")
+        self.save()
+        print("Vision reset, please wait")
+        self.reset()
+        print("Vision is now idling")
+        self.VI.vision_build_map_mode = False
+
+    def gui_um(self):
+        self.VI.vision_map_id = self.COM.gui_command_receive[1]
+        if self.VI.vision_map_id is not None:
+            start_resp = self.vision.set_start(0, [self.VI.vision_map_id])
+            self.VI.vision_build_map_mode = True
             print('\nset_start(), response: {}'.format(start_resp))
-            logging.info("'Use map' command received , mapid : %s ", mapid)
+            time.sleep(2)
         else:
-            print("\n'Use map' command received , but no mapid")
-            logging.info("'Use map' command received , but no mapid")
+            print("\n'Build map' command received , but no mapid")
 
+    def gui_um_stop(self):
+        print("Vision reset, please wait")
+        self.reset()
+        self.VI.vision_use_map_mode = False
+
+
+    def show_vision_status(self):
+        '''Show message depends on vision status'''
+        if self.VI.vision_status == 0:
+            print("Vision module status : {} | Vision module is booting".format(self.VI.vision_status))
+        elif self.VI.vision_status == 1:
+            print("Vision module status : {} | Vision module is waiting for 'st $mapid' command".format(self.VI.vision_status))
+        elif self.VI.vision_status == 2:
+            print("Vision module status : {} | Vision module is loading data ".format(self.VI.vision_status))
+        elif self.VI.vision_status == 3:
+            print('Vision module status : {} | Please move slowly, fp-slam is searching a set of best images to initialize'.format(self.VI.vision_status))
+        elif self.VI.vision_status == 4:
+            print('Vision module status : {} | System is working normaaly'.format(self.VI.vision_status))
+        elif self.VI.vision_status == 5:
+            print('Vision module status : {} | Lost Lost Lost'.format(self.VI.vision_status))
+        else:
+            print('Unknown status code : {}'.format(self.VI.vision_status))
+
+    def continuous_show_vision_data(self):
+        '''Show vision data'''
+        self.continuous_show_vision_data_run = True
+        while self.continuous_show_vision_data_run:
+            try:
+                print('status : {} | x : {} | y : {} | theta : {} | Use Ctrl+C or enter any key to end current process : '\
+                    .format(self.VI.vision_status, self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle))
+                time.sleep(0.1)
+            except:
+                print('\nError from Main : main_send_vision_data_to_commander\n')
+                traceback.print_exc()
+                logging.exception('Got error : ')
+                self.continuous_show_vision_data_run = False
+
+    def stop_show_vision_data(self):
+        self.continuous_show_vision_data_run = False
 
 class VisionGetDataThread(threading.Thread):
     def __init__(self, SharedVariableS, vision, daemon=True):

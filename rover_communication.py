@@ -24,15 +24,6 @@ class Communication():
         self.CF = self.SV.CF
         self.COM = self.SV.COM
 
-        self.vision = self.COM.vision
-        self.lidar = self.COM.lidar
-
-
-
-
-
-
-
         # Vision initial variables
         self.VI.vision_build_map_mode = False
         self.VI.vision_use_map_mode = False

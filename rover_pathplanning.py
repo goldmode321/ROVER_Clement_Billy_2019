@@ -178,25 +178,93 @@ class AstarPathPlanning_ori:
         self.SV = SharedVariable
         self.AS = self.SV.AS
 
+        # self.motion = [
+        #     [0, 'forward'],
+        #     [45, 'forward'],
+        #     [90, 'forward'],
+        #     [315, 'forward'],
+        #     [180, 'forward'],
+        #     [135, 'forward'],
+        #     [225, 'forward'],
+        #     [270, 'forward'],
+        # ]
         self.motion = [
             [0, 'forward'],
+            [11.25, 'forward'],
+            [22.5, 'forward'],
+            [33.75, 'forward'],
             [45, 'forward'],
+            [56.25, 'forward'],
+            [67.5, 'forward'],
+            [78.75, 'forward'],
             [90, 'forward'],
-            [315, 'forward'],
-            [180, 'forward'],
+            [101.25, 'forward'],
+            [112.5, 'forward'],
+            [123.75, 'forward'],
             [135, 'forward'],
+            [146.25, 'forward'],
+            [157.5, 'forward'],
+            [168.75, 'forward'],
+            [180, 'forward'],
+            [191.25, 'forward'],
+            [202.5, 'forward'],
+            [213.75, 'forward'],
             [225, 'forward'],
+            [236.25, 'forward'],
+            [247.5, 'forward'],
+            [258.75, 'forward'],
             [270, 'forward'],
+            [281.25, 'forward'],
+            [292.5, 'forward'],
+            [303.75, 'forward'],
+            [315, 'forward'],
+            [326.25, 'forward'],
+            [337.5, 'forward'],
+            [348.75, 'forward'],
         ]
+        # self.motion_dict = {
+        #     0:[1, 0],
+        #     45:[1, 1],
+        #     90:[0, 1],
+        #     135:[-1, 1],
+        #     180:[-1, 0],
+        #     225:[-1, -1],
+        #     270:[0, -1],
+        #     315:[1, -1],
+        # }
         self.motion_dict = {
             0:[1, 0],
+            11.25:[1, 0.25],
+            22.5:[1, 0.5],
+            33.75:[1, 0.75],
             45:[1, 1],
+            56.25:[0.75, 1],
+            67.5:[0.5, 1],
+            78.75:[0.25, 1],
             90:[0, 1],
+            101.25:[-0.25 ,1],
+            112.5:[-0.5, 1],
+            123.75:[-0.75, 1],
             135:[-1, 1],
+            146.25:[-1, 0.75],
+            157.5:[-1, 0.5],
+            168.75:[-1, 0.25],
             180:[-1, 0],
+            191.25:[-1, -0.25],
+            202.5:[-1, -0.5],
+            213.75:[-1, -0.75],
             225:[-1, -1],
+            236.25:[-0.75, -1],
+            247.5:[-0.5, -1],
+            258.75:[-0.25, -1],
             270:[0, -1],
+            281.25:[0.25, -1],
+            292.5:[0.5, -1],
+            303.75:[0.75, -1],
             315:[1, -1],
+            326.25:[1, -0.75],
+            337.5:[1, -0.5],
+            348.75:[1, -0.75],
         }
         self.node_calculated = dict() # Close set
         # self.calculated_path_dictionary = dict() # Open set
@@ -206,12 +274,14 @@ class AstarPathPlanning_ori:
 
     class Node:
         ''' Define parameters in a Node (point) : node_x, node_y, cost, node ID'''
-        def __init__(self, x, y, cost, last_node_id, attitude):
-            self.x, self.y, self.cost, self.last_node_id, self.attitude = x, y, cost, last_node_id, attitude
+        def __init__(self, x, y, cost, last_node_id, attitude, num_of_step):
+            self.x, self.y, self.cost, self.last_node_id, self.attitude, self.num_of_step = x, y, cost, last_node_id, attitude, num_of_step
 
     def calculate_cost(self, node, movement, motion):
-        node.cost += round(np.hypot(movement[0], movement[1]), 1) + (0 if motion[1] == 'forward' else 1)*self.AS.step_unit
-
+        # node.cost += round(np.hypot(movement[0], movement[1]), 1) + (0 if motion[1] == 'forward' else 1)*self.AS.step_unit
+        #      + np.hypot(node.x - self.AS.end_x, node.y - self.AS.end_y)*0.5
+        node.cost = (round(np.hypot(movement[0], movement[1]), 2)*self.AS.step_unit) + node.num_of_step*self.AS.step_unit\
+             + np.hypot(node.x - self.AS.end_x, node.y - self.AS.end_y)*1
         return node.cost
 
     def node_invaild(self, node):
@@ -226,7 +296,13 @@ class AstarPathPlanning_ori:
         self.node_use_for_calculation = dict()
         self.node_calculated = dict()
 
-
+    def _show_progress(self, current_node, node_calculated=None):
+        if self.SV.GUI.show_progress:
+            node_calculated = self.node_calculated if node_calculated is None else node_calculated
+            self.calculate_path(current_node, node_calculated)
+            # self.SV.GUI.route_plot.setData(self.AS.route_x, self.AS.route_y)
+            # pyqtgraph.QtGui.QApplication.processEvents()
+            time.sleep(self.SV.GUI.show_progress_delay)
 
 
     def planning(self):
@@ -239,18 +315,22 @@ class AstarPathPlanning_ori:
             self.AS.start_y,
             0,
             str(self.AS.start_x) + ',' + str(self.AS.start_y),
-            self.AS.attitude
+            self.AS.attitude,
+            0
         )
         target_node = self.Node(
             self.AS.end_x,
             self.AS.end_y,
             0,
             "",
-            self.AS.attitude
+            self.AS.attitude,
+            0
         )
         self.AS.reach_target = reach_target = False
         self.node_use_for_calculation[str(current_node.x) + ',' + str(current_node.y)] = current_node
+        total_step = 0
         while not reach_target:
+            total_step += 1
             # print(len(self.node_use_for_calculation))
             if len(self.node_use_for_calculation) == 0:
                 self.calculate_path(current_node, self.node_calculated)
@@ -277,6 +357,7 @@ class AstarPathPlanning_ori:
                 break
             # print(current_node_id)
 
+            self._show_progress(current_node)
 
             # Node calculation
             for motion in self.motion:
@@ -286,7 +367,8 @@ class AstarPathPlanning_ori:
                     current_node.y + self.AS.step_unit * movement[1],
                     current_node.cost,
                     current_node_id,
-                    [motion[0], "forward" if motion[1] == current_node.attitude[1] else "backward"]
+                    [motion[0], "forward" if motion[1] == current_node.attitude[1] else "backward"],
+                    total_step,
                 )
                 if self.node_invaild(new_node):
                     continue

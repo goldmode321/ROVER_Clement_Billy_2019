@@ -39,14 +39,6 @@ class Main():
         self.CF = self.SV.CF
         self.COM = self.SV.COM
 
-
-
-        self.path_planning = rover_pathplanning.AstarPathPlanning(self.SV)
-        self.curve_fitting = rover_curve_fitting.CubicSpline(self.SV)
-        self.map_builder = rover_map_builder.MapBuilder(self.SV)
-        self.communication = rover_communication.Communication(self.SV)
-
-
         # Main initial variables
         self.auto_start = auto_start
         self.main_receive = []
@@ -65,45 +57,36 @@ class Main():
 
 
         self.COM.command_rover = {
-            'exit all':self._exit_all, 'next':self._next, 'svgobs':self._svgobs,
+            'exit all':self._exit_all, 'svgobs':self._svgobs,
             "import":self._import,
         }
 
         self.COM.command_lidar = {
-            'exit l':self._exit_l, 'li':self._li, 'gld':self._gld, 'next':self._next, \
-                'lr':self._lr, 'ls':self._ls, "lmm":self._lmm,
+            'li':self._li,
         }
 
         self.COM.command_vision = {
-            'exit v':self._exit_v, 'vi':self._vi, 'vs':self._vs, 'gs':self._gs, 'al':self._al, \
-                'cc':self._vcc, 'svv':self._sv, 'vrs':self._vrs, 'gp c':self._gp_c, \
-                    'gp exit':self._gp_exit, 'gp':self._gp, 'bm':self._bm, 'um':self._um, \
-                        'next':self._next, "vsc":self._vsc,
-            "gbm": self._gui_bm, "gum":self._gui_um,
-                        "gbms": self._gui_bm_stop, "gums":self._gui_um_stop,
+            'exit v':self.end_vision, 'vi':self.vision_init,
         }
 
         self.COM.command_car_control = {
-            'ccs':self._cc_s, 'cci':self._cc_i, 'cct':self._cc_t, 'ccstop':self._cc_stop,
+            'cci':self.car_control_init
         }
 
-        self.COM.command_path_tracking = {
-            'pti':self._pt_i, 'ptm':self._pt_m, 'pta':self._pt_a, 'ptstop':self._pt_stop,
-            'ptswi':self._pt_swi,
-        }
+        self.COM.command_path_tracking = {'pti':self.path_tracking_init}
         self.COM.command_path_planning = {
             'pp':self._pp, 'pps':self._pp_s, 'ppe':self._pp_e, 'ppv':self._pp_v,
             "ppr":self._pp_r,
-        }
-
-        self.COM.command_map_builder = {
-            'mb start':self._mb_start, 'mb stop':self._mb_stop, 'mbg':self._mb_g
         }
 
         self.COM.command_calibration = {
             "cal":self._cal,
         }
 
+        self.path_planning = rover_pathplanning.AstarPathPlanning(self.SV)
+        self.curve_fitting = rover_curve_fitting.CubicSpline(self.SV)
+        self.map_builder = rover_map_builder.MapBuilder(self.SV)
+        self.communication = rover_communication.Communication(self.SV)
 
         if self.auto_start:
 
@@ -112,7 +95,6 @@ class Main():
             self.lidar_init()
             self.car_control_init()
             self.path_tracking_init()
-            self.localObsBuilderInit()
 
         self.main_main()
 
@@ -123,16 +105,18 @@ class Main():
 
     def vision_init(self):
         '''Initialize vision system and communication '''
-        try:
-            logging.info("Initialize vision")
-            self.vision = rover_vision.Vision(self.SV)
-            logging.info("Vision initiated\n")
-        except:
-            print('\nError from Main : vision_init \n')
-            traceback.print_exc()
-            logging.info('Main initializing fail at vision_init()')
-            logging.exception("Got error : \n")
-
+        if not self.VI.vision_run:
+            try:
+                logging.info("Initialize vision")
+                self.vision = rover_vision.Vision(self.SV)
+                logging.info("Vision initiated\n")
+            except:
+                print('\nError from Main : vision_init \n')
+                traceback.print_exc()
+                logging.info('Main initializing fail at vision_init()')
+                logging.exception("Got error : \n")
+        else:
+            print('Vision run already')
 
     def end_vision(self):
         '''End vision module system'''
@@ -141,8 +125,6 @@ class Main():
             logging.info('Vision end')
         else:
             print('Vision already off')
-
-
 
 ################## LiDAR ######################
 
@@ -158,6 +140,12 @@ class Main():
             traceback.print_exc()
             logging.info('Main initializing fail at lidar_init()\n')
             logging.exception("Main initializing fail at lidar_init() : \n")
+
+    def _li(self):
+        if not self.LI.lidar_run:
+            self.lidar_init()
+        else:
+            print('LiDAR run already')
 
     def end_lidar(self):
         '''End lidar system'''
@@ -181,10 +169,6 @@ class Main():
             self.path_tracking = rover_pathtracking.PathTracking(self.SV)
         else:
             print("Path Tracking already standby")
-
-######## Map Builder ##########
-    def localObsBuilderInit(self):
-        self.local_obs_builder = rover_map_builder.LocalObsBuilderThread(self.SV)
 
 ############ Main main ###################
     def main_main(self):
@@ -224,53 +208,14 @@ class Main():
                 logging.exception('Got error :')
                 self.ROV.rover_run = False
 
+
     def end_main_all(self):
         '''Close all system except for tnc_main'''
-
         self.end_lidar()
         self.end_vision()
         self.communication.end_gui_server()
-        self._pt_stop()
-        self._cc_stop()
-
-
-
-
-
-    def main_show_vision_data(self):
-        '''Show vision data'''
-        self.main_show_vision_data_run = True
-        while self.main_show_vision_data_run:
-            try:
-                print('status : {} | x : {} | y : {} | theta : {} | Use Ctrl+C or enter any key to end current process : '\
-                    .format(self.VI.vision_status, self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle))
-                time.sleep(0.1)
-            except:
-                print('\nError from Main : main_send_vision_data_to_commander\n')
-                traceback.print_exc()
-                logging.exception('Got error : ')
-                self.main_show_vision_data_run = False
-
-
-    def show_vision_status(self):
-        '''Show message depends on vision status'''
-        if self.VI.vision_status == 0:
-            print("Vision module status : {} | Vision module is booting".format(self.VI.vision_status))
-        elif self.VI.vision_status == 1:
-            print("Vision module status : {} | Vision module is waiting for 'st $mapid' command".format(self.VI.vision_status))
-        elif self.VI.vision_status == 2:
-            print("Vision module status : {} | Vision module is loading data ".format(self.VI.vision_status))
-        elif self.VI.vision_status == 3:
-            print('Vision module status : {} | Please move slowly, fp-slam is searching a set of best images to initialize'.format(self.VI.vision_status))
-        elif self.VI.vision_status == 4:
-            print('Vision module status : {} | System is working normaaly'.format(self.VI.vision_status))
-        elif self.VI.vision_status == 5:
-            print('Vision module status : {} | Lost Lost Lost'.format(self.VI.vision_status))
-        else:
-            print('Unknown status code : {}'.format(self.VI.vision_status))
-
-
-
+        self.path_tracking.stop()
+        self.car_control.stop()
 
 
 
@@ -278,10 +223,7 @@ class Main():
     def _exit_all(self):
         self.end_main_all()
         self.ROV.rover_run = False
-    def _exit_l(self):
-        self.end_lidar()
-    def _exit_v(self):
-        self.end_vision()
+
     def _svgobs(self):
         name = input("Save name")
         if name != "":
@@ -331,135 +273,7 @@ class Main():
         self.CAL.calibrate_angle_multi = abs(float(input("Calibrate angle multi (%): ")))/100
         self.CAL.calibrate_dis_lv = int(input("horizontal distance between lidar and vision"))
 
-######### Map builder ###############
-    def _mb_start(self):
-        if self.local_obs_builder.isAlive():
-            self.local_obs_builder = rover_map_builder.LocalObsBuilderThread(self.SV)
 
-    def _mb_stop(self):
-        self.local_obs_builder.stop()
-
-    def _mb_g(self):
-        self.map_builder.get_global_obstacle()
-
-################ LiDAR ###############
-    def _li(self):
-        if not self.LI.lidar_run:
-            self.lidar_init()
-        else:
-            print('LiDAR run already')
-
-    def _lr(self):
-        self.lidar.lidar_run()
-
-    def _ls(self):
-        self.lidar.lidar_stop()
-    
-    def _lmm(self):
-        maximum_radius = int(input("Lidar max radius"))
-        minimum_radius = int(input("Lidar min radius"))
-        if maximum_radius > minimum_radius:
-            self.LI.lidar_maximum_radius = maximum_radius
-            self.LI.lidar_minimum_radius = minimum_radius
-        else:
-            print("Lidar max radius must be larger than min radius")
-
-    def _gld(self):
-        print(self.LI.lidar_data)
-
-    ################ Vision #############
-    def _vi(self):
-        if not self.VI.vision_run:
-            self.vision_init()
-        else:
-            print('Vision run already')
-    def _vs(self):
-        print('Vision server : {}\n'.format(self.VI.vision_run))
-    def _gs(self):
-        self.show_vision_status()
-    def _sv(self):
-        self.vision.save()
-    def _al(self):
-        self.vision.alive()
-    def _vcc(self):
-        self.vision.check_cpu_speed()
-    def _vrs(self):
-        self.vision.reset()
-    def _gp_c(self):
-        self.main_show_vision_data()
-    def _gp_exit(self):
-        self.main_show_vision_data_run = False
-    def _gp(self):
-        print('status : {} | x : {} | y : {} | theta : {} '.format(self.VI.vision_status, self.VI.vision_x, self.VI.vision_y, self.VI.vision_angle))
-    def _bm(self):
-        try:
-            self.VI.vision_map_id = int(input('MapID : '))
-            self.vision.build_map(self.VI.vision_map_id)
-            try:
-                input("Use Ctrl+C or enter any key to end current process : ")
-                self.vision.save()
-                self.vision.reset()
-            except KeyboardInterrupt:
-                self.vision.save()
-                self.vision.reset()
-        except ValueError:
-            print('Please specify MapID in integer')
-        except KeyboardInterrupt:
-            print('Abort')
-    def _um(self):
-        try:
-            self.VI.vision_map_id = int(input('MapID : '))
-            self.vision.use_map(self.VI.vision_map_id)
-            try:
-                input("Use Ctrl+C or enter any key to end current process : ")
-                self.vision.save()
-                self.vision.reset()
-            except KeyboardInterrupt:
-                self.vision.save()
-                self.vision.reset()
-        except ValueError:
-            print('Please specify MapID in integer')
-        except KeyboardInterrupt:
-            print('Abort')
-    def _next(self):
-        pass
-
-    def _gui_bm(self):
-        self.VI.vision_map_id = self.COM.gui_command_receive[1]
-        self.vision.build_map(self.VI.vision_map_id)
-        self.VI.vision_build_map_mode = True
-    def _gui_bm_stop(self):
-        print("Vision save, please wait")
-        self.vision.save()
-        print("Vision reset, please wait")
-        self.vision.reset()
-
-        print("Vision is now idling")
-        self.VI.vision_build_map_mode = False
-    def _gui_um(self):
-        self.VI.vision_map_id = self.COM.gui_command_receive[1]
-        self.vision.use_map(self.VI.vision_map_id)
-        self.VI.vision_use_map_mode = True
-    def _gui_um_stop(self):
-        print("Vision reset, please wait")
-        self.vision.reset()
-        self.VI.vision_use_map_mode = False
-
-    def _vsc(self):
-        input("input calibration : ")
-
-######### Car Control #########
-    def _cc_i(self):
-        self.car_control_init()
-    
-    def _cc_t(self):
-        self.CC.car_control_steer = int(input("Input range 320-405-490 : "))
-
-    def _cc_s(self):
-        self.car_control.start()
-
-    def _cc_stop(self):
-        self.car_control.stop()
 
 ############# Path Planning ##############
     def _pp(self):
@@ -486,29 +300,7 @@ class Main():
         self.AS.step_unit = int(input("Step unit (cm) :"))
         self.AS.rover_size = int(input("Rover size (cm) :"))
 
-################## Path Tracking #############
-    def _pt_i(self):
-        self.path_tracking_init()
 
-    def _pt_m(self):
-        '''Path tracking by manual forward and back'''
-        self.path_tracking.manualControl()
-
-    def _pt_a(self):
-        '''Path tracking by auto forward'''
-        self.path_tracking.autoControl()
-
-    def _pt_stop(self):
-        self.path_tracking.stop()
-
-    def _pt_g(self):
-        self.PT.theta_e_gain = float(input("Theta e gain : "))
-        self.PT.theta_d_gain = float(input("Theta d gain"))
-
-    def _pt_swi(self):
-        print("stanley, stanley_sim : ")
-        method = input("Choose : ")
-        self.path_tracking.switchMethod(method)
 
 
 

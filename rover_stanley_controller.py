@@ -20,7 +20,7 @@ class StanleyController:
         # self.PT.current_yaw = self.PT.current_yaw % 2*np.pi # normalize yaw to 0~2 pi
         self.PT.velocity += self.PT.acceleration * self.PT.interval/1000
 
-    def updateState_real(self):
+    def update_state_real(self):
         self.PT.current_x = self.VI.vision_x
         self.PT.current_y = self.VI.vision_y
         self.PT.current_yaw = - self.VI.vision_angle + 90
@@ -55,14 +55,14 @@ class StanleyController:
 
 
 
-    def calculateCommand(self):
+    def calculate_command(self):
         self.next_target()
         if self.PT.velocity >= 0:
-            self.PT.theta_e = self.PT.theta_e_gain * self.normalizeAngleRadian(self.normalizeAngleDegree(np.radians(self.PT.current_yaw)) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
-            self.PT.theta_e_deg = np.degrees(self.PT.theta_e)
+            self.PT.theta_e = self.PT.theta_e_gain * self.normalize_angle_rad(self.normalize_angle_deg(np.radians(self.PT.current_yaw)) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
+            self.PT.theta_e_deg = np.rad2deg(self.PT.theta_e)
 
             self.PT.theta_d = np.arctan2(self.PT.theta_d_gain*self.error_front_axle, self.PT.velocity)
-            self.PT.theta_d_deg = np.degrees(self.PT.theta_d)
+            self.PT.theta_d_deg = np.rad2deg(self.PT.theta_d)
             self.PT.steering_target_angle_rad = self.PT.theta_e + self.PT.theta_d
 
 
@@ -78,19 +78,19 @@ class StanleyController:
             self.PT.real_steer_command = int(405 + self.PT.real_steer_deg/3*8)
 
             self.PT.steering_angle_deg = self.PT.real_steer_deg + self.PT.current_yaw
-            self.PT.steering_angle_rad = np.radians(self.PT.steering_angle_deg)
+            self.PT.steering_angle_rad = np.deg2rad(self.PT.steering_angle_deg)
 
         elif self.PT.velocity < 0:
-            self.PT.theta_e = self.normalizeAngleRadian(np.radians(self.PT.current_yaw) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
+            self.PT.theta_e = self.normalize_angle_rad(np.radians(self.PT.current_yaw) - self.SV.CF.fitted_route_yaw_rad[self.PT.target_index])
             self.PT.theta_e_deg = np.degrees(self.PT.theta_e)
 
             self.PT.theta_d = np.arctan2(self.PT.theta_d_gain*self.error_front_axle, self.PT.velocity)
-            self.PT.theta_d_deg = np.degrees(self.PT.theta_d)
+            self.PT.theta_d_deg = np.rad2deg(self.PT.theta_d)
             self.PT.steering_target_angle_rad = self.PT.theta_e - self.PT.theta_d
 
-            self.PT.steering_target_angle_rad = self.normalizeAngleRadian(self.PT.steering_target_angle_rad)
+            self.PT.steering_target_angle_rad = self.normalize_angle_rad(self.PT.steering_target_angle_rad)
 
-            self.PT.steering_target_angle_deg = np.degrees(self.PT.steering_target_angle_rad)
+            self.PT.steering_target_angle_deg = np.rad2deg(self.PT.steering_target_angle_rad)
 
             self.PT.real_steer_deg = - np.clip(
                  - self.PT.steering_target_angle_deg,
@@ -111,7 +111,7 @@ class StanleyController:
         # ))
 
 
-    def normalizeAngleRadian(self, angle):
+    def normalize_angle_rad(self, angle):
         '''normalize angle to [-180, 180]'''
         # angle = angle%(2*np.pi)
         # angle = angle if angle - np.pi < 0 else angle - (2*np.pi)
@@ -126,7 +126,7 @@ class StanleyController:
         return angle
 
 
-    def normalizeAngleDegree(self, angle):
+    def normalize_angle_deg(self, angle):
         '''normalize angle to [-180, 180]'''
         # angle = angle%360
         # angle = angle if angle - 180 < 0 else angle - 360
@@ -140,7 +140,7 @@ class StanleyController:
 
         return angle
 
-    def findDirection(self):
+    def find_direction(self):
         # global_angle_difference = np.degrees(np.arctan2(
         #     self.difference_y[self.PT.target_index], self.difference_x[self.PT.target_index]
         # ))%360

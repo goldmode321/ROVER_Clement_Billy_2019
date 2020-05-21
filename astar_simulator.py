@@ -947,5 +947,5 @@ class Astar_thread(threading.Thread):
 #             self.as_queue.put(self.AS)
 
 
-# if __name__ == "__main__":
-#     App()
+if __name__ == "__main__":
+    App()

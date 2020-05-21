@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 
 
 class SharedVariables():
@@ -27,7 +27,7 @@ class Rover:
 
 class PathTracking:
     def __init__(self):
-        # self.max_steering_angle = numpy.radians(30)
+        # self.max_steering_angle = np.radians(30)
         self.max_steering_angle = 30
         self.interval = 100 # ms
         self.speed_propotional_gain = 1
@@ -94,16 +94,16 @@ class Astar:
 class Curve_fitting:
     def __init__(self):
         self.sample_number = 100
-        self.fitted_route_x = numpy.array([])
-        self.fitted_route_y = numpy.array([])
-        self.fitted_route_yaw_rad = numpy.array([])
-        self.fitted_route_yaw_deg = numpy.array([])
+        self.fitted_route_x = np.array([])
+        self.fitted_route_y = np.array([])
+        self.fitted_route_yaw_rad = np.array([])
+        self.fitted_route_yaw_deg = np.array([])
 
 
 class LocalObstacle:
     def __init__(self):
-        self.local_obstacle_x = numpy.array([0, 1, 2])
-        self.local_obstacle_y = numpy.array([0, 1, 2])
+        self.local_obstacle_x = np.array([0, 1, 2])
+        self.local_obstacle_y = np.array([0, 1, 2])
         self.local_obstacle_dict = {
             'local_obstacle_x':self.local_obstacle_x,
             'local_obstacle_y':self.local_obstacle_y
@@ -111,9 +111,9 @@ class LocalObstacle:
 
 class GlobalObstacle:
     def __init__(self):
-        self.global_obstacle_x = numpy.array([])
-        self.global_obstacle_y = numpy.array([])
-        self.global_obstacle = numpy.array([])
+        self.global_obstacle_x = np.array([])
+        self.global_obstacle_y = np.array([])
+        self.global_obstacle = np.array([])
         self.global_obstacle_buffer = list()
 
 class Vision:
@@ -137,21 +137,23 @@ class Lidar:
     def __init__(self):
         self.lidar = None
         self.lidar_thread = None
-        self.lidar_USB_port = ""
+        self.lidar_usb_port = ""
         self.lidar_run = False
         self.lidar_connect = False
         self.lidar_state = list()
         self.lidar_minimum_radius = 350
         self.lidar_maximum_radius = 1200
-        self.lidar_data = numpy.array([[0,0,0],[1,1,1]])
-        self.lidar_angle = numpy.array([0])
-        self.lidar_radius = numpy.array([0])
+        self.lidar_data = np.array([[0,0,0],[1,1,1]])
+        self.lidar_angle = np.array([0])
+        self.lidar_radius = np.array([0])
+        self.lidar_obs_x = np.array([])
+        self.lidar_obs_y = np.array([])
 
 class MapPlotting:
     def __init__(self):
         self.arrow_x = [0]
         self.arrow_y = [0]
-        self.global_map = numpy.array([])
+        self.global_map = np.array([])
 
         self.rover_x = 0
         self.rover_y = 0
@@ -162,12 +164,6 @@ class MapPlotting:
 
 class Calibration:
     def __init__(self):
-        # self.calibrate_x = 0
-        # self.calibrate_y = 0
-        # self.calibrate_angle = 0
-        # self.calibrate_x_multi = 1
-        # self.calibrate_y_multi = 1
-        # self.calibrate_angle_multi = 1
         self.calibrate_x = 0
         self.calibrate_y = 0
         self.calibrate_angle = 0
@@ -212,14 +208,15 @@ class GuiObject:
 
 class Communication:
     def __init__(self):
-        self.command_rover = None
-        self.command_lidar = None
-        self.command_vision = None
-        self.command_car_control = None
-        self.command_path_tracking = None
-        self.command_path_planning = None
-        self.command_map_builder = None
-        self.command_calibration = None
+        self.command_rover = {}
+        self.command_lidar = {}
+        self.command_vision = {}
+        self.command_car_control = {}
+        self.command_path_tracking = {}
+        self.command_path_planning = {}
+        self.command_map_builder = {}
+        self.command_calibration = {}
+        self.command_communication = {}
 
         self.gui_command_receive = []
 

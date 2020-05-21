@@ -362,7 +362,7 @@ class ROVER_gui():
             else:
                 self.gui.VisionStatus_text.setText("{} : unknown".format(self.VI.vision_status))
 
-            self.gui.LidarUSB_text.setText("USB Port: " + str(self.LI.lidar_USB_port) \
+            self.gui.LidarUSB_text.setText("USB Port: " + str(self.LI.lidar_usb_port) \
                 + "\n Status: " + str(self.LI.lidar_state))
 
             self.gui.CurrentSpeed_text.setText(str(self.CC.car_control_move))
@@ -462,7 +462,7 @@ class ROVER_gui():
     def showMap(self):
 
         def plot_lidar_map():
-            self.lidar_plot.setData(self.x, self.y)
+            self.lidar_plot.setData(self.LI.lidar_obs_x, self.LI.lidar_obs_y)
 
         def plot_global_map():
             self.route_plot.setData(self.AS.route_x, self.AS.route_y)
